@@ -158,5 +158,10 @@ public class ClientDAO {
         public PipeAdvertisement getPipeAdvertisement() {
             return pipeAd;
         }
+
+        public String toString() {
+            return "[id=" + serviceSpace.getServiceSpaceId() +
+                ", trust=" + serviceSpace.getTrustLevel();
+        }
     }
 }

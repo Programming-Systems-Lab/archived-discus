@@ -15,12 +15,12 @@ import org.w3c.dom.Element;
 public class ClientQuery {
 
     private Element queryElement;    // the XML element holding the actual query
-    private ClientResponseListener responseListener;
+    private ClientEventListener responseListener;
         // the object that is listening for a response on this query
 
     private String name;            // an optional name for this query
 
-    public ClientQuery(Element queryElement, ClientResponseListener responseListener) {
+    public ClientQuery(Element queryElement, ClientEventListener responseListener) {
         this.queryElement = queryElement;
         this.responseListener = responseListener;
     }
@@ -29,7 +29,7 @@ public class ClientQuery {
         return queryElement;
     }
 
-    public ClientResponseListener getResponseListener() {
+    public ClientEventListener getResponseListener() {
         return responseListener;
     }
 
