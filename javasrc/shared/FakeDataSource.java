@@ -22,19 +22,6 @@ public class FakeDataSource implements DataSource {
 
     private static final Logger logger = Logger.getLogger(FakeDataSource.class);
 
-    /*public static final String CONNECTION_URL = "jdbc:postgresql://liberty.psl.cs.columbia.edu/discusDemo";
-    public static final String DRIVER_CLASS = "org.postgresql.Driver";
-    public static final String USERNAME = "matias";
-    public static final String PASSWORD = "discus";
-    */
-
-    private static String defaultConnectionURL = "jdbc:hsqldb:db/discus-security";
-    private static String defaultDriverClass = "org.hsqldb.jdbcDriver";
-    private static String defaultUsername = "sa";
-    private static String defaultPassword = "";
-
-    private static Properties defaultProperties;
-
     private String driverClass;
     private String connectionUrl;
     private String username;
@@ -43,51 +30,8 @@ public class FakeDataSource implements DataSource {
     private boolean persistConnection;  // if true, only one Connection will be used for all calls
     private PersistentConnection persistentConnection;
 
-    static {
-
-        try {
-            InputStream in = FakeDataSource.class.getClassLoader().getResourceAsStream("SecurityManager.properties");
-            if (in != null) {
-
-                defaultProperties = new Properties();
-                defaultProperties.load(in);
-
-                logger.debug("loaded config values from SecurityManager.properties");
-
-            }
-        } catch (Exception e) {
-            logger.debug("could not load properties: " + e);
-        }
-
-        if (defaultProperties == null) {
-            logger.debug("using default values");
-            defaultProperties = new Properties();
-            defaultProperties.setProperty("driverClass", defaultDriverClass);
-            defaultProperties.setProperty("connectionUrl", defaultConnectionURL);
-            defaultProperties.setProperty("username", defaultUsername);
-            defaultProperties.setProperty("password", defaultPassword);
-        }
-
-        /*
-        try {
-            Context initCtx = new InitialContext();
-            Context envCtx = (Context) initCtx.lookup("java:comp/env");
-
-            defaultConnectionURL = (String) envCtx.lookup("DBConnectionUrl");
-            defaultDriverClass = (String) envCtx.lookup("DBDriverClass");
-            defaultUsername = (String) envCtx.lookup("DBUsername");
-            defaultPassword = (String) envCtx.lookup("DBPassword");
-
-            logger.debug("loaded config values from web.xml");
-
-        } catch (Exception e) {
-
-        }*/
-
-    }
-
     public FakeDataSource() {
-        this(defaultProperties);
+        this(DiscusProperties.getProperties());
     }
 
     public FakeDataSource(Properties props) {
