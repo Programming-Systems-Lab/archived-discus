@@ -157,8 +157,8 @@ public class SignatureManager {
      * (For web-service calls)
      * Verifies a signed XML document and returns the document and the id of the signing service space
      * @returns an array three Strings, where the first is a status code (0 is OK),
-     * the second element is the signing service space id, and the third is is
-     * the given xml document but without the signature, or the error message.
+     * the second element is the given xml document but without the signature, or the error message
+     * and the third (if no error) is the signing service space id.
      */
     public String[] verifyDocument(String xml)
         throws SignatureManagerException {
@@ -175,10 +175,10 @@ public class SignatureManager {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             XMLUtils.outputDOM(vr.document,out);
 
-            return new String[] { String.valueOf(STATUS_OK), vr.alias, out.toString() };
+            return new String[] { String.valueOf(STATUS_OK), out.toString(), vr.alias };
 
         } catch (Exception e) {
-            return new String[] { String.valueOf(STATUS_ERROR), "0", e.getMessage() };
+            return new String[] { String.valueOf(STATUS_ERROR), e.getMessage() };
         }
 
 

@@ -25,8 +25,9 @@ public interface SecurityManagerService extends Remote  {
      * and the service,method,args entries that are actually authorized for the requesting
      * Service Space.
      *
-     * @return an array of 2 strings, where the first string is the status code (0 is OK)
-     * and the second string is the content (either treaty XML or error message)
+     * @return an array of 3 strings, where the first string is the status code (0 is OK),
+     * the second string is the content (either treaty XML or error message)  and the third is
+     * the service space id
      */
     public String[] verifyTreaty(String treatyXML, boolean signed)
             throws RemoteException;
@@ -42,8 +43,8 @@ public interface SecurityManagerService extends Remote  {
     /**
      * Verifies a signed XML document and returns the document and the id of the signing service space
      * @returns an array three Strings, where the first is a status code (0 is OK),
-     * the second element is the signing service space id, and the third is is
-     * the given xml document but without the signature, or the error message.
+     * the second element is the given xml document but without the signature, or the error message
+     * and the third (if no error) is the signing service space id.
      */
     public String[] verifyDocument(String signedXML)
         throws RemoteException;

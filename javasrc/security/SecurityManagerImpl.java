@@ -125,7 +125,7 @@ public class SecurityManagerImpl implements SecurityManager {
             treaty.marshal(writer);
             writer.close();
 
-            return new String[] { String.valueOf(STATUS_OK), writer.toString() };
+            return new String[] { String.valueOf(STATUS_OK), writer.toString(), String.valueOf(requesterId) };
 
         } catch (Exception e) {
             return new String[] { String.valueOf(STATUS_ERROR), e.toString() };
