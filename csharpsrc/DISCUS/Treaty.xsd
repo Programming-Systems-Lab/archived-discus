@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema targetNamespace="http://localhost/Discus/Schema/Treaty.xsd" elementFormDefault="qualified" xmlns="http://localhost/Discus/Schema/Treaty.xsd" xmlns:mstns="http://localhost/Discus/Schema/Treaty.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<!-- Schema of a DISCUS Treaty: contains a Treaty ID and a list of ServiceData entries -->
+	<xs:complexType name="Treaty">
+		<xs:sequence>
+			<xs:element name="TreatyID" type="xs:int" minOccurs="1" maxOccurs="1" default="0" nillable="false" />
+			<xs:element name="ServiceInfo" type="mstns:ServiceData" minOccurs="1" maxOccurs="unbounded" nillable="false" />
+		</xs:sequence>
+	</xs:complexType>
+	<!-- Schema of a ServiceData type: contains a Service name and a list of ServiceMethodData entries -->
+	<xs:complexType name="ServiceData">
+		<xs:sequence>
+			<xs:element name="ServiceName" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false" />
+			<xs:element name="ServiceMethods" type="mstns:ServiceMethodData" minOccurs="1" maxOccurs="unbounded" nillable="false" />
+		</xs:sequence>
+	</xs:complexType>
+	<!-- Schema of a ServiceMethodData type: contains a method name and a list of named parameters-->
+	<xs:complexType name="ServiceMethodData">
+		<xs:sequence>
+			<xs:element name="MethodName" type="xs:string" minOccurs="1" maxOccurs="0" nillable="false" />
+			<xs:element name="Parameters" type="mstns:ParamList" minOccurs="0" maxOccurs="1" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:simpleType name="ParamList">
+		<xs:list itemType="xs:string" />
+	</xs:simpleType> 
+	
+</xs:schema>

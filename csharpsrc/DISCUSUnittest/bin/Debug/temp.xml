@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Treaty xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://localhost/Discus/Schema/Treaty.xsd">
+  <TreatyID>0</TreatyID>
+  <ClientServiceSpace>vision</ClientServiceSpace>
+  <ProviderServiceSpace>psl</ProviderServiceSpace>
+  <ServiceInfo>
+    <ServiceName>simpleService</ServiceName>
+    <ServiceMethods>
+      <MethodName>simpleMethod</MethodName>
+      <Parameter>start</Parameter>
+      <Parameter>finish</Parameter>
+      <Authorized>false</Authorized>
+    </ServiceMethods>
+  </ServiceInfo>
+</Treaty>
