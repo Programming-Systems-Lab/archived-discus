@@ -11,6 +11,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+import javax.sql.DataSource;
 
 import org.apache.xml.security.Init;
 import org.apache.xml.security.exceptions.XMLSecurityException;
@@ -28,6 +29,7 @@ import org.w3c.dom.DOMException;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import psl.discus.javasrc.shared.Util;
+import psl.discus.javasrc.shared.FakeDataSource;
 
 
 /**
@@ -48,33 +50,31 @@ public class SignatureManager {
     private static final String CERT_ALIAS = "100";
 
     // TODO: get keystore from database!
-    private static final String keystoreFileName = "keystore.jks";
+    //private static final String keystoreFileName = "keystore.jks";
 
     private static KeyStore keyStore;
     private static PrivateKey privateKey;
 
     private DocumentBuilder db;
 
-    public SignatureManager()
+    public SignatureManager(DataSource ds)
             throws SignatureManagerException {
 
-        if (keyStore == null || privateKey == null) {
+        if (keyStore == null) {
             try {
-
+                KeyStoreDAO dao = new KeyStoreDAO(ds);
                 keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
-                File keystoreFile = new File(keystoreFileName);
-                if (!keystoreFile.exists())
-                    throw new SignatureManagerException("Could not find keystore at " + keystoreFile.getCanonicalPath());
+                dao.loadKeyStore(0,keyStore,KEYSTORE_PASS.toCharArray());
+            } catch (Exception e) {
+                throw new SignatureManagerException(e);
+            }
+        }
 
-                FileInputStream fis = new FileInputStream(keystoreFile);
-                keyStore.load(fis, KEYSTORE_PASS.toCharArray());
-                if (keyStore == null)
-                    throw new SignatureManagerException("Could not load keystore");
-
+        if (privateKey == null) {
+            try {
                 privateKey = (PrivateKey) keyStore.getKey(PRIVATEKEY_ALIAS,PRIVATEKEY_PASS.toCharArray());
                 if (privateKey == null)
                     throw new SignatureManagerException("Could not get PrivateKey");
-
             } catch (Exception e) {
                 throw new SignatureManagerException(e);
             }
@@ -267,7 +267,7 @@ public class SignatureManager {
         DocumentBuilder db = dbf.newDocumentBuilder();
         Document d = db.parse(new File(filename));
 
-        SignatureManager sigManager = new SignatureManager();
+        SignatureManager sigManager = new SignatureManager(new FakeDataSource());
         Document signed = sigManager.signDocument(d);
 
         File f = new File(filename + ".signed.xml");
@@ -283,7 +283,7 @@ public class SignatureManager {
         DocumentBuilder db = dbf.newDocumentBuilder();
         Document d = db.parse(new File(filename + ".signed.xml"));
 
-        SignatureManager sigManager = new SignatureManager();
+        SignatureManager sigManager = new SignatureManager(new FakeDataSource());
         VerificationResponse  vr = sigManager.verifyDocument(d);
 
         Util.debug(vr.alias);

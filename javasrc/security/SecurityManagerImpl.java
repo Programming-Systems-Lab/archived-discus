@@ -235,7 +235,8 @@ public class SecurityManagerImpl implements SecurityManager {
             buf.append(line).append("\r\n");
         }
 
-        SecurityManagerImpl manager = new SecurityManagerImpl(new FakeDataSource(), new SignatureManager());
+        DataSource ds = new FakeDataSource();
+        SecurityManagerImpl manager = new SecurityManagerImpl(ds, new SignatureManager(ds));
         String[] result = manager.verifyTreaty(buf.toString(), true);
 
         Util.debug(result);
