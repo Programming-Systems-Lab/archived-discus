@@ -270,7 +270,7 @@ public class Client implements PipeMsgListener, Tags {
                 // the listening endpoint pipe of the service
                 OutputPipe endpointPipe = null;
                 for (int i = 0; i < 3; i++) {
-                    logger.debug("Trying to bind to pipe for service space id " + endpoint.getServiceSpaceId() + "...");
+                    logger.debug("Trying to bind to pipe for " + endpoint.getServiceSpace() + "...");
                     try {
                         endpointPipe = pipeService.createOutputPipe(pipeAd, BIND_TIMEOUT);
                         break;
@@ -298,7 +298,7 @@ public class Client implements PipeMsgListener, Tags {
                 // first we uniquely identify this message, and store it in the queries hashtable
                 // with a reference to its ClientQuery
                 Long messageNumber = new Long(random.nextLong());
-                QueryMessage queryMessage = new QueryMessage(query,endpoint.getServiceSpaceId());
+                QueryMessage queryMessage = new QueryMessage(query,endpoint.getServiceSpace().getServiceSpaceId());
                 queries.put(messageNumber, queryMessage);
 
                 Element msgNumElement = doc.createElement(MSGNUM_TAG);
@@ -517,19 +517,6 @@ public class Client implements PipeMsgListener, Tags {
                             continue;
                         }
 
-                        // extract the signed data
-/*
-                        Enumeration children = paramDoc.getChildren();
-                        if (!children.hasMoreElements()) {
-                            logger.debug("param did not have signed data");
-                            continue;
-                        }
-
-                        TextElement dataDoc = (TextElement) children.nextElement();
-                        logger.debug("signed data:");
-                        String data = dataDoc.getTextValue();
-
-*/
                         try {
 
                             // base64-decode the signed data first
@@ -537,32 +524,15 @@ public class Client implements PipeMsgListener, Tags {
                             byte[] decoded = Base64.decodeBase64(paramValue);
 
                             org.w3c.dom.Document doc = db.parse(new ByteArrayInputStream(decoded));
-                            //NodeList l = doc.getElementsByTagName(DATA_TAG);
 
-                            //Node data = l.item(0);
-                            /*
-                            org.w3c.dom.Document dataDoc = db.newDocument();
-                            Node newData = dataDoc.importNode(data,true);
-                            dataDoc.appendChild(newData);
-                            */
-
-                            /*ByteArrayOutputStream out = new ByteArrayOutputStream();
-                            XMLUtils.outputDOM(data,out);
-
-                            org.w3c.dom.Document dataDoc = db.parse(new ByteArrayInputStream(out.toByteArray()));
-                            */
-
+                            logger.info("verifying module advertisement");
                             // for debugging
                             //XMLUtils.outputDOM(doc,System.out);
-
-                            /*
-                            SignatureManagerResponse response = signatureManager.verifyDocument(doc);
+                            SignatureManagerResponse verificationResult = signatureManager.verifyDocument(doc);
 
                             // document was verified (otherwise an exception would have been thrown)
                             // now check that the ID's match
-                            doc = response.document;
-                            */
-                            logger.warn("not verifying the module advertisement");
+                            doc = verificationResult.getDocument();
 
                             {
                                 NodeList list = doc.getElementsByTagName(MODULE_SPEC_ID_TAG);
@@ -597,10 +567,11 @@ public class Client implements PipeMsgListener, Tags {
                             // TODO: we should check if we actually trust this peer enough
 
                             // ok, if we got here we're all OK
-                            logger.info("Adding pipe for service from peer " + peerAdv.getName());
+                            ServiceSpace serviceSpace = verificationResult.getSigner();
+                            logger.info("Adding pipe for service from peer " +
+                                    peerAdv.getName() + " (id " + serviceSpace.getServiceSpaceId() + ")");
 
-                            // TODO: use actual service space id (need signature verification)
-                            ServiceSpaceEndpoint endpoint = clientDAO.addPipeAdvertisement(1,pipeAd);
+                            ServiceSpaceEndpoint endpoint = clientDAO.addPipeAdvertisement(serviceSpace,pipeAd);
                             knownPipeAds.put(pipeAd.getID(), endpoint);
 
                         } catch (Exception e) {

@@ -278,14 +278,14 @@ public class Server implements PipeMsgListener, Tags {
                     dataDoc = signatureManager.signDocument(dataDoc);
 
                     // debugging
-                    //XMLUtils.outputDOMc14nWithComments(dataDoc,System.out);
-                    xmlSerializer.setOutputByteStream(System.out);
-                    xmlSerializer.serialize(dataDoc);
+                    XMLUtils.outputDOM(dataDoc,System.out);
+                    //xmlSerializer.setOutputByteStream(System.out);
+                    //xmlSerializer.serialize(dataDoc);
 
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    //XMLUtils.outputDOMc14nWithComments(dataDoc,out);
-                    xmlSerializer.setOutputByteStream(out);
-                    xmlSerializer.serialize(dataDoc);
+                    XMLUtils.outputDOM(dataDoc,out);
+                    //xmlSerializer.setOutputByteStream(out);
+                    //xmlSerializer.serialize(dataDoc);
                     out.close();
 
                     // it's sad, but we have to encode it because otherwise signature gets mangled
@@ -417,7 +417,7 @@ public class Server implements PipeMsgListener, Tags {
             Node envelopeNode = list.item(0);
             Text msgNumText = (Text) envelopeNode.getFirstChild();
             messageNumber = msgNumText.getNodeValue();
-            logger.debug("msg num=" + messageNumber);
+
         }
 
 
