@@ -7,42 +7,79 @@
 package psl.discus.javasrc.uddi;
 
 import psl.discus.javasrc.security.ServiceSpace;
-import psl.discus.javasrc.p2p.ServiceSpaceEndpoint;
+import psl.discus.javasrc.p2p.*;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import java.io.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+
+import org.w3c.dom.*;
+import org.apache.axis.utils.XMLUtils;
+import org.apache.log4j.Logger;
 
 /**
  * A GUI for the UddiP2PTester class
  * @author  Matias
  */
-public class UddiP2PTesterGUI extends javax.swing.JFrame {
+public class UddiP2PTesterGUI extends javax.swing.JFrame implements ClientEventListener {
 
     private UddiP2PTester tester;
+    private Logger logger;
 
-    public UddiP2PTesterGUI(UddiP2PTester tester) {
+    public UddiP2PTesterGUI() {
         initComponents();
-        serviceSpaceList.setModel(new DefaultListModel());
 
         System.setOut(new TextAreaPrintStream());
-        this.tester = tester;
+        logger = Logger.getLogger(UddiP2PTesterGUI.class);
+
+        this.tester = new UddiP2PTester();
     }
 
     /**
      * Set the service space list to the given array of service spaces
      */
     public void setServiceSpaces(Object[] serviceSpaces) {
-        serviceSpaceList.setListData(serviceSpaces);
+
+        DefaultListModel model = new DefaultListModel();
+        for (int i = 0; i < serviceSpaces.length; i++) {
+            model.addElement(serviceSpaces[i]);
+
+        }
+
+        serviceSpaceList.setModel(model);
+
     }
 
-    /**
-     * Add the given service space to the list of available service spaces
-     */
-    public void addServiceSpace(Object serviceSpace) {
-        ((DefaultListModel) serviceSpaceList.getModel()).addElement(serviceSpace);
+    public void clientResponseEvent(ClientResponseEvent evt) {
+
+        logger.info("received a response from client for " +
+                    evt.getSourceQuery() + " query");
+
+        StringWriter writer = new StringWriter();
+
+        Element response = evt.getResponse();
+        NodeList nodes = response.getChildNodes();
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node currentNode = nodes.item(i);
+
+            if (currentNode.getNodeName().equals(Tags.SOAP_ENVELOPE_TAG)) {
+                XMLUtils.ElementToWriter((Element) currentNode, writer);
+                logger.info(writer.toString());
+            }
+        }
+    }
+
+    public void clientNotificationEvent(ClientNotificationEvent evt) {
+        logger.info("received a client notification: " +
+                "found new service space: " + evt.getServiceSpaceEndpoint());
+
+        ((DefaultListModel) serviceSpaceList.getModel()).addElement(evt.getServiceSpaceEndpoint());
+
+
     }
 
 
@@ -67,7 +104,7 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame {
         findServiceText = new javax.swing.JTextField();
         getDetailsRadio = new javax.swing.JRadioButton();
         jPanel6 = new javax.swing.JPanel();
-        jButton1 = new javax.swing.JButton();
+        sendQueryButton = new javax.swing.JButton();
 
 
         setTitle("UddiP2PTester");
@@ -79,15 +116,16 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame {
 
         jPanel1.setLayout(new java.awt.BorderLayout());
 
-        jScrollPane1.setPreferredSize(new java.awt.Dimension(85, 123));
-        logText.setPreferredSize(new java.awt.Dimension(100, 120));
+        jScrollPane1.setPreferredSize(new java.awt.Dimension(300,200));
+        //logText.setPreferredSize(new java.awt.Dimension(10, 10));
         jScrollPane1.setViewportView(logText);
+        logText.setFont(new Font("Courier New",Font.PLAIN,12));
 
         jPanel1.add(jScrollPane1, java.awt.BorderLayout.CENTER);
 
         jPanel2.setLayout(new java.awt.BorderLayout());
 
-        jPanel2.setPreferredSize(new java.awt.Dimension(301, 100));
+        jPanel2.setPreferredSize(new java.awt.Dimension(200, 100));
         jPanel4.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 100, 5));
 
         jLabel2.setText("Service Space Endpoints:");
@@ -117,8 +155,14 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame {
 
         jPanel3.add(jPanel5, java.awt.BorderLayout.CENTER);
 
-        jButton1.setText("Send query");
-        jPanel6.add(jButton1);
+        sendQueryButton.setText("Send query");
+        sendQueryButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                sendQuery(e);
+            }
+        });
+
+        jPanel6.add(sendQueryButton);
 
         jPanel3.add(jPanel6, java.awt.BorderLayout.SOUTH);
 
@@ -131,22 +175,34 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame {
         pack();
     }//GEN-END:initComponents
 
-    private void sendGetServiceDetailsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendGetServiceDetailsActionPerformed
+    private void sendQuery(java.awt.event.ActionEvent evt) {
 
-        (new SendQueryThread(SendQueryThread.GETDETAILS_QUERY)).start();
+        SendQueryThread thread =
+                new SendQueryThread(getDetailsRadio.isSelected() ? SendQueryThread.GETDETAILS_QUERY :
+                SendQueryThread.FIND_QUERY);
 
-    }//GEN-LAST:event_sendGetServiceDetailsActionPerformed
+        thread.start();
 
-    private void sendFindServicesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendFindServicesActionPerformed
+    }
 
-        (new SendQueryThread(SendQueryThread.FIND_QUERY)).start();
-
-    }//GEN-LAST:event_sendFindServicesActionPerformed
+    private void log(String s) {
+        logText.append(s + "\n");
+    }
 
     /** Exit the Application */
     private void exitForm(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_exitForm
         System.exit(0);
     }//GEN-LAST:event_exitForm
+
+    public static void main(String args[]) {
+        UddiP2PTesterGUI gui = new UddiP2PTesterGUI();
+        gui.setSize(500,400);
+        gui.show();
+
+        ServiceSpaceEndpoint[] serviceSpaces = gui.tester.init(gui);
+        gui.setServiceSpaces(serviceSpaces);
+
+    }
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -165,7 +221,7 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame {
     private javax.swing.JTextField findServiceText;
     private javax.swing.JRadioButton getDetailsRadio;
     private javax.swing.JPanel jPanel6;
-    private javax.swing.JButton jButton1;
+    private javax.swing.JButton sendQueryButton;
     // End of variables declaration//GEN-END:variables
 
     // this class is used to redirect the log output to the TextArea box
@@ -193,7 +249,7 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame {
 
         public void write(byte buf[], int off, int len) {
             //super.write(buf, off, len);
-            textArea.append(new String(buf,off,len));
+            textArea.append(new String(buf, off, len));
             textArea.repaint();
         }
 
@@ -205,7 +261,7 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame {
      */
     private final class SendQueryThread extends Thread {
 
-        private static final int FIND_QUERY=1, GETDETAILS_QUERY=2;
+        private static final int FIND_QUERY = 1, GETDETAILS_QUERY = 2;
         private int queryType;
 
         public SendQueryThread(int queryType) {
@@ -213,11 +269,15 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame {
         }
 
         public void run() {
-           if (queryType == FIND_QUERY) {
-                tester.sendFindServiceQuery(findServiceText.getText());
+            if (queryType == FIND_QUERY) {
+                tester.sendFindServiceQuery(findServiceText.getText(), UddiP2PTesterGUI.this);
             } else if (queryType == GETDETAILS_QUERY) {
                 ServiceSpaceEndpoint endpoint = (ServiceSpaceEndpoint) serviceSpaceList.getSelectedValue();
-                tester.sendGetServiceDetailsQuery(endpoint);
+                if (endpoint == null) {
+                    log("no endpoint selected");
+                    return;
+                }
+                tester.sendGetServiceDetailsQuery(endpoint, UddiP2PTesterGUI.this);
             }
 
         }
