@@ -13,7 +13,8 @@ import psl.discus.javasrc.shared.Util;
 import psl.discus.javasrc.shared.FakeDataSource;
 
 /**
- * This class is used to save and fetch Treaty objects from the database
+ * This class is used to save and retrieve Treaty objects from the database
+ * The treaties are stored in serialized form as a byte array.
  *
  * Author: Matias
  * Date: Mar 20, 2002
@@ -50,7 +51,7 @@ public class TreatyDAO {
             int result = stmt.executeUpdate();
 
         } catch (Exception e) {
-            throw new DAOException(e);
+            throw new DAOException(e.getMessage());
         }
         finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) { }
@@ -74,7 +75,7 @@ public class TreatyDAO {
             rs = stmt.executeQuery();
 
             if (!rs.next())
-                throw new DAOException("no treaties found for treatyid " + treatyid);
+                throw new DAOException("No treaty found for treatyid " + treatyid);
 
             // get bytes and unserialize into treaty
             byte[] bytes = rs.getBytes(1);
@@ -85,10 +86,43 @@ public class TreatyDAO {
             return treaty;
 
         } catch (Exception e) {
-            throw new DAOException(e);
+            throw new DAOException(e.getMessage());
         }
         finally {
             try { if (rs != null) rs.close(); } catch (SQLException e) { }
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) { }
+            try { if (con != null) con.close(); } catch (SQLException e) { }
+        }
+
+
+    }
+
+    public void modifyTreaty(int treatyid, Treaty treaty)
+        throws DAOException
+    {
+        Connection con = null;
+        PreparedStatement stmt = null;
+
+        try {
+            con = ds.getConnection();
+            String sql = "UPDATE treaties SET treaty=? WHERE treatyid=?";
+            stmt = con.prepareStatement(sql);
+
+            // serialize treaty object and put into a BLOB
+            ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(byteOut);
+            out.writeObject(treaty);
+            byte[] bytes = byteOut.toByteArray();
+            stmt.setBytes(1,bytes);
+
+            stmt.setInt(2,treaty.getTreatyID());
+
+            stmt.executeUpdate();
+
+        } catch (Exception e) {
+            throw new DAOException(e.getMessage());
+        }
+        finally {
             try { if (stmt != null) stmt.close(); } catch (SQLException e) { }
             try { if (con != null) con.close(); } catch (SQLException e) { }
         }
