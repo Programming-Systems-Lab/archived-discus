@@ -19,6 +19,14 @@ public final class Util {
         }
     }
 
+    public static long parseLong(Object o) {
+        try {
+            return Long.parseLong(String.valueOf(o));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
     public static String replaceString(String s, String from, String to) {
 
         StringBuffer buf = new StringBuffer();
@@ -72,5 +80,7 @@ public final class Util {
 
         return buf.toString();
     }
+
+
 
 }
