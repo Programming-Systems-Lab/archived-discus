@@ -22,6 +22,7 @@ import psl.discus.javasrc.schemas.execServiceMethodRequest.ExecServiceMethodRequ
 import psl.discus.javasrc.schemas.treaty.ServiceInfo;
 import psl.discus.javasrc.schemas.treaty.ServiceMethod;
 import psl.discus.javasrc.schemas.treaty.Treaty;
+import psl.discus.javasrc.shared.*;
 
 public class SecurityManagerImpl implements SecurityManager {
 
