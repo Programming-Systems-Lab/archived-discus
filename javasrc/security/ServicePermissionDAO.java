@@ -20,7 +20,7 @@ public class ServicePermissionDAO {
 
     DataSource ds;
 
-    ServicePermissionDAO(DataSource ds) {
+    public ServicePermissionDAO(DataSource ds) {
         this.ds = ds;
     }
 
@@ -114,7 +114,7 @@ public class ServicePermissionDAO {
     public ServicePermission getPermissions(int clientServiceSpaceId, String serviceName)
             throws DAOException {
 
-        // we use 0 as the group id, since a permission for a particular service space can span
+        // we set 0 as the group id, since a permission for a particular service space can span
         // multiple groups. since this method requests permission for a particular service space anyway,
         // it shouldn't cause many problems
         ServiceInvokationPermissionImpl permission = new ServiceInvokationPermissionImpl(0, serviceName);

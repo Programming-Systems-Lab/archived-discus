@@ -18,6 +18,8 @@ public class ClientQuery {
     private ClientResponseListener responseListener;
         // the object that is listening for a response on this query
 
+    private String name;            // an optional name for this query
+
     public ClientQuery(Element queryElement, ClientResponseListener responseListener) {
         this.queryElement = queryElement;
         this.responseListener = responseListener;
@@ -30,6 +32,15 @@ public class ClientQuery {
     public ClientResponseListener getResponseListener() {
         return responseListener;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
 
 
 }

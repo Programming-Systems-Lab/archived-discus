@@ -32,7 +32,7 @@ public class SecurityGUI extends javax.swing.JPanel {
     public static final String PROPS_FILENAME = "SecurityGUI.properties";
 
     private FakeDataSource ds;
-    private ServiceSpaceGroupsDAO groupsDAO;
+    private ServiceSpaceDAO groupsDAO;
     private JPanel currentPanel;
     private boolean permissionsLoaded;
     private ServicePermissionDAO permissionsDAO;
@@ -748,7 +748,7 @@ public class SecurityGUI extends javax.swing.JPanel {
                 return;
             }
 
-            groupsDAO = new ServiceSpaceGroupsDAO(ds);
+            groupsDAO = new ServiceSpaceDAO(ds);
             permissionsDAO = new ServicePermissionDAO(ds);
 
             groupCache = new Hashtable();

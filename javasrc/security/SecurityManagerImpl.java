@@ -71,10 +71,10 @@ public class SecurityManagerImpl implements SecurityManager {
             if (treatyXML == null)
                 throw new SecurityManagerException("signedTreaty parameter is null");
 
-            // TODO: if necessary decrypt
 
             Treaty treaty = null;
-            int requesterId = 0;
+            int serviceSpaceId = 0;
+            String serviceSpaceName = null;
             StringReader reader = new StringReader(treatyXML);
             Document treatyDoc = db.parse(new InputSource(reader));
             if (signed) {
@@ -84,21 +84,22 @@ public class SecurityManagerImpl implements SecurityManager {
                 // from the verification we get the service space id
 
                 SignatureManagerResponse vr = signatureManager.verifyDocument(treatyDoc);
-                treatyDoc = vr.document;
-                requesterId = Util.parseInt(vr.alias);
-                logger.info("verifying signed treaty from service space " + requesterId);
+                treatyDoc = vr.getDocument();
+                serviceSpaceId = vr.getSigner().getServiceSpaceId();
+                serviceSpaceName = vr.getSigner().getName();
+                logger.info("verifying signed treaty from service space " + vr.getSigner().getName());
 
             }
 
             treaty = Treaty.unmarshal(treatyDoc);
 
             // if treaty is unsigned, (requestid==0), just use the service space id they gave us
-            if (requesterId == 0) {
-                requesterId = Util.parseInt(treaty.getClientServiceSpace());
-                logger.info("verifying unsigned treaty as if it came from service space " + requesterId);
+            if (serviceSpaceId == 0) {
+                serviceSpaceId = Util.parseInt(treaty.getClientServiceSpace());
+                logger.info("verifying unsigned treaty as if it came from service space " + serviceSpaceId);
             }
             else {   // otherwise, use the one from the signature
-                treaty.setClientServiceSpace(String.valueOf(requesterId));
+                treaty.setClientServiceSpace(serviceSpaceName);
             }
 
             // now, for each service in the treaty, we get the authorized methods, and set
@@ -107,7 +108,7 @@ public class SecurityManagerImpl implements SecurityManager {
 
             for (Enumeration e = treaty.enumerateServiceInfo(); e.hasMoreElements();) {
                 ServiceInfo serviceInfo = (ServiceInfo) e.nextElement();
-                ServicePermission permission = dao.getPermissions(requesterId, serviceInfo.getServiceName());
+                ServicePermission permission = dao.getPermissions(serviceSpaceId, serviceInfo.getServiceName());
 
                 for (Enumeration methods = serviceInfo.enumerateServiceMethod(); methods.hasMoreElements();) {
                     ServiceMethod method = (ServiceMethod) methods.nextElement();
@@ -137,7 +138,7 @@ public class SecurityManagerImpl implements SecurityManager {
             logger.debug("Done verifying treaty.");
             String treatyData = writer.toString();
             treatyLogger.info(treatyData.replace('\n',' '));
-            return new String[]{STATUS_OK, treatyData, String.valueOf(requesterId)};
+            return new String[]{STATUS_OK, treatyData, String.valueOf(serviceSpaceId)};
 
         } catch (Exception e) {
             return new String[]{STATUS_ERROR, e.toString()};
@@ -157,8 +158,6 @@ public class SecurityManagerImpl implements SecurityManager {
             if (requestXML == null)
                 throw new SecurityManagerException("requestXML parameter is null");
 
-            // TODO: if necessary decrypt
-
             StringReader reader = new StringReader(requestXML);
             Document requestDoc = db.parse(new InputSource(reader));
             String requester = null;
@@ -166,8 +165,8 @@ public class SecurityManagerImpl implements SecurityManager {
                 // verify document.
                 // from the verification we get the service space id
                 SignatureManagerResponse vr = signatureManager.verifyDocument(requestDoc);
-                requestDoc = vr.document;
-                requester = vr.alias;
+                requestDoc = vr.getDocument();
+                requester = vr.getSigner().getName();
             }
 
             request = ExecServiceMethodRequest.unmarshal(requestDoc);

@@ -53,6 +53,7 @@ public class SignatureManagerImpl implements SignatureManager {
     private DocumentBuilder db;
     private String certAlias;
     private Signature signSignature;
+    private ServiceSpaceDAO serviceSpaceDAO;
 
     public SignatureManagerImpl(DataSource ds)
             throws SignatureManagerException {
@@ -129,8 +130,6 @@ public class SignatureManagerImpl implements SignatureManager {
             throw new SignatureManagerException(e);
         }
 
-
-
         // we will need a documentbuilder to create XML documents -- instantiate one here
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
@@ -139,6 +138,9 @@ public class SignatureManagerImpl implements SignatureManager {
         } catch (ParserConfigurationException e) {
             throw new SignatureManagerException(e);
         }
+
+        // ServiceSpaceDAO is used to fetch ServiceSpace information
+        serviceSpaceDAO = new ServiceSpaceDAO(ds);
     }
 
 
@@ -247,9 +249,9 @@ public class SignatureManagerImpl implements SignatureManager {
             SignatureManagerResponse vr = verifyDocument(doc);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            XMLUtils.outputDOM(vr.document, out);
+            XMLUtils.outputDOM(vr.getDocument(), out);
 
-            return new String[]{String.valueOf(STATUS_OK), out.toString(), vr.alias};
+            return new String[]{String.valueOf(STATUS_OK), out.toString(), vr.getSigner().getName()};
 
         } catch (Exception e) {
             return new String[]{String.valueOf(STATUS_ERROR), e.getMessage()};
@@ -266,7 +268,7 @@ public class SignatureManagerImpl implements SignatureManager {
 
         logger.info("verifying document...");
 
-        SignatureManagerResponse vr = new SignatureManagerResponse();
+        SignatureManagerResponse response = null;
         try {
             Element nscontext = XMLUtils.createDSctx(signedDoc, "ds", Constants.SignatureSpecNS);
             Element sigElement = (Element) XPathAPI.selectSingleNode(signedDoc, "//ds:Signature[1]", nscontext);
@@ -299,23 +301,23 @@ public class SignatureManagerImpl implements SignatureManager {
             if (!signature.checkSignatureValue(cert))
                 throw new SignatureManagerException("Document did not pass verification!");
 
-            vr.alias = alias;
+            // lookup service space by its alias (name)
+            ServiceSpace signer = serviceSpaceDAO.getServiceSpaceByName(alias);
 
             // NOTE: this makes a copy of the whole document. Look at instead copying over everything but the signature
             Document doc = (Document) signedDoc.cloneNode(true);
             nscontext = XMLUtils.createDSctx(doc, "ds", Constants.SignatureSpecNS);
             sigElement = (Element) XPathAPI.selectSingleNode(doc, "//ds:Signature[1]", nscontext);
             doc.getFirstChild().removeChild(sigElement);
-            //XMLUtils.outputDOM(doc,new FileOutputStream("out.xml"));
 
-            vr.document = doc;
+            response = new SignatureManagerResponse(doc,signer);
             logger.info("verification done.");
 
         } catch (Exception e) {
             throw new SignatureManagerException(e);
         }
 
-        return vr;
+        return response;
 
     }
 
@@ -370,7 +372,7 @@ public class SignatureManagerImpl implements SignatureManager {
         SignatureManager sigManager = new SignatureManagerImpl(new FakeDataSource());
         SignatureManagerResponse vr = sigManager.verifyDocument(d);
 
-        logger.debug(vr.alias);
+        logger.debug(vr.getSigner().getName());
     }
 
 }

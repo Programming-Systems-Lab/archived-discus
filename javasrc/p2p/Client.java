@@ -430,6 +430,7 @@ public class Client implements PipeMsgListener, Tags {
         }
 
         // now pass on the response to the object that sent the query
+        logger.info("dispatching response to caller");
         ClientQuery query = queryMessage.getQuery();
         ClientResponseEvent evt = new ClientResponseEvent(this,query,responseElement);
         query.getResponseListener().clientResponseEvent(evt);

@@ -7,12 +7,67 @@ import java.util.*;
 
 import javax.sql.DataSource;
 
-public class ServiceSpaceGroupsDAO {
+public class ServiceSpaceDAO {
 
     DataSource ds;
 
-    public ServiceSpaceGroupsDAO(DataSource ds) {
+    public ServiceSpaceDAO(DataSource ds) {
         this.ds = ds;
+    }
+
+    public void addServiceSpace(String serviceSpaceName) throws DAOException {
+        Connection con = null;
+        PreparedStatement stmt = null;
+
+        try {
+            con = ds.getConnection();
+            String sql = "INSERT INTO ServiceSpaces(serviceSpaceName) VALUES(?)";
+            stmt = con.prepareStatement(sql);
+            stmt.setString(1,serviceSpaceName);
+
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new DAOException(e);
+        }
+        finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) { }
+            try { if (con != null) con.close(); } catch (SQLException e) { }
+        }
+    }
+
+    public ServiceSpace getServiceSpaceByName(String serviceSpaceName) throws DAOException {
+        Connection con = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        ServiceSpace ss = null;
+
+        try {
+            con = ds.getConnection();
+            String sql = "SELECT * FROM ServiceSpaces WHERE serviceSpaceName=?";
+            stmt = con.prepareStatement(sql);
+
+            stmt.setString(1,serviceSpaceName);
+
+            rs = stmt.executeQuery();
+            if (!rs.next()) {
+                throw new DAOException("ServiceSpace with name " + serviceSpaceName + " not found.");
+            }
+
+            ss = new ServiceSpaceImpl(rs.getInt("serviceSpaceId"), serviceSpaceName,
+                                      rs.getInt("trustLevel"));
+
+        } catch (SQLException e) {
+            throw new DAOException(e);
+        }
+        finally {
+            try { if (rs != null) rs.close(); } catch (SQLException e) { }
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) { }
+            try { if (con != null) con.close(); } catch (SQLException e) { }
+        }
+
+        return ss;
     }
 
     public Vector getGroups() throws DAOException {
@@ -55,13 +110,16 @@ public class ServiceSpaceGroupsDAO {
 
         try {
             con = ds.getConnection();
-            String sql = "SELECT * FROM ServiceSpaceGroups WHERE groupid=?";
+            String sql = "SELECT ssg.serviceSpaceId, ss.serviceSpaceName, ss.trustLevel " +
+                    "FROM ServiceSpaceGroups ssg, ServiceSpaces ss WHERE groupid=?";
             stmt = con.prepareStatement(sql);
             stmt.setInt(1,groupId);
 
             rs = stmt.executeQuery();
             while (rs.next()) {
-                ServiceSpaceImpl ss = new ServiceSpaceImpl(rs.getInt("servicespaceid"));
+                ServiceSpaceImpl ss = new ServiceSpaceImpl(rs.getInt("servicespaceid"),
+                                                           rs.getString("serviceSpaceName"),
+                                                           rs.getInt("trustLevel"));
                 v.add(ss);
             }
         } catch (SQLException e) {
@@ -195,20 +253,33 @@ public class ServiceSpaceGroupsDAO {
         }
     }
 
-    private class ServiceSpaceImpl implements ServiceSpace {
+    public static class ServiceSpaceImpl implements ServiceSpace {
 
         int serviceSpaceId;
+        String name;
+        int trustLevel;
 
-        public ServiceSpaceImpl(int serviceSpaceId) {
+        public ServiceSpaceImpl(int serviceSpaceId, String name, int trustLevel) {
             this.serviceSpaceId = serviceSpaceId;
+            this.name = name;
+            this.trustLevel = trustLevel;
         }
 
         public int getServiceSpaceId() {
             return serviceSpaceId;
         }
 
+        public String getName() {
+            return name;
+        }
+
+        public int getTrustLevel() {
+            return trustLevel;
+        }
+
         public String toString() {
-            return "Service Space " + serviceSpaceId;
+            return "Service Space " + serviceSpaceId +
+                    " (id=" + serviceSpaceId + ", trustlevel=" + trustLevel + ")";
         }
     }
 }
