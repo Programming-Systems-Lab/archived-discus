@@ -40,14 +40,25 @@ public final class UddiP2PTester implements ClientEventListener {
 
     }
 
+    /**
+     * Initializes the client and subscribe to service space notifications
+     * @param listener the listener where the events should be sent you, usually either
+     * this or the class using UddiP2PTester
+     * @return the array of ServiceSpaceEndpoints returned by client.subscribeToNotifications()
+     */
     public ServiceSpaceEndpoint[] init(ClientEventListener listener) {
         // initialize the Client
         FakeDataSource ds = new FakeDataSource();
-        client = new Client(ds);
+        try {
+            client = Client.getInstance(ds);
+        } catch (ClientException e) {
+            throw new RuntimeException("Could not get client instance!");
+        }
+
         return client.subscribeToNotifications(listener);
     }
 
-    // make uddi call
+
     /**
      * Sends a FindService query, to all service spaces
      * @param serviceName
