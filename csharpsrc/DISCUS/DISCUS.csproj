@@ -137,6 +137,16 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "EvtLoggerImpl.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "EvtTracerImpl.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "ExecServiceMethodRequestType.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -167,12 +177,27 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "ILogger.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "InternalRegistry.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "IResourceAcquire.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ITracer.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "LoggerImpl.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -188,6 +213,11 @@
                 />
                 <File
                     RelPath = "ServiceSpaceDAO.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "TracerImpl.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
