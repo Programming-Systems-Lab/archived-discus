@@ -274,7 +274,23 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				// Extract each XML document
 				foreach( XmlNode n in lstParamNodes )
 				{
-					arrParams[y] = n.InnerText;
+					// If inner text is <string></string>
+					// force all <string>s to be interpreted
+					// literally
+					string strTemp = n.InnerText;
+					int nFirstIndex = strTemp.IndexOf( "<string>" );
+					int nLastIndex = strTemp.LastIndexOf( "</string>" );
+					if( nFirstIndex != -1 && nLastIndex != -1 )
+					{
+						int nStartIndex = nFirstIndex + 8;
+						int nLength = nLastIndex - nStartIndex;
+						string strNewString = "<?xml version=\"1.0\" encoding=\"utf-8\"?><string><![CDATA[";
+							strNewString += strTemp.Substring( nStartIndex, nLength );
+						strNewString += "]]></string>";
+						arrParams[y] = strNewString;
+					}
+					else arrParams[y] = n.InnerText;
+					
 					y++;
 				}
 				
