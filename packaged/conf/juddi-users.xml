@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<juddi-users>
+	<user userid="griddell"   password="password"   name="Graeme Riddell"		admin="false" />
+	<user userid="sviens"     password="password"   name="Steve Viens" 			admin="true" />
+	<user userid="shmigget"   password="password"   name="Chris Dellario" 	admin="false" />
+	<user userid="jtauber"    password="password"   name="James Tauber" 		admin="false" />
+	<user userid="aceponkus"  password="password"   name="Alex Ceponkus" 		admin="false" />
+	<user userid="zpope"      password="password"   name="Bill Pope" 				admin="false" />
+	<user userid="bhablutzel" password="password"   name="Bob Hablutzel" 		admin="false" />
+	<user userid="bren"	      password="password"   name="Bill Ren" 				admin="false" />
+	<user userid="eikeon"	    password="password"   name="Dan Krech" 				admin="false" />
+	<user userid="mcoene"	    password="password"   name="Maarten Coene" 		admin="false" />
+	<user userid="robpool"	  password="password"   name="Rob Pool" 				admin="true" />
+</juddi-users>

@@ -7,7 +7,8 @@ Quick instructions for installing the DISCUS Security Manager demo:
 
 2. If not done already, unzip the contents of this zip file into a temporary directory
 
-3. Open the build.properties file on any text editor and fix any necessary values:
+3. Copy the build.properties.orig file to "build.properties". Then open it 
+   on any text editor and fix any necessary values:
 	jwsdp.home=C:/jwsdp-1.0				# location of JWSDP
 	jwsdp.url=http://localhost:8080		# server and port where JWSDP installed
 	servicespace.id=1					# which service space is being configured

@@ -2,7 +2,7 @@
 
     <property file="build.properties"/>
 
-    <property name="src" value="../../../.."/>
+    <property name="src" value="../../../../src"/>
     <property name="dist" value="dist"/>
     <property name="build" value="../../../../build"/>
     <property name="config" value="config"/>
@@ -10,7 +10,7 @@
     <property name="db" value="db"/>
     <property name="keys" value="keys"/>
 
-	<property name="juddi.dir" value="d:/matias/discus-project" />
+	<property name="juddi.dir" value="." />
 
     <property name="jar-file" value="discus-security.jar"/>
     <property name="gui-jar-file" value="discus-gui.jar"/>
