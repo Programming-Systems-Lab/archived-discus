@@ -15,11 +15,14 @@ import psl.discus.javasrc.shared.Util;
 
 import java.rmi.RemoteException;
 
+import org.apache.log4j.Logger;
+
 /**
  * @author Matias Pelenur
  */
 public class SecurityManagerServiceImpl implements SecurityManagerService {
 
+    private static final Logger logger = Logger.getLogger(SecurityManagerServiceImpl.class);
     public static final String DISCUS_DB_JNDI_NAME = "jdbc/SecurityManagerDB";
 
     private SecurityManager securityManager;
@@ -28,7 +31,7 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
     public SecurityManagerServiceImpl()
         throws RemoteException {
 
-        Util.debug("Initializing SecurityManagerService...");
+        logger.debug("Initializing SecurityManagerService...");
 
         // For testing: [removed]
         // RE-ADDED for Baltimore Demo - we are using a built-in hsqldb

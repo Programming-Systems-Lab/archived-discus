@@ -7,6 +7,7 @@
 package psl.discus.javasrc.security;
 
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -25,6 +26,8 @@ import psl.discus.javasrc.shared.*;
  * @author  Matias
  */
 public class SecurityGUI extends javax.swing.JPanel {
+
+    private static final Logger logger = Logger.getLogger(SecurityGUI.class);
 
     public static final String PROPS_FILENAME = "SecurityGUI.properties";
 
@@ -64,7 +67,7 @@ public class SecurityGUI extends javax.swing.JPanel {
 
             }
             catch (Exception e) {
-                Util.debug("Could not load properties: " + e);
+                logger.debug("Could not load properties: " + e);
             }
         }
 
@@ -206,7 +209,7 @@ public class SecurityGUI extends javax.swing.JPanel {
     }
 
     private void error(String message) {
-        Util.debug(message);
+        logger.debug(message);
         JOptionPane.showMessageDialog(this,message,"Security Manager Admin Error",JOptionPane.WARNING_MESSAGE);
     }
 
@@ -732,7 +735,7 @@ public class SecurityGUI extends javax.swing.JPanel {
                 props.store(out,"SecurityGUI properties");
             }
             catch (IOException e) {
-                Util.debug("Could not save settings");
+                logger.debug("Could not save settings");
             }
 
             ds = new FakeDataSource(props);

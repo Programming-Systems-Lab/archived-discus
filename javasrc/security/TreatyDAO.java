@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 
 import psl.discus.javasrc.schemas.treaty.Treaty;
 import psl.discus.javasrc.shared.*;
+import org.apache.log4j.Logger;
 
 /**
  * This class is used to save and retrieve Treaty objects from the database
@@ -22,6 +23,7 @@ import psl.discus.javasrc.shared.*;
  */
 public class TreatyDAO {
 
+    private static final Logger logger = Logger.getLogger(TreatyDAO.class);
     DataSource ds;
 
     public TreatyDAO(DataSource ds) {
@@ -221,7 +223,7 @@ public class TreatyDAO {
         //dao.addTreaty(treaty);
         Treaty treaty = dao.getTreaty(55).getTreaty();
 
-        Util.debug("done");
+        logger.debug("done");
 
     }
 }

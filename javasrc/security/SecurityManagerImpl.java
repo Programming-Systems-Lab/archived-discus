@@ -26,6 +26,8 @@ import psl.discus.javasrc.shared.*;
 
 public class SecurityManagerImpl implements SecurityManager {
 
+    private static final Logger logger = Logger.getLogger(SecurityManagerImpl.class);
+
     private DataSource ds;
     private SignatureManager signatureManager;
     private TreatyDAO treatyDAO;
@@ -33,13 +35,13 @@ public class SecurityManagerImpl implements SecurityManager {
 
     private Random random;  // used to create random ids for treaties
 
-    private static Logger treatyLogger = Logger.getLogger("TreatyLogger");
-    private static Logger encryptedTreatyLogger = Logger.getLogger("EncryptedTreatyLogger");
+    private static final Logger treatyLogger = Logger.getLogger("TreatyLogger");
+    private static final Logger encryptedTreatyLogger = Logger.getLogger("EncryptedTreatyLogger");
 
     public SecurityManagerImpl(DataSource ds, SignatureManager signatureManager)
             throws SecurityManagerException {
 
-        Util.debug("Initializing SecurityManagerImpl");
+        logger.debug("Initializing SecurityManagerImpl");
 
         this.ds = ds;
         this.signatureManager = signatureManager;
@@ -84,7 +86,7 @@ public class SecurityManagerImpl implements SecurityManager {
                 SignatureManagerResponse vr = signatureManager.verifyDocument(treatyDoc);
                 treatyDoc = vr.document;
                 requesterId = Util.parseInt(vr.alias);
-                Util.info("verifying signed treaty from service space " + requesterId);
+                logger.info("verifying signed treaty from service space " + requesterId);
 
             }
 
@@ -93,7 +95,7 @@ public class SecurityManagerImpl implements SecurityManager {
             // if treaty is unsigned, (requestid==0), just use the service space id they gave us
             if (requesterId == 0) {
                 requesterId = Util.parseInt(treaty.getClientServiceSpace());
-                Util.info("verifying unsigned treaty as if it came from service space " + requesterId);
+                logger.info("verifying unsigned treaty as if it came from service space " + requesterId);
             }
             else {   // otherwise, use the one from the signature
                 treaty.setClientServiceSpace(String.valueOf(requesterId));
@@ -132,7 +134,7 @@ public class SecurityManagerImpl implements SecurityManager {
             treaty.marshal(writer);
             writer.close();
 
-            Util.debug("Done verifying treaty.");
+            logger.debug("Done verifying treaty.");
             String treatyData = writer.toString();
             treatyLogger.info(treatyData.replace('\n',' '));
             return new String[]{STATUS_OK, treatyData, String.valueOf(requesterId)};
@@ -177,11 +179,11 @@ public class SecurityManagerImpl implements SecurityManager {
             // hashtable or something like it to make searching more efficient.
 
             if (requester != null) {
-                Util.info("performing signed request check for service space " + requester +
+                logger.info("performing signed request check for service space " + requester +
                             "with treaty id " + request.getTreatyID());
             }
             else {
-                Util.info("performing unsigned request check with treaty id " + request.getTreatyID());
+                logger.info("performing unsigned request check with treaty id " + request.getTreatyID());
             }
 
             TreatyData treatyData = treatyDAO.getTreaty(request.getTreatyID());
@@ -233,7 +235,7 @@ public class SecurityManagerImpl implements SecurityManager {
             XMLUtils.outputDOM(requestDoc,out);
             String returnXML = out.toString();
 
-            Util.info("request check done. Result: " + (error == null ? "passed" : "not passed: " + error));
+            logger.info("request check done. Result: " + (error == null ? "passed" : "not passed: " + error));
 
             if (error == null)
                 return new String[] {STATUS_OK, returnXML};
@@ -241,7 +243,7 @@ public class SecurityManagerImpl implements SecurityManager {
                 return new String[] {STATUS_ERROR, error};
 
         } catch (Exception e) {
-            Util.info("request check not passed: " + e.getMessage());
+            logger.info("request check not passed: " + e.getMessage());
             return new String[]{STATUS_ERROR, e.getMessage()};
         }
 
@@ -298,7 +300,7 @@ public class SecurityManagerImpl implements SecurityManager {
         SecurityManagerImpl manager = new SecurityManagerImpl(ds, new SignatureManagerImpl(ds));
         String[] result = manager.verifyTreaty(buf.toString(), true);
 
-        Util.debug(result);
+        logger.debug(result);
 
     }
 }

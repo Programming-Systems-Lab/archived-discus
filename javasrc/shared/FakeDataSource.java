@@ -11,12 +11,16 @@ import java.util.Properties;
 import java.util.Map;
 import java.net.URL;
 
+import org.apache.log4j.Logger;
+
 /**
  * This class is purely used to facilitate testing. It fakes a DataSource connection to the
  * discus development database.
  * @author Matias Pelenur
  */
 public class FakeDataSource implements DataSource {
+
+    private static final Logger logger = Logger.getLogger(FakeDataSource.class);
 
     /*public static final String CONNECTION_URL = "jdbc:postgresql://liberty.psl.cs.columbia.edu/discusDemo";
     public static final String DRIVER_CLASS = "org.postgresql.Driver";
@@ -48,15 +52,15 @@ public class FakeDataSource implements DataSource {
                 defaultProperties = new Properties();
                 defaultProperties.load(in);
 
-                Util.debug("FakeDataSource: loaded config values from SecurityManager.properties");
+                logger.debug("loaded config values from SecurityManager.properties");
 
             }
         } catch (Exception e) {
-            Util.debug("FakeDataSource: could not load properties: " + e);
+            logger.debug("could not load properties: " + e);
         }
 
         if (defaultProperties == null) {
-            Util.debug("FakeDataSource: using default values");
+            logger.debug("using default values");
             defaultProperties = new Properties();
             defaultProperties.setProperty("driverClass", defaultDriverClass);
             defaultProperties.setProperty("connectionUrl", defaultConnectionURL);
@@ -74,7 +78,7 @@ public class FakeDataSource implements DataSource {
             defaultUsername = (String) envCtx.lookup("DBUsername");
             defaultPassword = (String) envCtx.lookup("DBPassword");
 
-            Util.debug("FakeDataSource: loaded config values from web.xml");
+            logger.debug("loaded config values from web.xml");
 
         } catch (Exception e) {
 
@@ -101,7 +105,7 @@ public class FakeDataSource implements DataSource {
         try {
             Class.forName(driverClass);
         } catch (ClassNotFoundException e) {
-            Util.debug(e);
+            logger.fatal(e);
         }
     }
 

@@ -36,6 +36,7 @@ public final class Util {
         return buf.toString();
     }
 
+    /*
     public static void debug(Object o) {
         //System.out.println("debug: " + o);
         logger.debug(o);
@@ -58,6 +59,7 @@ public final class Util {
     public static void error(Object o) {
         logger.error(o);
     }
+    */
 
     public static String collectionToString(Collection params) {
         StringBuffer buf = new StringBuffer();

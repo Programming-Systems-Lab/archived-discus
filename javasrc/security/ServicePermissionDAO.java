@@ -7,12 +7,16 @@ import java.util.*;
 
 import javax.sql.DataSource;
 
+import org.apache.log4j.Logger;
+
 /**
  * Author: Matias
  * Date: Mar 19, 2002
  * Time: 5:11:17 PM
  */
 public class ServicePermissionDAO {
+
+    private static final Logger logger = Logger.getLogger(ServicePermissionDAO.class);
 
     DataSource ds;
 
@@ -443,7 +447,7 @@ public class ServicePermissionDAO {
         //dao.addPermission(100,"service","method","foo,bar",1);
         ServicePermission perm = dao.getPermissions(100,"service");
 
-        Util.debug("done");
+        logger.debug("done");
 
     }
 

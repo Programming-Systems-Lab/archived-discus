@@ -28,6 +28,6 @@ public class DAOException extends Exception {
     }
 
     public String toString() {
-        return (e != null ? e.toString() : getMessage());
+        return DAOException.class.getName() + ": " + (e != null ? e.toString() : getMessage());
     }
 }

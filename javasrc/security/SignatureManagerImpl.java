@@ -8,6 +8,7 @@ import org.apache.xml.security.transforms.Transforms;
 import org.apache.xml.security.utils.Constants;
 import org.apache.xml.security.utils.XMLUtils;
 import org.apache.xpath.XPathAPI;
+import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -31,6 +32,8 @@ import psl.discus.javasrc.shared.Util;
  */
 public class SignatureManagerImpl implements SignatureManager {
 
+    private static final Logger logger = Logger.getLogger(SignatureManagerImpl.class);
+
     /* The following are retrieved from the SecurityManager.properties file
     private static final String KEYSTORE_PASS = "discus";
     private static final String PRIVATEKEY_ALIAS = "100";
@@ -42,9 +45,9 @@ public class SignatureManagerImpl implements SignatureManager {
     private static PrivateKey privateKey;
 
     static {
-        Util.debug("Initializing crypto...");
+        logger.debug("Initializing crypto...");
         Init.init();
-        Util.debug("Crypto initialized.");
+        logger.debug("Crypto initialized.");
     }
 
     private DocumentBuilder db;
@@ -54,7 +57,7 @@ public class SignatureManagerImpl implements SignatureManager {
     public SignatureManagerImpl(DataSource ds)
             throws SignatureManagerException {
 
-        Util.debug("Initializing SignatureManagerImpl");
+        logger.debug("Initializing SignatureManagerImpl");
 
         String keyStorePass = null, privateKeyAlias = null, privateKeyPass = null;
         // lookup values using JNDI
@@ -93,7 +96,7 @@ public class SignatureManagerImpl implements SignatureManager {
             throw new SignatureManagerException("SignatureManagerImpl: could not load properties: " + e);
         }
 
-        Util.print("Loading keystore from database...");
+        logger.debug("Loading keystore from database...");
         if (keyStore == null) {
             // get keystore from the database
             try {
@@ -104,9 +107,9 @@ public class SignatureManagerImpl implements SignatureManager {
                 throw new SignatureManagerException(e);
             }
         }
-        Util.println("done.");
+        logger.debug("done.");
 
-        Util.print("Getting private key...");
+        logger.debug("Getting private key...");
         if (privateKey == null) {
             // get privatekey from the keystore
             try {
@@ -117,7 +120,7 @@ public class SignatureManagerImpl implements SignatureManager {
                 throw new SignatureManagerException(e);
             }
         }
-        Util.println("done.");
+        logger.debug("done.");
 
         try {
             signSignature = Signature.getInstance("SHA1withDSA");
@@ -171,7 +174,7 @@ public class SignatureManagerImpl implements SignatureManager {
             throws SignatureManagerException {
 
         try {
-            Util.info("signing document...");
+            logger.info("signing document...");
             // make a copy of the document, so we don't modify the one that was passed
             Document doc = (Document) givenDoc.cloneNode(true);
 
@@ -202,10 +205,10 @@ public class SignatureManagerImpl implements SignatureManager {
 
             }
 
-            Util.info("signing done.");
+            logger.info("signing done.");
             return doc;
         } catch (Exception e) {
-            Util.debug("Error in signing: " + e);
+            logger.debug("Error in signing: " + e);
             throw new SignatureManagerException(e);
         }
     }
@@ -261,7 +264,7 @@ public class SignatureManagerImpl implements SignatureManager {
     public SignatureManagerResponse verifyDocument(Document signedDoc)
             throws SignatureManagerException {
 
-        Util.info("verifying document...");
+        logger.info("verifying document...");
 
         SignatureManagerResponse vr = new SignatureManagerResponse();
         try {
@@ -306,7 +309,7 @@ public class SignatureManagerImpl implements SignatureManager {
             //XMLUtils.outputDOM(doc,new FileOutputStream("out.xml"));
 
             vr.document = doc;
-            Util.info("verification done.");
+            logger.info("verification done.");
 
         } catch (Exception e) {
             throw new SignatureManagerException(e);
@@ -316,10 +319,18 @@ public class SignatureManagerImpl implements SignatureManager {
 
     }
 
-    /**     * Gets a known certificate. This can be used by the SecurityManager to     * vouch for other service spaces by signing their certificates (public keys)     * @return the Base64-encoded certificate     */
-    public String getCertificate(String cerificateAlias)        throws SignatureManagerException {
-        throws new SignatureManagerException("not implemented yet");
+    /**
+     * Gets a known certificate. This can be used by the SecurityManager to
+     * vouch for other service spaces by signing their certificates (public keys)
+     * @return the Base64-encoded certificate
+     */
+
+    public String getCertificate(String cerificateAlias)
+        throws SignatureManagerException {
+
+        throw new SignatureManagerException("not implemented yet");
     }
+
 
     static {
         Init.init();
@@ -359,7 +370,7 @@ public class SignatureManagerImpl implements SignatureManager {
         SignatureManager sigManager = new SignatureManagerImpl(new FakeDataSource());
         SignatureManagerResponse vr = sigManager.verifyDocument(d);
 
-        Util.debug(vr.alias);
+        logger.debug(vr.alias);
     }
 
 }

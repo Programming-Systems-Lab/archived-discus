@@ -9,12 +9,15 @@ import java.security.PrivateKey;
 
 import javax.sql.DataSource;
 
+import org.apache.log4j.Logger;
+
 /**
  * Handles loading and saving the KeyStore to the database
  * @author Matias Pelenur
  */
 public class KeyStoreDAO {
 
+    private static final Logger logger = Logger.getLogger(KeyStoreDAO.class);
     public static final String KEYSTORE_TYPE = "JKS";
 
     private DataSource ds;
@@ -161,14 +164,14 @@ public class KeyStoreDAO {
         throws Exception {
 
         if (args.length < 2) {
-            Util.debug("Usage: KeyStoreDAO keystorefile password");
+            logger.debug("Usage: KeyStoreDAO keystorefile password");
             return;
         }
 
         KeyStoreDAO dao = new KeyStoreDAO(new FakeDataSource());
         dao.storeKeyStoreFromFile(args[0],"JKS",args[1].toCharArray());
 
-        Util.debug("KeyStore stored in database.");
+        logger.debug("KeyStore stored in database.");
     }
 
 }
