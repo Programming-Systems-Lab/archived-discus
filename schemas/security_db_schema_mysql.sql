@@ -4,7 +4,7 @@
 CREATE TABLE ServiceSpaces (
     serviceSpaceId      integer AUTO_INCREMENT,
     serviceSpaceName    varchar(32) NOT NULL,
-    trustLevel          integer
+    trustLevel          integer,
         -- used for deciding who to send UDDI requests too only for now
         -- (not for incoming request verification)
     PRIMARY KEY (serviceSpaceId)
