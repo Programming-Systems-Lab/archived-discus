@@ -10,11 +10,11 @@ CREATE TABLE ServiceSpaces (
     PRIMARY KEY (serviceSpaceId)
 );
 
-INSERT INTO ServiceSpaces VALUES(-1,'Dummy service space');
-INSERT INTO ServiceSpaces VALUES(1,'1');
-INSERT INTO ServiceSpaces VALUES(2,'1');
-INSERT INTO ServiceSpaces VALUES(3,'2');
-INSERT INTO ServiceSpaces VALUES(4,'4');
+INSERT INTO ServiceSpaces VALUES(0,'Dummy service space',0);
+INSERT INTO ServiceSpaces VALUES(1,'1',3);
+INSERT INTO ServiceSpaces VALUES(2,'1',3);
+INSERT INTO ServiceSpaces VALUES(3,'2',3);
+INSERT INTO ServiceSpaces VALUES(4,'4',3);
 
 CREATE TABLE ServiceSpaceEndpoints (
     endpointId          integer AUTO_INCREMENT,
