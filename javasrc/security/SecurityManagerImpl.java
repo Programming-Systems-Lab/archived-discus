@@ -11,8 +11,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Arrays;
 import java.util.Random;
-import java.io.StringWriter;
-import java.io.StringReader;
+import java.io.*;
 
 import javax.sql.DataSource;
 import javax.xml.parsers.DocumentBuilder;
@@ -24,6 +23,8 @@ import psl.discus.javasrc.schemas.treaty.ServiceInfo;
 import psl.discus.javasrc.schemas.treaty.ServiceMethod;
 import psl.discus.javasrc.schemas.treaty.TreatyDAO;
 import psl.discus.javasrc.schemas.securityManagerResponse.SecurityManagerResponse;
+import psl.discus.javasrc.shared.FakeDataSource;
+import psl.discus.javasrc.shared.Util;
 
 public class SecurityManagerImpl implements SecurityManager {
 
@@ -57,8 +58,8 @@ public class SecurityManagerImpl implements SecurityManager {
 
             // TODO: if necessary decrypt, and verify treaty document.
             // from the verification we get the service space id
-            String treatyDoc = null;
-            int requesterId = 0;
+            String treatyDoc = signedTreatyXMLDoc;
+            int requesterId = 100;
 
 
             // first we need to make a Treaty instance object from the treaty document...
@@ -87,8 +88,7 @@ public class SecurityManagerImpl implements SecurityManager {
                         method.setAuthorized(true);
                     }
 
-                    // TODO: set the numInvokations to some meaningful number
-                    method.setNumInvokations(1);
+                    method.setNumInvokations(method.getNumInvokations());
                 }
             }
 
@@ -151,5 +151,27 @@ public class SecurityManagerImpl implements SecurityManager {
 
     public String removePermission(String servicePermissionXMLDoc) {
         return null;
+    }
+
+
+    // for testing
+    public static void main(String[] args)
+        throws Exception {
+
+        // read treaty file
+        /*FileInputStream fin = new FileInputStream("mytreaty.xml");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(fin));
+
+        String line = null;
+        StringBuffer buf = new StringBuffer();
+        while ((line=reader.readLine()) != null) {
+            buf.append(line);
+        }
+        */
+        SecurityManager manager = new SecurityManagerImpl(new FakeDataSource());
+        String result = manager.verifyTreaty("foobar" /*buf.toString()*/);
+
+        Util.debug(result);
+
     }
 }

@@ -29,12 +29,14 @@ public class Test {
 
                 // add one service info
                 ServiceInfo serviceInfo = new ServiceInfo();
-                serviceInfo.setServiceName("FooService");
+                serviceInfo.setServiceName("service");
 
                 ServiceMethod method = new ServiceMethod();
-                method.setMethodName("aMethod");
+                method.setMethodName("method");
                 method.addParameter("foo");
                 method.addParameter("bar");
+                method.setNumInvokations(1);
+                method.setAuthorized(true);
 
                 serviceInfo.addServiceMethod(method);
 

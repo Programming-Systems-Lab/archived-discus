@@ -6,6 +6,8 @@ import java.util.*;
 import javax.sql.DataSource;
 
 import psl.discus.javasrc.shared.DAOException;
+import psl.discus.javasrc.shared.FakeDataSource;
+import psl.discus.javasrc.shared.Util;
 
 /**
  * Author: Matias
@@ -183,5 +185,19 @@ public class ServiceInvokationPermissionDAO {
         }
     }
 
+
+    // for testing
+    public static void main (String[] args)
+        throws Exception {
+
+        FakeDataSource ds = new FakeDataSource();
+        ServiceInvokationPermissionDAO dao = new ServiceInvokationPermissionDAO(ds);
+
+        //dao.addPermission(100,"service","method","foo,bar",1);
+        ServiceInvokationPermission perm = dao.getPermissions(100,"service");
+
+        Util.debug("done");
+
+    }
 }
 

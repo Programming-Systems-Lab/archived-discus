@@ -37,19 +37,20 @@
   </target>
 
 
-  <target name="package"
+  <target name="package" depends="setup-web-inf"
       description="Packages the WAR file">
       <echo message="Packaging the WAR...."/>
-      <delete file="${dist}/${war-file}" />
+      <!--<delete file="${dist}/${war-file}" />-->
       <jar jarfile="${dist}/${war-file}" >
         <fileset dir="${build}" includes="WEB-INF/**" />
+        <fileset dir="${build}/server" includes="*.wsdl"/>
       </jar>
   </target>
 
   <target name="setup-web-inf"
      description="Copies files to build/WEB-INF">
      <echo message="Setting up ${build}/WEB-INF...."/>
-     <delete dir="${build}/WEB-INF" />
+     <!--<delete dir="${build}/WEB-INF" />-->
      <mkdir dir="${build}/WEB-INF/classes/psl" />
      <copy todir="${build}/WEB-INF/classes/psl">
          <fileset dir="${build}/server/psl" />
@@ -58,7 +59,7 @@
      <copy file="${build}/server/${web-inf-config}" todir="${build}/WEB-INF" />
   </target>
 
-  <target name="install" depends="setup-web-inf"
+  <target name="install" depends="package"
      description="Installs a Web application">
      <echo message="Installing the application...."/>
      <install
@@ -66,8 +67,8 @@
         username="${username}"
         password="${password}"
         path="/${context-path}"
-        war="file:${build-path}"
-      />
+        war="file:${dist}/${war-file}"
+      /><!--war="file:${build-path}"-->
   </target>
 
   <target name="list"

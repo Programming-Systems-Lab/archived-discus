@@ -1,0 +1,1 @@
+@echo "java org.exolab.castor.builder.SourceGenerator -i <schema> -package psl.discus.javasrc.schemas.<schema> -dest ..\..\..\..\src -types j2"

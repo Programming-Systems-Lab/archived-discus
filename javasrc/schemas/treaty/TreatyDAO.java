@@ -9,6 +9,8 @@ import java.io.*;
 import javax.sql.DataSource;
 
 import psl.discus.javasrc.shared.DAOException;
+import psl.discus.javasrc.shared.Util;
+import psl.discus.javasrc.shared.FakeDataSource;
 
 /**
  * This class is used to save and fetch Treaty objects from the database
@@ -91,6 +93,29 @@ public class TreatyDAO {
             try { if (con != null) con.close(); } catch (SQLException e) { }
         }
 
+
+    }
+
+    // for testing
+    public static void main(String args[])
+        throws Exception {
+
+        /*Treaty treaty = new Treaty();
+        treaty.setTreatyID((int)(100*Math.random()));
+        treaty.setClientServiceSpace("clientSS");
+        treaty.setProviderServiceSpace("providerSS");
+        ServiceInfo si = new ServiceInfo();
+        si.setServiceName("servicename");
+        si.addServiceMethod(new ServiceMethod());
+        treaty.addServiceInfo(si);
+        */
+        FakeDataSource ds = new FakeDataSource();
+        TreatyDAO dao = new TreatyDAO(ds);
+
+        //dao.addTreaty(treaty);
+        Treaty treaty = dao.getTreaty(55);
+
+        Util.debug("done");
 
     }
 }
