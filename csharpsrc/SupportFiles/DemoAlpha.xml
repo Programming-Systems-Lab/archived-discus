@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<definitions name="DemoAlpha" 
+ targetNamespace="http://psl.cs.columbia.edu" 
+ xmlns:xlang="http://schemas.microsoft.com/bixtalk/xlang"
+ xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<!-- Simple demo using simple xlang constructs -->
+
+<xlang:behavior>
+	<xlang:body>
+		<xlang:sequence>
+			<xlang:action activation="true" gatekeeper="PSLGateKeeper" servicename="QuoteBinding" operation="getPrice">
+				<parameter type="xs:string">1861005458</parameter>
+			</xlang:action>
+			<xlang:action gatekeeper="PSLGateKeeper" servicename="GeoCash" operation="GetATMLocations">
+				<parameter type="xs:string">10025</parameter>
+			</xlang:action>
+			<xlang:action gatekeeper="PSLGateKeeper" servicename="XMethodsQuery" operation="getAllServiceSummaries">
+			</xlang:action>
+		</xlang:sequence>
+	</xlang:body>
+</xlang:behavior>
+
+
+</definitions>
