@@ -8,6 +8,8 @@ import java.sql.*;
 import javax.sql.DataSource;
 
 /**
+ * This class is purely used to facilitate testing. It fakes a DataSource connection to the
+ * discus development database.
  * @author Matias Pelenur
  */
 public class FakeDataSource implements DataSource {

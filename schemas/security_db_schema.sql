@@ -16,3 +16,9 @@ CREATE TABLE Treaties (
     treaty      bytea NOT NULL,
     PRIMARY KEY(treatyid)
 );
+
+CREATE TABLE Keystore (
+    keystoreid  integer NOT NULL,
+    keystore    bytea NOT NULL,
+    PRIMARY KEY(keystoreid)
+);

@@ -23,10 +23,6 @@ public class DAOException extends Exception {
         this.e = e;
     }
 
-    public String getMessage() {
-        return e.getMessage();
-    }
-
     public Exception getNextException() {
         return e;
     }

@@ -28,12 +28,12 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
 
         Util.debug("Initializing SecurityManagerService...");
 
-        // get DataSource
+        // TODO: get *real* DataSource
         DataSource ds = new FakeDataSource();
 
         // create SignatureManager
         try {
-            signatureManager = new SignatureManager();
+            signatureManager = new SignatureManager(ds);
         }
         catch (Exception e) {
             throw new RemoteException("Could not initialize SignatureManager: " + e);
