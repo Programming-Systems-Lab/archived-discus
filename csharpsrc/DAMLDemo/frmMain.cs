@@ -51,8 +51,8 @@ namespace DAMLDemo
 	/// </summary>
 	public class frmMain : System.Windows.Forms.Form
 	{
-		private DAMLProcess m_demoProcess = null;
-		private DAMLProcessModel m_processModel = null;
+		private DamlProcess m_demoProcess = null;
+		private DamlProcessModelReader m_processModel = null;
 		private System.Windows.Forms.ComboBox cmbProcess;
 		private System.Windows.Forms.GroupBox grpDetails;
 		private System.Windows.Forms.RadioButton rdoAtomic;
@@ -72,14 +72,14 @@ namespace DAMLDemo
 
 		public frmMain()
 		{
-			m_demoProcess = new DAMLProcess();
+			m_demoProcess = new DamlProcess();
 
 			// Can only execute Atomic processes
 			m_demoProcess.ProcessType = enuProcessType.AtomicProcess;
 			m_demoProcess.Name = "GetWeather";
 			
 			// Inputs necessary
-			RDFProperty input = new RDFProperty();
+			RdfProperty input = new RdfProperty();
 			input.Name = "zipcode";
 			input.Domain = "#WeatherRetriever";
 			input.Range = "http://www.w3.org/2000/10/XMLSchema#string";
@@ -90,7 +90,7 @@ namespace DAMLDemo
 
 			// Conditional output
 			// WS returns complex type (class instance) this maps to DAML "Thing"
-			RDFProperty condOutput = new RDFProperty();
+			RdfProperty condOutput = new RdfProperty();
 			condOutput.Name = "CurrentWeather";
 			condOutput.Domain = "#WeatherRetriever";
 			condOutput.Range = "http://www.daml.org/2001/03/daml+oil#Thing";
@@ -301,9 +301,8 @@ namespace DAMLDemo
 			StreamReader s = new StreamReader( fs );
 			string strDAML = s.ReadToEnd();
 
-			m_processModel = new DAMLProcessModel();
-			m_processModel.LoadXml( strDAML );
-			
+			m_processModel = new DamlProcessModelReader( strDAML );
+						
 			rdoAtomic.Checked = true;
 
 			if( rdoAtomic.Checked )
@@ -340,7 +339,7 @@ namespace DAMLDemo
 				return;
 			
 			// otherwise go get data and display
-			DAMLProcess process = new DAMLProcess();
+			DamlProcess process = new DamlProcess();
 			enuProcessType processType = enuProcessType.AtomicProcess;
 
 			if( rdoAtomic.Checked )
@@ -355,7 +354,7 @@ namespace DAMLDemo
 			LoadProcessData( process, ref tvwDetails );
 		}
 
-		private void LoadProcessData( DAMLProcess process, ref TreeView tview )
+		private void LoadProcessData( DamlProcess process, ref TreeView tview )
 		{
 			// Clear treeview
 			tview.Nodes.Clear();
@@ -372,7 +371,7 @@ namespace DAMLDemo
 			if( process.HasInputs )
 			{
 				TreeNode Node = new TreeNode( "Inputs" );
-				RDFProperty[] arrData = process.Inputs;
+				RdfProperty[] arrData = process.Inputs;
 
 				for( int i = 0; i < arrData.Length; i++ )
 				{
@@ -385,7 +384,7 @@ namespace DAMLDemo
 			if( process.HasParameters )
 			{
 				TreeNode Node = new TreeNode( "Parameters" );
-				RDFProperty[] arrData = process.Parameters;
+				RdfProperty[] arrData = process.Parameters;
 
 				for( int i = 0; i < arrData.Length; i++ )
 				{
@@ -398,7 +397,7 @@ namespace DAMLDemo
 			if( process.HasOutputs )
 			{
 				TreeNode Node = new TreeNode( "Outputs" );
-				RDFProperty[] arrData = process.Outputs;
+				RdfProperty[] arrData = process.Outputs;
 
 				for( int i = 0; i < arrData.Length; i++ )
 				{
@@ -411,7 +410,7 @@ namespace DAMLDemo
 			if( process.HasConditionalOutputs )
 			{
 				TreeNode Node = new TreeNode( "ConditionalOutputs" );
-				RDFProperty[] arrData = process.ConditionalOutputs;
+				RdfProperty[] arrData = process.ConditionalOutputs;
 
 				for( int i = 0; i < arrData.Length; i++ )
 				{
@@ -424,7 +423,7 @@ namespace DAMLDemo
 			if( process.HasCoOutputs )
 			{
 				TreeNode Node = new TreeNode( "CoOutputs" );
-				RDFProperty[] arrData = process.CoOutputs;
+				RdfProperty[] arrData = process.CoOutputs;
 
 				for( int i = 0; i < arrData.Length; i++ )
 				{
@@ -437,7 +436,7 @@ namespace DAMLDemo
 			if( process.HasEffects )
 			{
 				TreeNode Node = new TreeNode( "Effects" );
-				RDFProperty[] arrData = process.Effects;
+				RdfProperty[] arrData = process.Effects;
 
 				for( int i = 0; i < arrData.Length; i++ )
 				{
@@ -450,7 +449,7 @@ namespace DAMLDemo
 			if( process.HasCoConditions )
 			{
 				TreeNode Node = new TreeNode( "CoConditions" );
-				RDFProperty[] arrData = process.CoConditions;
+				RdfProperty[] arrData = process.CoConditions;
 
 				for( int i = 0; i < arrData.Length; i++ )
 				{
@@ -463,7 +462,7 @@ namespace DAMLDemo
 			if( process.HasPreconditions )
 			{
 				TreeNode Node = new TreeNode( "Preconditions" );
-				RDFProperty[] arrData = process.Preconditions;
+				RdfProperty[] arrData = process.Preconditions;
 
 				for( int i = 0; i < arrData.Length; i++ )
 				{
@@ -476,7 +475,7 @@ namespace DAMLDemo
 			if( process.HasSubProcesses )
 			{
 				TreeNode Node = new TreeNode( "SubProcesses" );
-				DAMLProcess[] arrData = process.SubProcesses;
+				DamlProcess[] arrData = process.SubProcesses;
 
 				for( int i = 0; i < arrData.Length; i++ )
 				{
@@ -545,7 +544,7 @@ namespace DAMLDemo
 
 		// Simple scenario to show how an agent could execute a WS described using
 		// DAML
-		private object DemoExecuteService( DAMLProcess process, DAMLParameter zipcode )
+		private object DemoExecuteService( DamlProcess process, DAMLParameter zipcode )
 		{
 			object objRes = null;
 
