@@ -15,5 +15,8 @@ namespace PSL.DISCUS.Impl
 		// Database configuration file, contains dbase connection
 		// string etc.
 		public static string DBASECONFIG_FILE = "DataConfig.xml"; 
+
+		// XPath constants
+
 	}
 }

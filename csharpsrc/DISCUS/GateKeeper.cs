@@ -14,23 +14,6 @@ using PSL.DISCUS.Impl.DynamicProxy;
 // DISCUS GateKeeper package
 namespace PSL.DISCUS.Impl.GateKeeper
 {
-	class ExecutionRequest
-	{
-		public ExecutionRequest()
-		{
-			m_Params = new ArrayList();
-			m_bServicedLocally = false;
-			m_nTreatyID = -1; // TreatyID exec request assoc with
-		}
-
-		public string m_strGKName;
-		public string m_strServiceName;
-		public string m_strMethod;
-		public ArrayList m_Params;
-		public int m_nTreatyID;
-		public bool m_bServicedLocally;
-	};
-	
 	/// <summary>
 	/// Sample implementation of a GateKeeper
 	/// </summary>
@@ -47,6 +30,54 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		// Proxy Generator
 		private ProxyGen m_pxyGen;
 
+		// Inner ExecRequext class
+		class ExecRequest
+		{
+			public string m_strGKName;
+			public string m_strServiceName;
+			public string m_strServiceMethod;
+			public ArrayList m_XMLParameters;
+			public int m_nTreatyID;
+		
+			public ExecRequest()
+			{
+				m_XMLParameters = new ArrayList();
+				m_nTreatyID = -1; // TreatyID exec request assoc with
+			}
+
+			public string ToXML()
+			{
+				string strXMLReq = "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
+				strXMLReq += "<ExecServiceMethodRequest>";
+				strXMLReq += "<TreatyID>";
+				strXMLReq += m_nTreatyID.ToString();	
+				strXMLReq += "</TreatyID>";
+				strXMLReq += "<ServiceName>";
+				strXMLReq += m_strServiceName;
+				strXMLReq += "</ServiceName>";
+				strXMLReq += "<MethodName>";
+				strXMLReq += m_strServiceMethod;
+				strXMLReq += "</MethodName>";
+						
+				if( m_XMLParameters.Count > 0 )
+				{
+					Object[] arrParams = m_XMLParameters.ToArray();
+
+					for( int i = 0; i < arrParams.Length; i++ )
+					{
+						strXMLReq += "<Parameter>";
+						strXMLReq += "<![CDATA[";
+						strXMLReq += (string) arrParams[i];
+						strXMLReq += "]]>";
+						strXMLReq += "</Parameter>";
+					}
+				}
+				strXMLReq += "</ExecServiceMethodRequest>";
+
+				return strXMLReq;
+			}
+		};
+	
 		/* Constructor */
 		[SecurityPermission(SecurityAction.Assert, Flags = SecurityPermissionFlag.AllFlags)]
 		public GateKeeper()
@@ -583,6 +614,239 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		*/
 
 		[SecurityPermission(SecurityAction.Assert, Flags = SecurityPermissionFlag.AllFlags)]
+		public string[] ExecuteAlphaProtocol( string strAlphaProtocol )
+		{
+			if( strAlphaProtocol.Length == 0 )
+				return null;
+
+			// 6 Stages to Alpha Protocol Execution
+			// 1) Verify that alpha-protocol is valid
+			// 2) Get the list of actions to be performed
+			// 3) Create the Execution requests
+			// 4) Create nec treaties with other GKs - Resource Acquire stage
+			// 5) Execution stage
+			// 6) Fill in array of returned values (if any)
+
+			string [] arrRetVal = null; // Holds returned values
+			
+			// Execution queue
+			Queue execQ = new Queue();
+
+			try
+			{
+				// Stage 1 - Verify alpha-protocol is valid
+				// Create XML text reader
+				XmlTextReader xt = new XmlTextReader( strAlphaProtocol, XmlNodeType.Document, null );
+				// Add namespaces expected in alpha protocol so our xpath queries work
+				XmlNamespaceManager mgr = new XmlNamespaceManager( xt.NameTable );
+				mgr.AddNamespace( "xlang", "http://schemas.microsoft.com/bixtalk/xlang" );
+				mgr.AddNamespace( "xs", "http://www.w3.org/2001/XMLSchema" );
+				// Load document					
+				XmlDocument doc = new XmlDocument();
+				doc.Load( xt );
+				// Get the sequence of steps to be executed		
+				XmlNode root = doc.DocumentElement;
+				XmlNode seq = root.SelectSingleNode( "/definitions/xlang:behavior/xlang:body/xlang:sequence", mgr );
+				
+				if( seq == null || !seq.HasChildNodes )
+					throw new Exception( "Nothing to do" );
+
+				// Stage 2 - Get list of actions to be performed
+				// Every sequence should have a list of actions to be performed
+				// The first action must be an activation action
+				// otherwise the alpha-protocol is invalid
+				XmlNode startNode = seq.FirstChild;
+				XmlAttributeCollection attCol = startNode.Attributes;
+				XmlNode activation = attCol.GetNamedItem( "activation" );
+				if( activation == null || activation.Value.ToLower().CompareTo( "true" ) != 0 )
+					throw new Exception( "Invalid Alpha-Protocol...No Activation Action" );
+
+				// Stage 3 - Create Execution requests
+				XmlNodeList lstActions = seq.ChildNodes;
+				// For each action create an execution request
+				// and add to a queue, an execution request
+				// is simply an xml document
+				foreach( XmlNode action in lstActions )
+				{
+					// Create an attribute collection
+					XmlAttributeCollection att = action.Attributes;
+					// An action must have attributes
+					if( att.Count == 0 )
+						throw new Exception( "Invalid Alpha-Protocol - no attributes specified" );
+
+					ExecRequest e = new ExecRequest();
+					// Get the Gatekeeper that will service request
+					XmlNode val = att.GetNamedItem( "gatekeeper" );
+					if( val == null ) // May mean use local only...handle this later
+						throw new Exception( "No Provider GateKeeper" );
+					e.m_strGKName = val.Value;
+					
+					// Get the name of the service we want to use
+					val = att.GetNamedItem( "servicename" );
+					if( val == null )
+						throw new Exception( "No Service To Use" );
+					e.m_strServiceName = val.Value;
+
+					// Get the operation/method we are supposed to request
+					val = att.GetNamedItem( "operation" );
+					if( val == null )
+						throw new Exception( "No Service Method Specified" );
+					e.m_strServiceMethod = val.Value;
+					
+					// Get any parameters the action may have
+					if( action.HasChildNodes )
+					{
+						XmlNodeList lstParams = action.ChildNodes;
+						// Parameters should be well formed
+						// XML documents (surrounded by
+						// CDATA modifiers to prevent parsing)
+						foreach( XmlNode param in lstParams )
+						{
+							// Just add XML document to list
+							e.m_XMLParameters.Add( param.InnerText );
+						}
+					}// End if action has child nodes
+					// Add request to execution queue
+					execQ.Enqueue( e );
+				}// End for each action in lstActions
+				
+				// Stage 4 - Create nec treaties with other GKs
+				// Resource Acquire stage
+				// Determine whether requests can be serviced locally
+				// Need to create treaty/treaties with all
+				// GateKeepers that must be contacted
+				// Need to copy execution Q to a list, sort by GKName
+				// & create a consolidated treaty to be passed to
+				// any external GK requesting use of its services
+				
+				// Stage 5 - Execution stage
+				IEnumerator it = execQ.GetEnumerator();
+				InternalRegistry ireg = new InternalRegistry();
+				string strGKLocation = "";
+				string strGKAccessPoint = "";
+				string strGKNamespace = "";
+				string strAssembly = "";
+				
+				// Create appropriate sized array to hold results
+				arrRetVal = new string[execQ.Count];
+				int nIndex = 0;
+				// Go thru execution queue servicing each request
+				while( it.MoveNext() )
+				{
+					ExecRequest toExec = (ExecRequest) it.Current;
+						
+					strGKLocation = ireg.GetGateKeeperLocation( toExec.m_strGKName );
+					strGKAccessPoint = ireg.GetGateKeeperLocation( toExec.m_strGKName );
+					strGKNamespace = ireg.GetGateKeeperNamespace( toExec.m_strGKName );
+					
+					if( strGKLocation.Length == 0 )
+						continue; // should throw exception??
+					// May have to go find gatekeeper
+
+					if( strGKLocation.ToLower().StartsWith( "http://" ) )
+					{
+						// Create a dynamic request
+						DynamicRequest req = new DynamicRequest();	
+						req.serviceName = toExec.m_strGKName;
+						// Set properties of the Dynamic request
+						req.filenameSource = req.serviceName;
+						// Location of wsdl file to use for proxy generation
+						req.wsdlFile = strGKLocation;
+						// Service Access Point
+						req.baseURL = strGKAccessPoint;
+						if( req.baseURL.Length == 0 )
+						{
+							// Issue warning, Proxy will ONLY function as expected if
+							// WSDL file contains the service access point
+							string strMsg = "Service did not provide a Base URL (Service Access Point), generated proxy may not function as expected";
+							m_EvtLog.WriteEntry( strMsg, EventLogEntryType.Warning );
+						}
+						// Where to store generated proxy
+						req.proxyPath = m_strPxyCacheDir;
+						// Pass Dynamic request to proxy generator
+						strAssembly = m_pxyGen.GenerateAssembly( req );
+						// If no assembly generated, report error and exit
+						if( strAssembly.Length == 0 )
+						{
+							// Report error generating proxy
+							string strError = "Error generating proxy to WSDL ref: ";
+							strError += strGKLocation;
+							m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
+							throw new Exception( strError );
+						}
+				
+						// Update database location of service, point to
+						// dynamic proxy, change namespace the dynamic proxy namespace
+						ireg.UpdateGateKeeperLocation( toExec.m_strGKName, strAssembly );
+						ireg.UpdateGateKeeperNamespace( toExec.m_strGKName, req.dynNamespace );
+						// Set Service name to Fully qualified 
+						// name i.e <Namespace>.<servicename>
+						// necessary for reflection
+						toExec.m_strGKName = req.dynNamespace + "." + req.serviceName;
+					}
+					else
+					{
+						if( strGKNamespace.Length > 0 )
+							toExec.m_strGKName = strGKNamespace + "." + toExec.m_strGKName;
+						strAssembly = strGKLocation;
+					}
+		
+					// Load assembly from file
+					Assembly a = Assembly.LoadFrom( strAssembly );
+					// Get the correct type (typename must be fully qualified with namespace)
+					Type GKProxyType = a.GetType( toExec.m_strGKName );
+					// Create an instance of the type
+					Object objGKProxy = a.CreateInstance( toExec.m_strGKName );
+					PropertyInfo Url = GKProxyType.GetProperty( "Url" );
+					// Check whether object has a property
+					// called Url, valid for generated
+					// proxies, if it does check its value
+					// if value is empty fill in proxy access point
+					if( Url != null )
+					{
+						string strUrl = (string) Url.GetValue( objGKProxy, null );
+						if( strUrl.Length == 0 )
+							Url.SetValue( objGKProxy, strGKAccessPoint, null );
+					}
+					
+					// Trace
+					string strTrace = "Executing method: ";
+					strTrace += toExec.m_strServiceMethod;
+					strTrace += " against GK: ";
+					strTrace += toExec.m_strGKName;
+					m_EvtLog.WriteEntry( strTrace, EventLogEntryType.Information );
+					
+					// GK expects one parameter - an XML document
+					Object[] parameters = new Object[1];
+					
+					// Create XML document (execute service method request)
+					string strXMLReq = toExec.ToXML();
+					// Set parameter to pass to GK proxy
+					parameters[0] = strXMLReq;
+	
+					// Invoke method
+					Object objResult = GKProxyType.InvokeMember( "ExecuteServiceMethod", 
+							BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Static,
+							null,
+							objGKProxy,
+							parameters ); 
+						
+					if( objResult != null )
+					{
+						// save string
+						arrRetVal[nIndex] = (string) objResult;
+					}
+					nIndex++;
+				} // End while it.MoveNext
+			}
+			catch( System.Exception e )
+			{
+				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
+			}
+			return arrRetVal;
+		}
+		
+		/*[SecurityPermission(SecurityAction.Assert, Flags = SecurityPermissionFlag.AllFlags)]
 		public int ExecuteAlphaProtocol( string strAlphaProtocol )
 		{
 			if( strAlphaProtocol.Length == 0 )
@@ -747,7 +1011,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 						Type tDyn = a.GetType( exec.m_strGKName );
 				
 						// Create an instance of the type
-						Object obj = Activator.CreateInstance( tDyn );
+						Object obj = a.CreateInstance( exec.m_strGKName );
 						PropertyInfo Url = tDyn.GetProperty( "Url" );
 						// Check whether object has a property
 						// called Url, valid for generated
@@ -799,6 +1063,6 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				return 0;
 			}
 			return 1;
-		}
+		}*/
 	}// End GateKeeper
 }

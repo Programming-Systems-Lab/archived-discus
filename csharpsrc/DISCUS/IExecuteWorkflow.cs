@@ -7,6 +7,7 @@ namespace PSL.DISCUS.Interfaces
 	/// </summary>
 	public interface IExecuteWorkflow
 	{
-		int ExecuteAlphaProtocol( string strXMLProtocol );
+		//int ExecuteAlphaProtocol( string strXMLProtocol );
+		string [] ExecuteAlphaProtocol( string strXMLProtocol );
 	}
 }

@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ExecServiceMethodRequest>
     <TreatyID>4</TreatyID>
-    <ServiceName>XMethodQuery</ServiceName>
+    <ServiceName>XMethodsQuery</ServiceName>
     <MethodName>getServiceNamesByPublisher</MethodName>
     <Parameter>
 		<![CDATA[<?xml version="1.0"?><string>Interdata</string>]]>
