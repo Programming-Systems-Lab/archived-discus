@@ -1,7 +1,7 @@
 <VisualStudioProject>
     <CSHARP>
         <Build>
-            <Settings ReferencePath = "C:\Program Files\Microsoft.NET\Odbc.Net\" >
+            <Settings ReferencePath = "C:\Program Files\Microsoft.NET\Odbc.Net\;C:\pslroot\psl\discus\bin\" >
                 <Config
                     Name = "Debug"
                     EnableASPDebugging = "false"

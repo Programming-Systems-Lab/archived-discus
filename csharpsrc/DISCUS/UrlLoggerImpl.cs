@@ -73,10 +73,13 @@ namespace PSL.DISCUS.Impl.Logging
 			try
 			{
 				// Format strMsg as XML
-				strXmlMsg = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
-				strXmlMsg += "<Source>" + m_strSource + "</Source>\n"; // Set source
-				strXmlMsg += "<MessageType>" + DConst.ERROR_MSG_TYPE + "</MessageType>\n"; // Set msg type
-				strXmlMsg += "<Message><![CDATA[" + strMsg + "]]></Message>\n"; // Set message
+				// strXmlMsg = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
+				// strXmlMsg += "<Source>" + m_strSource + "</Source>\n"; // Set source
+				// strXmlMsg += "<MessageType>" + DConst.ERROR_MSG_TYPE + "</MessageType>\n"; // Set msg type
+				// strXmlMsg += "<Message><![CDATA[" + strMsg + "]]></Message>\n"; // Set message
+
+				// TODO: Remove later...For Demo only
+				strXmlMsg += "LOG_" + m_strSource + " " + strMsg;
 
 				// Send message (using TCP)
 				TcpClient clientSocket = new TcpClient( m_strHostname, m_nPort );
@@ -98,10 +101,13 @@ namespace PSL.DISCUS.Impl.Logging
 			try
 			{
 				// Format strMsg as XML
-				strXmlMsg = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
-				strXmlMsg += "<Source>" + m_strSource + "</Source>\n"; // Set source
-				strXmlMsg += "<MessageType>" + DConst.INFO_MSG_TYPE + "</MessageType>\n"; // Set msg type
-				strXmlMsg += "<Message><![CDATA[" + strMsg + "]]></Message>\n"; // Set message
+				// strXmlMsg = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
+				// strXmlMsg += "<Source>" + m_strSource + "</Source>\n"; // Set source
+				// strXmlMsg += "<MessageType>" + DConst.INFO_MSG_TYPE + "</MessageType>\n"; // Set msg type
+				// strXmlMsg += "<Message><![CDATA[" + strMsg + "]]></Message>\n"; // Set message
+
+				// TODO: Remove later...For Demo only
+				strXmlMsg += "LOG_" + m_strSource + " " + strMsg;
 
 				// Send message (using TCP)
 				TcpClient clientSocket = new TcpClient( m_strHostname, m_nPort );
@@ -123,10 +129,13 @@ namespace PSL.DISCUS.Impl.Logging
 			try
 			{
 				// Format strMsg as XML
-				strXmlMsg = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
-				strXmlMsg += "<Source>" + m_strSource + "</Source>\n"; // Set source
-				strXmlMsg += "<MessageType>" + DConst.WARNING_MSG_TYPE + "</MessageType>\n"; // Set msg type
-				strXmlMsg += "<Message><![CDATA[" + strMsg + "]]></Message>\n"; // Set message
+				// strXmlMsg = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
+				// strXmlMsg += "<Source>" + m_strSource + "</Source>\n"; // Set source
+				// strXmlMsg += "<MessageType>" + DConst.WARNING_MSG_TYPE + "</MessageType>\n"; // Set msg type
+				// strXmlMsg += "<Message><![CDATA[" + strMsg + "]]></Message>\n"; // Set message
+
+				// TODO: Remove later...For Demo only
+				strXmlMsg += "LOG_" + m_strSource + " " + strMsg;
 
 				// Send message (using TCP)
 				TcpClient clientSocket = new TcpClient( m_strHostname, m_nPort );

@@ -1,7 +1,7 @@
 Microsoft Visual Studio Solution File, Format Version 7.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DISCUS", "DISCUS.csproj", "{4CB23253-BF2A-4764-9F86-2EC23858515D}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DISCUSUnittest", "..\DISCUSUnittest\DISCUSUnittest.csproj", "{5DEA4E44-32D0-40CB-A1B3-6EE45F04C360}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DISCUS", "DISCUS.csproj", "{4CB23253-BF2A-4764-9F86-2EC23858515D}"
 EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
@@ -11,14 +11,14 @@ Global
 	GlobalSection(ProjectDependencies) = postSolution
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
-		{4CB23253-BF2A-4764-9F86-2EC23858515D}.Debug.ActiveCfg = Debug|.NET
-		{4CB23253-BF2A-4764-9F86-2EC23858515D}.Debug.Build.0 = Debug|.NET
-		{4CB23253-BF2A-4764-9F86-2EC23858515D}.Release.ActiveCfg = Release|.NET
-		{4CB23253-BF2A-4764-9F86-2EC23858515D}.Release.Build.0 = Release|.NET
 		{5DEA4E44-32D0-40CB-A1B3-6EE45F04C360}.Debug.ActiveCfg = Debug|.NET
 		{5DEA4E44-32D0-40CB-A1B3-6EE45F04C360}.Debug.Build.0 = Debug|.NET
 		{5DEA4E44-32D0-40CB-A1B3-6EE45F04C360}.Release.ActiveCfg = Release|.NET
 		{5DEA4E44-32D0-40CB-A1B3-6EE45F04C360}.Release.Build.0 = Release|.NET
+		{4CB23253-BF2A-4764-9F86-2EC23858515D}.Debug.ActiveCfg = Debug|.NET
+		{4CB23253-BF2A-4764-9F86-2EC23858515D}.Debug.Build.0 = Debug|.NET
+		{4CB23253-BF2A-4764-9F86-2EC23858515D}.Release.ActiveCfg = Release|.NET
+		{4CB23253-BF2A-4764-9F86-2EC23858515D}.Release.Build.0 = Release|.NET
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

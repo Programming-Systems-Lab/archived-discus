@@ -74,11 +74,11 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		// Proxy Generator
 		private ProxyGen m_pxyGen;
 		// SecurityManagerService
-		private string SECURITY_MANAGER = "SecurityManagerService";
+		public string SECURITY_MANAGER = "SecurityManagerService";
 		// SecurityManagerServiceMethods
 		private string REQUEST_CHECK_METHOD = "doRequestCheck";
 		private string SIGN_DOCUMENT_METHOD = "signDocument";
-		private string VERIFY_DOCUMENT_METHOD = "verifyDocument";
+		public string VERIFY_DOCUMENT_METHOD = "verifyDocument";
 		private string VERIFY_TREATY_METHOD = "verifyTreaty";
 		// Security Manager constants
 		private int SECURITY_MANAGER_STATUS_FIELD = 0;
@@ -89,7 +89,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
  		// GateKeeper Methods
 		private string GK_EXECUTE_SERVICE_METHOD = "ExecuteServiceMethod";
 		private string GK_ENLIST_SERVICES_BY_NAME_METHOD = "EnlistServicesByName";
-		private string DEFAULT_CLIENT_SERVICE_SPACE = "100";
+		private string DEFAULT_CLIENT_SERVICE_SPACE = "1";
 		
 		// Private inner class representing an AlphaProtocol execution 
 		// step
@@ -125,6 +125,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		{
 			try
 			{
+				string strLoc = Assembly.GetExecutingAssembly().Location;
+				string strCodebase = Assembly.GetExecutingAssembly().CodeBase;
+								
 				// Create ProxyGenerator instance
 				m_pxyGen = new ProxyGen();
 
@@ -165,6 +168,10 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					m_logCtx.WebServiceAccessPoint = currentNode.InnerText;
 
 				// Tracing context info
+				currentNode = root.SelectSingleNode( "Tracing/TraceOn" );
+				if( currentNode != null )
+					m_bTraceOn = ( currentNode.InnerText.ToLower().CompareTo( "true" ) == 0 );
+                				
 				currentNode = root.SelectSingleNode( "Tracing/UrlTracing/Hostname" );
 				if( currentNode != null )
 					m_traceCtx.Hostname = currentNode.InnerText;
@@ -254,7 +261,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			try
 			{
 				if( m_bTraceOn )
-					TraceInfo( "About to build execQ from Alpha-Protocol: " + strAlphaProtocol );
+					TraceInfo( "About to build execQ from Alpha-Protocol" );// + strAlphaProtocol );
 				
 				// Stage 1 - Verify alpha-protocol is valid
 				// Create XML text reader
@@ -415,7 +422,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				strCheck = treaty.ToXml();
 				
 				if( m_bTraceOn )
-					TraceInfo( "Built treaty: " + treaty.ToXml() );
+					TraceInfo( "Built treaty" );// + treaty.ToXml() );
 			}
 			catch( Exception e )
 			{
@@ -571,7 +578,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			try
 			{
 				if( m_bTraceOn )
-					TraceInfo( "Doing request check on: " + strXmlExecRequest );
+					TraceInfo( "Doing request check" );// on: " + strXmlExecRequest );
 			
 				// Interact with SecurityManagerService via reflection
 				InternalRegistry ireg = new InternalRegistry();
@@ -606,7 +613,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			try
 			{
 				if( m_bTraceOn )
-					TraceInfo( "Received treaty request, passing to SecurityManager to verify: " + strXmlTreatyReq );
+					TraceInfo( "Received treaty request, passing to SecurityManager to verify" );// + strXmlTreatyReq );
 			
 				// Create array of params to pass to VerifyTreaty
 				// of SecurityManagerService
@@ -614,6 +621,11 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				objParams[0] = strXmlTreatyReq;
 				objParams[1] = false; // request not signed (yet)
 				object objRes = null; // return value
+				
+				//TODO: Remove later...for demo only
+				if( m_bTraceOn )
+					TraceInfo( "EXECGUI_5" );
+
 				// Execute method
 				objRes = ExecuteService( SECURITY_MANAGER, VERIFY_TREATY_METHOD, objParams );
 				// Check whether execution returned something
@@ -629,7 +641,11 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					if( strRetVal.Length > 0 )
 					{
 						if( m_bTraceOn )
-							TraceInfo( "SecurityManager verification returned: " + strRetVal );
+						{
+							//TraceInfo( "SecurityManager verification returned: " + strRetVal );
+							//TODO: Remove later...for demo only
+							TraceInfo( "EXECGUI_6" );
+						}
 					}
 				}
 			}
@@ -651,6 +667,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			if( strAlphaProtocol.Length == 0 )
 				return null;
 
+			// TODO: Remove later...for demo only
+			if( m_bTraceOn )
+				TraceInfo( "EXECGUI_2" );
 			
 			// 4 stage execution			
 			// 1) Build the execution queue (steps to perform)
@@ -662,7 +681,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			{
 				// Stage 1 - Build Execution queue (steps to execute)
 				if( m_bTraceOn )
-					TraceInfo( "Executing Alpha Protocol Stage 1 - Building ExecutionQ" );
+					TraceInfo( "MESSAGE " + "Executing Alpha Protocol Stage 1 - Building ExecutionQ" );
 			
 				Queue execQ = BuildAlphaProtocolExecutionQ( strAlphaProtocol );
 				if( execQ == null || execQ.Count == 0 )
@@ -688,8 +707,8 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				// Stage 2 - Create the necessary treaties and return a hashtable
 				// of treatyIDs to be used with each GK.
 				if( m_bTraceOn )
-					TraceInfo( "Executing Alpha Protocol Stage 2 - Creating Treaties" );
-			
+					TraceInfo( "MESSAGE " + "Executing Alpha Protocol Stage 2 - Creating Treaties" );
+				
 				Hashtable mapping = FormTreaties( arrReqs );
 				if( mapping == null || mapping.Count == 0 )
 					throw new Exception( "Resource Acquire Failed, Error Creating Treaties" );
@@ -700,22 +719,38 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				// if not then we report the failure and exit
 				if( !CanExecuteAllSteps( mapping ) )
 				{
+					// TODO: Edit later...for demo only
 					if( m_bTraceOn )
 						TraceError( "All Necessary Resources NOT Acquired" );
+					
 					// Write Treaties to event log for analysis later
 					throw new Exception( "Resource Acquire Failed, All Requests NOT Authorized" );
+				}
+				else
+				{
+					// TODO: Edit later...for demo only
+					if( m_bTraceOn )
+					{
+						TraceInfo( "MESSAGE " + "Acquired All Necessary Resources" );
+						TraceInfo( "EXECGUI_7" );
+					}
 				}
 
 				// Stage 4 - Execution stage
 				if( m_bTraceOn )
-					TraceInfo( "Executing Alpha Protocol Stage 4 - Execution" );
+					TraceInfo( "MESSAGE " + "Executing Alpha Protocol Stage 4 - Execution" );
 				
 				IEnumerator it = execQ.GetEnumerator();
 				InternalRegistry ireg = new InternalRegistry();
 				int nIndex = 0;	
 			
+				// TODO: Edit later...for demo only
+				if( m_bTraceOn )
+					TraceInfo( "EXECGUI_8" );
+
 				while( it.MoveNext() )
 				{
+					
 					AlphaRequest actionReq = (AlphaRequest) it.Current;
 					// GK expects one parameter - an XML document
 					// representing a request
@@ -752,7 +787,10 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			}
 			
 			if( m_bTraceOn )
+			{
 				TraceInfo( "Finished Executing Alpha Protocol" );
+				TraceInfo( "EXECGUI_9" );
+			}
 				
 			return arrRetVal;
 		}//End ExecuteAlphaProtocol
@@ -871,8 +909,10 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		 *		  objParams - array of parameters to pass to proxy method
 		 * Return Values: the results of execution against the web service
 		 */
-		private object ExecuteService( string strServiceName, string strServiceMethod, object[] objParams )
+		public object ExecuteService( string strServiceName, string strServiceMethod, object[] objParams )
 		{
+			TraceInfo( "Started ExecuteService" );
+			
 			object objInvokeResult = null;
 			try
 			{
@@ -913,13 +953,17 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					if( strAssembly.Length == 0 )
 						throw new System.Exception( "Error generating proxy to " + strServiceName + " using WSDL ref: " + strServiceLocation );
 								
-					// Update database location of service, point to
-					// dynamic proxy, change namespace the dynamic proxy namespace
-					ireg.UpdateServiceLocation( strServiceName, strAssembly );
-					ireg.UpdateServiceNamespace( strServiceName, DynamicRequest.DEFAULT_PROXY_NAMESPACE );
-					// Set Service name to Fully qualified 
-					// name i.e <Namespace>.<servicename>
-					// necessary for reflection
+					// Do not update location of security manager
+					if( strServiceName.CompareTo( SECURITY_MANAGER ) != 0 )
+					{
+						// Update database location of service, point to
+						// dynamic proxy, change namespace the dynamic proxy namespace
+						ireg.UpdateServiceLocation( strServiceName, strAssembly );
+						ireg.UpdateServiceNamespace( strServiceName, DynamicRequest.DEFAULT_PROXY_NAMESPACE );
+						// Set Service name to Fully qualified 
+						// name i.e <Namespace>.<servicename>
+						// necessary for reflection
+					}
 					strServiceName = DynamicRequest.DEFAULT_PROXY_NAMESPACE + "." + strServiceName;
 				}
 				else
@@ -990,7 +1034,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			try
 			{
 				if( m_bTraceOn )
-					TraceInfo( "Received ExecServiceMethodRequest : " + strXmlExecRequest );
+					TraceInfo( "Received ExecServiceMethodRequest" );// + strXmlExecRequest );
 				
 				// 6 stages for execution
 				// 1) Do Security check
@@ -1007,9 +1051,10 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				if( m_bTraceOn )
 					TraceInfo( "Stage 1 - Do Security Check" );
 				
+				// TODO: Ignoring SecurityManager for now
 				string[] arrSecurityManagerResponse = DoRequestCheck( strXmlExecRequest, false );
 				if( arrSecurityManagerResponse == null || arrSecurityManagerResponse[SECURITY_MANAGER_STATUS_FIELD].CompareTo( SECURITY_MANAGER_ERROR_CODE ) == 0 )
-					throw new System.Exception( "Security Exception: Request Not Verified: " + strXmlExecRequest + "Reason: " + arrSecurityManagerResponse[1] );
+					throw new System.Exception( "Security Exception: Request Not Verified - Reason: " + arrSecurityManagerResponse[1] );
 				
 				if( m_bTraceOn )
 					TraceInfo( "Passed Security Check" );
@@ -1053,13 +1098,17 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					if( strAssembly.Length == 0 )
 						throw new System.Exception( "Error generating proxy to " + execReq.ServiceName + " using WSDL ref: " + strServiceLocation );
 								
-					// Update database location of service, point to
-					// dynamic proxy, change namespace the dynamic proxy namespace
-					ireg.UpdateServiceLocation( execReq.ServiceName, strAssembly );
-					ireg.UpdateServiceNamespace( execReq.ServiceName, DynamicRequest.DEFAULT_PROXY_NAMESPACE );
-					// Set Service name to Fully qualified 
-					// name i.e <Namespace>.<servicename>
-					// necessary for reflection
+					// Do not update location of SecurityServiceManager
+					if( execReq.ServiceName.CompareTo( SECURITY_MANAGER ) != 0 )
+					{
+						// Update database location of service, point to
+						// dynamic proxy, change namespace the dynamic proxy namespace
+						ireg.UpdateServiceLocation( execReq.ServiceName, strAssembly );
+						ireg.UpdateServiceNamespace( execReq.ServiceName, DynamicRequest.DEFAULT_PROXY_NAMESPACE );
+						// Set Service name to Fully qualified 
+						// name i.e <Namespace>.<servicename>
+						// necessary for reflection
+					}
 					execReq.ServiceName = DynamicRequest.DEFAULT_PROXY_NAMESPACE + "." + execReq.ServiceName;
 				}
 				else
@@ -1243,7 +1292,20 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			try
 			{
 				if( m_bTraceOn )
+				{
 					TraceInfo( "Forming Treaties for " + arrReqs.Length + " requests" );
+					
+					//  TODO: Remove later...for demo only
+					string strServicesTraceMsg = "SERVICE ";
+					for( int i = 0; i < arrReqs.Length; i++ )
+					{
+						strServicesTraceMsg += arrReqs[i].m_Req.ServiceName;
+						if( i + 1 < arrReqs.Length )
+							strServicesTraceMsg += ";";
+					}
+					// Send Trace message
+					TraceInfo( strServicesTraceMsg );
+				}
 				
 				mapping = new Hashtable();
 				IEnumerator it = arrReqs.GetEnumerator();
@@ -1271,19 +1333,31 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					// Build a treaty from the stack of requests
 					if( stkProviders.Count > 0 )
 					{
+						// TODO: Remove later...for demo only
+						if( m_bTraceOn )
+							TraceInfo( "EXECGUI_3" );
+						
 						// Build treaty
 						TreatyType treaty = BuildTreaty( stkProviders );
 						// Pass Treaty to remote GK to have it 
 						// verified so we can get a TreatyID to use
 						object[] objParams = new object[1];
 						objParams[0] = treaty.ToXml();
+
+						//  TODO: Remove later...for demo only
+						if( m_bTraceOn )
+						{
+							TraceInfo( "EXECGUI_4" );
+						}
+
 						object objRes = ExecuteGateKeeper( treaty.ProviderServiceSpace, GK_ENLIST_SERVICES_BY_NAME_METHOD, objParams );
 
-						if( objRes != null || ((string) objRes).Length > 0 )
+						if( objRes != null && ((string) objRes).Length > 0 )
 						{
 							//Deserialize into TreatyType
 							TreatyType returnedTreaty = null;
 							string strTreaty = (string) objRes;
+							
 							XmlSerializer ser = new XmlSerializer( typeof(TreatyType) );
 							
 							XmlReader xt = new XmlTextReader( strTreaty, XmlNodeType.Document, null );
@@ -1328,7 +1402,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			try
 			{
 				if( m_bTraceOn )
-					TraceInfo( "Generating Proxy" );
+					TraceInfo( "Generating Proxy to " + strName + " at location " + strLocation + " with access point " + strAccessPoint );
 				
 				// Create a dynamic request
 				DynamicRequest req = new DynamicRequest();	
@@ -1507,7 +1581,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			try
 			{
 				if( m_bTraceOn )
-					TraceInfo( "Signing document " + strXmlDoc );
+					TraceInfo( "Signing document" );// + strXmlDoc );
 				
 				string[] arrSecurityManagerResponse = null;
 				// Interact with SecurityManagerService via reflection
@@ -1527,7 +1601,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					strRetVal = arrSecurityManagerResponse[SECURITY_MANAGER_RETURNED_SIGNATURE_INDEX];
 					if( strRetVal.Length > 0 && m_bTraceOn )
 					{
-						LogInfo( "Signed doc = " + strRetVal );
+						LogInfo( "Signed doc" );// + strRetVal );
 					}
 				}
 			}
@@ -1564,7 +1638,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			try
 			{
 				if( m_bTraceOn )
-					TraceInfo( "Verifying Document " + strXmlDoc );
+					TraceInfo( "Verifying Document " );//+ strXmlDoc );
 				
 				string[] arrSecurityManagerResponse = null;
 				// Interact with SecurityManagerService via reflection
@@ -1585,7 +1659,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					
 					if( strRetVal.Length > 0 && m_bTraceOn )
 					{
-						LogInfo( "Verified doc = " + strRetVal );
+						LogInfo( "Verified doc" );// + strRetVal );
 					}
 				}
 			}
