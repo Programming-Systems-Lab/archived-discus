@@ -38,7 +38,7 @@ import java.util.Hashtable;
  *  associated with the service, extracts the pipe information to
  *  connect to the service, and saves the input pipes advertisement.
  *  It can then create a new output pipe to connect to the
- *  service and sends a message to the service.
+ *  service and send a message to the service.
  *
  */
 public class Client implements PipeMsgListener {

@@ -1,0 +1,38 @@
+
+Discus p2p notes
+================
+
+
+dynamic trust model
+
+each ss needs to have a level of trust assigned for each known ss
+    - different trust depending on different current mode of operation?
+
+
+getting to know other service spaces... how?
+    - signing public keys? (like PGP)
+        - are the keys sent all the time, or just once?
+        - probably once to each other service space... --> meeting protocol
+
+    - "meeting protocol"....
+        - option 1:
+            1. A receives request from B, which it does not know
+            2. A sends B an "I don't know you" response
+                - this requires proper error reporting for all types of calls
+            3. either:
+                A sends B a list of service spaces that it *does* know
+                and trust enough that they can "vouch" for B. B selectes
+                a service space that trusts it to vouch for it.
+             or
+                B asks A one by one if it knows and trusts service spaces that B
+                knows will vouch for it.
+            4. B gets a signature on its public key by the service C, which A trusts
+               and which trusts B, and sends it to A
+            5. A verifies the signature and adds B to its list of known service spaces.
+            6. A now re-processes B's original request.
+
+
+
+
+
+

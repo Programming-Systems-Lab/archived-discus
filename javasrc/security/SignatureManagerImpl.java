@@ -281,6 +281,19 @@ public class SignatureManagerImpl implements SignatureManager {
 
     }
 
+    /**
+     * Gets a known certificate. This can be used by the SecurityManager to
+     * vouch for other service spaces by signing their certificates (public keys)
+     * @return the Base64-encoded certificate
+     */
+    public String getCertificate(String cerificateAlias)
+        throws SignatureManagerException {
+
+
+
+    }
+
+
     static {
         Init.init();
     }
