@@ -14,11 +14,11 @@ namespace PSL.DAML
 		{
 			switch( filter )
 			{
-				case enuIOPESearchBy.PARAM_DESC: return  "/" + DAMLConstants.DEFAULT_NS + ":" + DAMLConstants.INPUT + "/" + DAMLConstants.PROFILE_PARAM_DESC;
+				case enuIOPESearchBy.PARAM_DESC: return  "/" + DamlConstants.DEFAULT_NS + ":" + DamlConstants.INPUT + "/" + DamlConstants.PROFILE_PARAM_DESC;
 												 
-				case enuIOPESearchBy.PARAM_NAME: return "/" + DAMLConstants.DEFAULT_NS + ":" + DAMLConstants.INPUT + "/" + DAMLConstants.PROFILE_PARAM_DESC + "[@" + DAMLConstants.RDF_ID + "]" + "/" + DAMLConstants.PROFILE_PARAM_NAME; 
+				case enuIOPESearchBy.PARAM_NAME: return "/" + DamlConstants.DEFAULT_NS + ":" + DamlConstants.INPUT + "/" + DamlConstants.PROFILE_PARAM_DESC + "[@" + DamlConstants.RDF_ID + "]" + "/" + DamlConstants.PROFILE_PARAM_NAME; 
 				
-				case enuIOPESearchBy.REFERS_TO: return "/" + DAMLConstants.DEFAULT_NS + ":" + DAMLConstants.INPUT + "/" + DAMLConstants.PROFILE_PARAM_DESC + "[@" + DAMLConstants.RDF_ID + "]" + "/" + DAMLConstants.PROFILE_REFERS_TO; 
+				case enuIOPESearchBy.REFERS_TO: return "/" + DamlConstants.DEFAULT_NS + ":" + DamlConstants.INPUT + "/" + DamlConstants.PROFILE_PARAM_DESC + "[@" + DamlConstants.RDF_ID + "]" + "/" + DamlConstants.PROFILE_REFERS_TO; 
 				
 				default: throw new ArgumentException( "Invalid filter value" );
 			};
@@ -31,7 +31,7 @@ namespace PSL.DAML
 			switch( filter )
 			{
 				case enuIOPESearchBy.PARAM_DESC: strXPath = BuildExpression( filter );
-												 strXPath += "[@" + DAMLConstants.RDF_ID + "='" + strSearchKey + "']";
+												 strXPath += "[@" + DamlConstants.RDF_ID + "='" + strSearchKey + "']";
 												 return strXPath;
 				
 				case enuIOPESearchBy.PARAM_NAME: strXPath = BuildExpression( filter );
@@ -39,7 +39,7 @@ namespace PSL.DAML
 												 return strXPath;
 				
 				case enuIOPESearchBy.REFERS_TO: strXPath = BuildExpression( filter );
-					strXPath += "[@" + DAMLConstants.RDF_RESOURCE + "='" + strSearchKey + "']";
+					strXPath += "[@" + DamlConstants.RDF_RESOURCE + "='" + strSearchKey + "']";
 					return strXPath;
 				
 
@@ -58,11 +58,11 @@ namespace PSL.DAML
 		{
 			switch( filter )
 			{
-				case enuIOPESearchBy.PARAM_DESC: return  "/" + DAMLConstants.DEFAULT_NS + ":" + DAMLConstants.OUTPUT + "/" + DAMLConstants.PROFILE_PARAM_DESC;
+				case enuIOPESearchBy.PARAM_DESC: return  "/" + DamlConstants.DEFAULT_NS + ":" + DamlConstants.OUTPUT + "/" + DamlConstants.PROFILE_PARAM_DESC;
 												 
-				case enuIOPESearchBy.PARAM_NAME: return "/" + DAMLConstants.DEFAULT_NS + ":" + DAMLConstants.OUTPUT + "/" + DAMLConstants.PROFILE_PARAM_DESC + "[@" + DAMLConstants.RDF_ID + "]" + "/" + DAMLConstants.PROFILE_PARAM_NAME; 
+				case enuIOPESearchBy.PARAM_NAME: return "/" + DamlConstants.DEFAULT_NS + ":" + DamlConstants.OUTPUT + "/" + DamlConstants.PROFILE_PARAM_DESC + "[@" + DamlConstants.RDF_ID + "]" + "/" + DamlConstants.PROFILE_PARAM_NAME; 
 				
-				case enuIOPESearchBy.REFERS_TO: return "/" + DAMLConstants.DEFAULT_NS + ":" + DAMLConstants.OUTPUT + "/" + DAMLConstants.PROFILE_PARAM_DESC + "[@" + DAMLConstants.RDF_ID + "]" + "/" + DAMLConstants.PROFILE_REFERS_TO; 
+				case enuIOPESearchBy.REFERS_TO: return "/" + DamlConstants.DEFAULT_NS + ":" + DamlConstants.OUTPUT + "/" + DamlConstants.PROFILE_PARAM_DESC + "[@" + DamlConstants.RDF_ID + "]" + "/" + DamlConstants.PROFILE_REFERS_TO; 
 				
 				default: throw new ArgumentException( "Invalid filter value" );
 			};
@@ -75,7 +75,7 @@ namespace PSL.DAML
 			switch( filter )
 			{
 				case enuIOPESearchBy.PARAM_DESC: strXPath = BuildExpression( filter );
-					strXPath += "[@" + DAMLConstants.RDF_ID + "='" + strSearchKey + "']";
+					strXPath += "[@" + DamlConstants.RDF_ID + "='" + strSearchKey + "']";
 					return strXPath;
 				
 				case enuIOPESearchBy.PARAM_NAME: strXPath = BuildExpression( filter );
@@ -83,7 +83,7 @@ namespace PSL.DAML
 					return strXPath;
 				
 				case enuIOPESearchBy.REFERS_TO: strXPath = BuildExpression( filter );
-					strXPath += "[@" + DAMLConstants.RDF_RESOURCE + "='" + strSearchKey + "']";
+					strXPath += "[@" + DamlConstants.RDF_RESOURCE + "='" + strSearchKey + "']";
 					return strXPath;
 				
 				default: throw new ArgumentException( "Invalid filter value" );
@@ -102,11 +102,11 @@ namespace PSL.DAML
 		{
 			switch( filter )
 			{
-				case enuIOPESearchBy.COND_DESC: return  "/" + DAMLConstants.DEFAULT_NS + ":" + DAMLConstants.PRECONDITION + "/" + DAMLConstants.PROFILE_CONDITION_DESC;
+				case enuIOPESearchBy.COND_DESC: return  "/" + DamlConstants.DEFAULT_NS + ":" + DamlConstants.PRECONDITION + "/" + DamlConstants.PROFILE_CONDITION_DESC;
 												 
-				case enuIOPESearchBy.COND_NAME: return "/" + DAMLConstants.DEFAULT_NS + ":" + DAMLConstants.PRECONDITION + "/" + DAMLConstants.PROFILE_CONDITION_DESC + "[@" + DAMLConstants.RDF_ID + "]" + "/" + DAMLConstants.PROFILE_CONDITION_NAME; 
+				case enuIOPESearchBy.COND_NAME: return "/" + DamlConstants.DEFAULT_NS + ":" + DamlConstants.PRECONDITION + "/" + DamlConstants.PROFILE_CONDITION_DESC + "[@" + DamlConstants.RDF_ID + "]" + "/" + DamlConstants.PROFILE_CONDITION_NAME; 
 				
-				case enuIOPESearchBy.REFERS_TO: return "/" + DAMLConstants.DEFAULT_NS + ":" + DAMLConstants.PRECONDITION + "/" + DAMLConstants.PROFILE_CONDITION_DESC + "[@" + DAMLConstants.RDF_ID + "]" + "/" + DAMLConstants.PROFILE_REFERS_TO; 
+				case enuIOPESearchBy.REFERS_TO: return "/" + DamlConstants.DEFAULT_NS + ":" + DamlConstants.PRECONDITION + "/" + DamlConstants.PROFILE_CONDITION_DESC + "[@" + DamlConstants.RDF_ID + "]" + "/" + DamlConstants.PROFILE_REFERS_TO; 
 				
 				default: throw new ArgumentException( "Invalid filter value" );
 			};
@@ -119,7 +119,7 @@ namespace PSL.DAML
 			switch( filter )
 			{
 				case enuIOPESearchBy.COND_DESC: strXPath = BuildExpression( filter );
-					strXPath += "[@" + DAMLConstants.RDF_ID + "='" + strSearchKey + "']";
+					strXPath += "[@" + DamlConstants.RDF_ID + "='" + strSearchKey + "']";
 					return strXPath;
 				
 				case enuIOPESearchBy.COND_NAME: strXPath = BuildExpression( filter );
@@ -127,7 +127,7 @@ namespace PSL.DAML
 					return strXPath;
 				
 				case enuIOPESearchBy.REFERS_TO: strXPath = BuildExpression( filter );
-					strXPath += "[@" + DAMLConstants.RDF_RESOURCE + "='" + strSearchKey + "']";
+					strXPath += "[@" + DamlConstants.RDF_RESOURCE + "='" + strSearchKey + "']";
 					return strXPath;
 				
 				default: throw new ArgumentException( "Invalid filter value" );
@@ -145,11 +145,11 @@ namespace PSL.DAML
 		{
 			switch( filter )
 			{
-				case enuIOPESearchBy.COND_DESC: return  "/" + DAMLConstants.DEFAULT_NS + ":" + DAMLConstants.EFFECT + "/" + DAMLConstants.PROFILE_CONDITION_DESC;
+				case enuIOPESearchBy.COND_DESC: return  "/" + DamlConstants.DEFAULT_NS + ":" + DamlConstants.EFFECT + "/" + DamlConstants.PROFILE_CONDITION_DESC;
 												 
-				case enuIOPESearchBy.COND_NAME: return "/" + DAMLConstants.DEFAULT_NS + ":" + DAMLConstants.EFFECT + "/" + DAMLConstants.PROFILE_CONDITION_DESC + "[@" + DAMLConstants.RDF_ID + "]" + "/" + DAMLConstants.PROFILE_CONDITION_NAME; 
+				case enuIOPESearchBy.COND_NAME: return "/" + DamlConstants.DEFAULT_NS + ":" + DamlConstants.EFFECT + "/" + DamlConstants.PROFILE_CONDITION_DESC + "[@" + DamlConstants.RDF_ID + "]" + "/" + DamlConstants.PROFILE_CONDITION_NAME; 
 				
-				case enuIOPESearchBy.REFERS_TO: return "/" + DAMLConstants.DEFAULT_NS + ":" + DAMLConstants.EFFECT + "/" + DAMLConstants.PROFILE_CONDITION_DESC + "[@" + DAMLConstants.RDF_ID + "]" + "/" + DAMLConstants.PROFILE_REFERS_TO; 
+				case enuIOPESearchBy.REFERS_TO: return "/" + DamlConstants.DEFAULT_NS + ":" + DamlConstants.EFFECT + "/" + DamlConstants.PROFILE_CONDITION_DESC + "[@" + DamlConstants.RDF_ID + "]" + "/" + DamlConstants.PROFILE_REFERS_TO; 
 				
 				default: throw new ArgumentException( "Invalid filter value" );
 			};
@@ -161,7 +161,7 @@ namespace PSL.DAML
 			switch( filter )
 			{
 				case enuIOPESearchBy.COND_DESC: strXPath = BuildExpression( filter );
-					strXPath += "[@" + DAMLConstants.RDF_ID + "='" + strSearchKey + "']";
+					strXPath += "[@" + DamlConstants.RDF_ID + "='" + strSearchKey + "']";
 					return strXPath;
 				
 				case enuIOPESearchBy.COND_NAME: strXPath = BuildExpression( filter );
@@ -169,7 +169,7 @@ namespace PSL.DAML
 					return strXPath;
 				
 				case enuIOPESearchBy.REFERS_TO: strXPath = BuildExpression( filter );
-					strXPath += "[@" + DAMLConstants.RDF_RESOURCE + "='" + strSearchKey + "']";
+					strXPath += "[@" + DamlConstants.RDF_RESOURCE + "='" + strSearchKey + "']";
 					return strXPath;
 				
 				default: throw new ArgumentException( "Invalid filter value" );

@@ -1,9 +1,17 @@
 using System;
+using System.Text;
+using System.Xml;
+using System.Xml.Serialization;
+using System.Collections;
 
 namespace PSL.DAML
 {
+	/// <summary>
+	/// Enumeration of the various attributes of a process 
+	/// </summary>
 	public enum enuIOPEType
 	{
+		None,
 		Input, // ServiceProfile entity
 		Output, // ServiceProfile entity
 		Precondition, // ServiceProfile entity
@@ -12,61 +20,107 @@ namespace PSL.DAML
 		CoCondition, // ProcessModel entity
 		CoOutput, // ProcessModel entity
 		Parameter // ProcessModel entity
-	};
-
-	public class RDFProperty
-	{
-		private string m_strName = "";
-		private string m_strSubPropertyOf = "";
-		private string m_strDomain = "";
-		private string m_strRange = "";
-		private string m_strSameValueAs = "";
-
-		public RDFProperty()
-		{}
-
-		public string Name
-		{
-			get
-			{ return m_strName; }
-			set
-			{ m_strName = value; }
-		}
-		public string SubPropertyOf
-		{
-			get
-			{ return m_strSubPropertyOf; }
-			set
-			{ m_strSubPropertyOf = value; }
-		}
-
-		public string Domain
-		{
-			get
-			{ return m_strDomain; }
-			set
-			{ m_strDomain = value; }
-		}
-
-		public string Range
-		{
-			get
-			{ return m_strRange; }
-			set
-			{ m_strRange = value; }
-		}
-
-		public string SameValueAs
-		{
-			get
-			{ return m_strSameValueAs; }
-			set
-			{ m_strSameValueAs = value; }
-		}
 	}
 
-	public abstract class DAMLConstants
+	/// <summary>
+	/// Enumeration of the various Daml Type Definitions
+	/// </summary>
+	public enum enuDamlType 
 	{
+		rdfProperty,
+		damlClass
+	}
+
+	/// <summary>
+	/// Enumeration of the various DamlClass types
+	/// </summary>
+	public enum enuDamlClassType
+	{
+		rdfsSubClassOf,
+		damlUnionOf,
+		damlOneOf
+	}
+
+	/// <summary>
+	/// Enumeration of the various ParseTypes
+	/// </summary>
+	public enum enuRdfParseType
+	{
+		damlCollection
+	}
+
+	/// <summary>
+	/// Enumeration of the various types of searches used by the ServiceProfile
+	/// </summary>
+	public enum enuIOPESearchBy
+	{
+		PARAM_DESC,
+		PARAM_NAME,
+		COND_DESC,
+		COND_NAME,
+		REFERS_TO
+	}
+		
+	/// <summary>
+	/// Enumeration of the various composite process sub task types/control structures
+	/// </summary>
+ 	public enum enuProcessSubTaskType
+	{
+		Sequence, // process:Sequence attribute
+		Choice	// process:Choice attribute
+	}
+
+	/// <summary>
+	/// Enumeration of the various kinds of Daml Processes
+	/// </summary>
+	public enum enuProcessType
+	{
+		AtomicProcess,
+		CompositeProcess,
+		SimpleProcess
+	}
+
+	/// <summary>
+	/// Abstract class of constant definitions
+	/// </summary>
+	public abstract class DamlConstants
+	{
+		//*********************************************************************//
+
+		// Namespace Uri constants usually present in DAML docs
+
+		//*********************************************************************//
+		public const string PROCESS_BASE_URI			= "http://www.daml.org/services/daml-s/2001/10/Process.daml";
+
+		public const string PROCESS_CONDITION_URI			= PROCESS_BASE_URI + "#" + "Condition";
+		public const string PROCESS_PRECONDITION_URI		= PROCESS_BASE_URI + "#" + "precondition";
+		public const string PROCESS_EFFECT_URI				= PROCESS_BASE_URI + "#" + "effect";
+		public const string PROCESS_INPUT_URI				= PROCESS_BASE_URI + "#" + "input";
+		public const string PROCESS_OUTPUT_URI				= PROCESS_BASE_URI + "#" + "output";
+		public const string PROCESS_CO_CONDITION_URI		= PROCESS_BASE_URI + "#" + "coCondition";
+		public const string PROCESS_CO_OUTPUT_URI			= PROCESS_BASE_URI + "#" + "coOutput";
+		public const string PROCESS_CONDITIONAL_OUTPUT_URI	= PROCESS_BASE_URI + "#" + "conditionalOutput";
+		public const string PROCESS_PARAMETER_URI			= PROCESS_BASE_URI + "#" + "parameter";
+		public const string PROCESS_COMPOSED_OF_URI			= PROCESS_BASE_URI + "#" + "composedOf";
+		public const string PROCESS_COMPONENTS_URI			= PROCESS_BASE_URI + "#" + "components";
+
+		// Process types
+		public const string SIMPLE_PROCESS_URI				= PROCESS_BASE_URI + "#" + "SimpleProcess";
+		public const string ATOMIC_PROCESS_URI				= PROCESS_BASE_URI + "#" + "AtomicProcess";
+		public const string COMPOSITE_PROCESS_URI			= PROCESS_BASE_URI + "#" + "CompositeProcess";
+		
+		public const string RDF_ROOT = RDF_NS + ":RDF";
+
+		public const string RDF_NS_URI = "http://www/w3.org/1999/02/22-rdf-syntax-ns#";
+		public const string RDFS_NS_URI = "http://www/w3.org/2000/01/rdf-schema#";
+		public const string XSD_NS_URI = "http://www.w3.org/2000/10/XMLSchema#";
+		public const string DAML_NS_URI = "http://www.daml.org/2001/03/daml+oil#";
+		public const string DEX_NS_URI = "http://www.daml.org/2001/03/daml+oil-ex#";
+		public const string EXD_NS_URI = "http://www.daml.org/2001/03/daml+oil-ex-dt#";
+		public const string PROCESS_NS_URI = PROCESS_BASE_URI + "#";
+		public const string TIME_NS_URI = "http://www.ai.sri.com/~daml/ontologies/sri-basic/1-0Time.daml#";
+		public const string SERVICE_NS_URI = "http://daml.org/services/daml-s/2001/10/Service.daml#";
+				
 		//*********************************************************************//
 
 		// Namespace constants usually present in DAML docs
@@ -74,7 +128,8 @@ namespace PSL.DAML
 		//*********************************************************************//
 		
 		public const string XMLNS = "xmlns";
-		// Known namespaces expected in Profile
+		public const string EXD_NS = "exd";
+		public const string DEX_NS = "dex";
 		public const string RDFS_NS = "rdfs";
 		public const string RDF_NS = "rdf";
 		public const string DAML_NS = "daml";
@@ -96,6 +151,9 @@ namespace PSL.DAML
 		public const string DAML_COLLECTION = DAML_NS + ":collection";
 		public const string DAML_INTERSECTION_OF = DAML_NS + ":intersectionOf";
 		public const string DAML_LIST_OF_INSTANCES_OF = DAML_NS + ":listOfInstancesOf";
+		public const string DAML_HAS_VALUE = DAML_NS + ":hasValue";
+		public const string DAML_ONE_OF = DAML_NS + ":oneOf";
+		public const string DAML_UNION_OF = DAML_NS + ":unionOf";
 		// RDF Constants (attributes)
 		public const string RDF_RESOURCE = RDF_NS + ":resource";
 		public const string RDF_COMMENT = RDF_NS + ":comment";
@@ -108,7 +166,7 @@ namespace PSL.DAML
 		public const string RDFS_SUBPROPERTYOF = RDFS_NS + ":subPropertyOf";
 		public const string RDFS_DOMAIN = RDFS_NS + ":domain";
 		public const string RDFS_RANGE = RDFS_NS + ":range";
-
+		
 		//*********************************************************************//
 
 		// DAML-S Service Profile constants
@@ -166,11 +224,12 @@ namespace PSL.DAML
 		//*********************************************************************//
 		
 		public const string DAML_CLASS = DAML_NS + ":Class";
+		public const string DAML_TO_CLASS = DAML_NS + ":toClass";
 		public const string DAML_SIMPLE_PROCESS = "SimpleProcess";
 		public const string DAML_COMPOSITE_PROCESS = "CompositeProcess";
 		public const string DAML_ATOMIC_PROCESS = "AtomicProcess";
 		
-		public DAMLConstants()
+		public DamlConstants()
 		{}
 	}
 }

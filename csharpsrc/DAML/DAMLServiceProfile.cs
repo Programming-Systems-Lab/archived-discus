@@ -27,7 +27,12 @@ namespace PSL.DAML
 			get
 			{ return m_strParamDesc; }
 			set
-			{ m_strParamDesc = value; }
+			{ 
+				if( value == null || value.Length == 0 )
+					return;
+
+				m_strParamDesc = value; 
+			}
 		}
 
 		public string ParameterName
@@ -35,7 +40,12 @@ namespace PSL.DAML
 			get
 			{ return m_strParamName; }
 			set
-			{ m_strParamName = value; }
+			{ 
+				if( value == null || value.Length == 0 )
+					return;
+
+				m_strParamName = value; 
+			}
 		}
 
 		public string RestrictedTo
@@ -43,7 +53,12 @@ namespace PSL.DAML
 			get
 			{ return m_strRestrictedTo; }
 			set
-			{ m_strRestrictedTo = value; }
+			{ 
+				if( value == null || value.Length == 0 )
+					return;
+
+				m_strRestrictedTo = value; 
+			}
 		}
 
 		public string RefersTo
@@ -51,9 +66,13 @@ namespace PSL.DAML
 			get
 			{ return m_strRefersTo; }
 			set
-			{ m_strRefersTo = value; }
-		}
+			{ 
+				if( value == null || value.Length == 0 )
+					return;
 
+				m_strRefersTo = value; 
+			}
+		}
 	}
 		
 	public struct EPType
@@ -74,7 +93,12 @@ namespace PSL.DAML
 			get
 			{ return m_strConditionDesc; }
 			set
-			{ m_strConditionDesc = value; }
+			{ 
+				if( value == null || value.Length == 0 )
+					return;
+
+				m_strConditionDesc = value; 
+			}
 		}
 
 		public string ConditionName
@@ -82,7 +106,12 @@ namespace PSL.DAML
 			get
 			{ return m_strConditionName; }
 			set
-			{ m_strConditionName = value; }
+			{ 
+				if( value == null || value.Length == 0 )
+					return;
+
+				m_strConditionName = value; 
+			}
 		}
 
 		public string Statement
@@ -90,7 +119,12 @@ namespace PSL.DAML
 			get
 			{ return m_strStatement; }
 			set
-			{ m_strStatement = value; }
+			{ 
+				if( value == null || value.Length == 0 )
+					return;
+
+				m_strStatement = value; 
+			}
 		}
 
 		public string RefersTo
@@ -98,32 +132,23 @@ namespace PSL.DAML
 			get
 			{ return m_strRefersTo; }
 			set
-			{ m_strRefersTo = value; }
+			{ 
+				if( value == null || value.Length == 0 )
+					return;
+
+				m_strRefersTo = value; 
+			}
 		}
 	}
-
-	public enum enuIOPESearchBy
-	{
-		PARAM_DESC,
-		PARAM_NAME,
-		COND_DESC,
-		COND_NAME,
-		REFERS_TO
-	};
 
 	/// <summary>
 	/// Summary description for DAMLServiceProfile.
 	/// </summary>
-	public class DAMLServiceProfile:DAMLContainer
+	public sealed class DamlServiceProfile:DamlContainer
 	{
 		/* Constructor */
-		public DAMLServiceProfile()
+		public DamlServiceProfile( string strDaml ):base( strDaml )
 		{
-			// Init inherited members
-			m_EvtLog = new EventLog( "Application" );
-			m_EvtLog.Source = "DAMLServiceProfile";
-			m_doc = new XmlDocument();
-			m_mgr = null;
 		}
 		
 		// Properties
@@ -267,7 +292,7 @@ namespace PSL.DAML
 			// Create Expression Builder instance
 			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Input );
 			// Build XPath Expression
-			string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_NAME, strName );
+			string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_NAME, strName );
 			XmlNode root = m_doc.DocumentElement;
 			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
 			node = node.ParentNode;
@@ -288,7 +313,7 @@ namespace PSL.DAML
 			// Create Expression Builder instance
 			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Input );
 			// Build XPath Expression
-			string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_DESC, strDesc );
+			string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_DESC, strDesc );
 			XmlNode root = m_doc.DocumentElement;
 			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
 			
@@ -308,7 +333,7 @@ namespace PSL.DAML
 			// Create Expression Builder instance
 			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Input );
 			// Build XPath Expression
-			string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.REFERS_TO, strRef );
+			string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.REFERS_TO, strRef );
 			XmlNode root = m_doc.DocumentElement;
 			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
 			node = node.ParentNode;
@@ -329,7 +354,7 @@ namespace PSL.DAML
 			// Create Expression Builder instance
 			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Output );
 			// Build XPath Expression
-			string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_NAME, strName );
+			string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_NAME, strName );
 			XmlNode root = m_doc.DocumentElement;
 			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
 			node = node.ParentNode;
@@ -350,7 +375,7 @@ namespace PSL.DAML
 			// Create Expression Builder instance
 			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Output );
 			// Build XPath Expression
-			string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_DESC, strDesc );
+			string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_DESC, strDesc );
 			XmlNode root = m_doc.DocumentElement;
 			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
 			
@@ -370,7 +395,7 @@ namespace PSL.DAML
 			// Create Expression Builder instance
 			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Output );
 			// Build XPath Expression
-			string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.REFERS_TO, strRef );
+			string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.REFERS_TO, strRef );
 			XmlNode root = m_doc.DocumentElement;
 			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
 			node = node.ParentNode;
@@ -391,7 +416,7 @@ namespace PSL.DAML
 			// Create Expression Builder instance
 			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Precondition );
 			// Build XPath Expression
-			string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_NAME, strName );
+			string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_NAME, strName );
 			XmlNode root = m_doc.DocumentElement;
 			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
 			node = node.ParentNode;
@@ -412,7 +437,7 @@ namespace PSL.DAML
 			// Create Expression Builder instance
 			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Precondition );
 			// Build XPath Expression
-			string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_DESC, strDesc );
+			string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_DESC, strDesc );
 			XmlNode root = m_doc.DocumentElement;
 			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
 			
@@ -432,7 +457,7 @@ namespace PSL.DAML
 			// Create Expression Builder instance
 			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Precondition );
 			// Build XPath Expression
-			string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.REFERS_TO, strRef );
+			string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.REFERS_TO, strRef );
 			XmlNode root = m_doc.DocumentElement;
 			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
 			node = node.ParentNode;
@@ -453,7 +478,7 @@ namespace PSL.DAML
 			// Create Expression Builder instance
 			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Effect );
 			// Build XPath Expression
-			string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_NAME, strName );
+			string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_NAME, strName );
 			XmlNode root = m_doc.DocumentElement;
 			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
 			node = node.ParentNode;
@@ -474,7 +499,7 @@ namespace PSL.DAML
 			// Create Expression Builder instance
 			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Effect );
 			// Build XPath Expression
-			string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_DESC, strDesc );
+			string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_DESC, strDesc );
 			XmlNode root = m_doc.DocumentElement;
 			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
 			
@@ -494,7 +519,7 @@ namespace PSL.DAML
 			// Create Expression Builder instance
 			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Effect );
 			// Build XPath Expression
-			string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.REFERS_TO, strRef );
+			string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.REFERS_TO, strRef );
 			XmlNode root = m_doc.DocumentElement;
 			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
 			node = node.ParentNode;
@@ -521,7 +546,7 @@ namespace PSL.DAML
 				// Create Expression Builder instance
 				IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Effect );
 				// Build XPath Expression
-				string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_DESC );
+				string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_DESC );
 							
 				XmlNodeList nodeList = root.SelectNodes( strXPathExpr, m_mgr );
 
@@ -534,9 +559,8 @@ namespace PSL.DAML
 				}
 			
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return (EPType[]) lstEffects.ToArray( typeof(EPType) );
@@ -559,7 +583,7 @@ namespace PSL.DAML
 				// Create Expression Builder instance
 				IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Precondition );
 				// Build XPath Expression
-				string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_DESC );
+				string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_DESC );
 							
 				XmlNodeList nodeList = root.SelectNodes( strXPathExpr, m_mgr );
 
@@ -572,9 +596,8 @@ namespace PSL.DAML
 				}
 			
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return (EPType[]) lstPreconds.ToArray( typeof(EPType) );
@@ -597,7 +620,7 @@ namespace PSL.DAML
 				// Create Expression Builder instance
 				IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Output );
 				// Build XPath Expression
-				string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_DESC );
+				string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_DESC );
 							
 				XmlNodeList nodeList = root.SelectNodes( strXPathExpr, m_mgr );
 
@@ -610,9 +633,8 @@ namespace PSL.DAML
 				}
 			
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return (IOType[]) lstOutputs.ToArray( typeof(IOType) );
@@ -635,7 +657,7 @@ namespace PSL.DAML
 				// Create Expression Builder instance
 				IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Input );
 				// Build XPath Expression
-				string strXPathExpr = DAMLConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_DESC );
+				string strXPathExpr = DamlConstants.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_DESC );
 							
 				XmlNodeList nodeList = root.SelectNodes( strXPathExpr, m_mgr );
 
@@ -648,9 +670,8 @@ namespace PSL.DAML
 				}
 			
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return (IOType[]) lstInputs.ToArray( typeof(IOType) );
@@ -666,19 +687,19 @@ namespace PSL.DAML
 		{
 			IOType ioData = new IOType();
 									
-			ioData.ParameterDesc = descNode.Attributes[DAMLConstants.RDF_ID].Value;
+			ioData.ParameterDesc = descNode.Attributes[DamlConstants.RDF_ID].Value;
 			
 			// Get Param name
-			XmlNode nameNode = descNode.SelectSingleNode( DAMLConstants.PROFILE_PARAM_NAME, m_mgr );
+			XmlNode nameNode = descNode.SelectSingleNode( DamlConstants.PROFILE_PARAM_NAME, m_mgr );
 			ioData.ParameterName = nameNode.InnerText;
 					
 			// Get Param RestrictedTo
-			XmlNode restrictNode = descNode.SelectSingleNode( DAMLConstants.PROFILE_RESTRICTED_TO, m_mgr );
-			ioData.RestrictedTo = restrictNode.Attributes[DAMLConstants.RDF_RESOURCE].Value;
+			XmlNode restrictNode = descNode.SelectSingleNode( DamlConstants.PROFILE_RESTRICTED_TO, m_mgr );
+			ioData.RestrictedTo = restrictNode.Attributes[DamlConstants.RDF_RESOURCE].Value;
 			
 			// Get Param RefersTo
-			XmlNode referNode = descNode.SelectSingleNode( DAMLConstants.PROFILE_REFERS_TO, m_mgr );
-			ioData.RefersTo = referNode.Attributes[DAMLConstants.RDF_RESOURCE].Value;
+			XmlNode referNode = descNode.SelectSingleNode( DamlConstants.PROFILE_REFERS_TO, m_mgr );
+			ioData.RefersTo = referNode.Attributes[DamlConstants.RDF_RESOURCE].Value;
 						
 			return ioData;
 		}
@@ -693,16 +714,16 @@ namespace PSL.DAML
 		{
 			EPType epData = new EPType();
 				
-			epData.ConditionDesc = descNode.Attributes[DAMLConstants.RDF_ID].Value;
+			epData.ConditionDesc = descNode.Attributes[DamlConstants.RDF_ID].Value;
 								
-			XmlNode nameNode = descNode.SelectSingleNode( DAMLConstants.PROFILE_CONDITION_NAME, m_mgr );
+			XmlNode nameNode = descNode.SelectSingleNode( DamlConstants.PROFILE_CONDITION_NAME, m_mgr );
 			epData.ConditionName = nameNode.InnerText;
 					
-			XmlNode stmntNode = descNode.SelectSingleNode( DAMLConstants.PROFILE_STATEMENT, m_mgr );
-			epData.Statement = stmntNode.Attributes[DAMLConstants.RDF_RESOURCE].Value;
+			XmlNode stmntNode = descNode.SelectSingleNode( DamlConstants.PROFILE_STATEMENT, m_mgr );
+			epData.Statement = stmntNode.Attributes[DamlConstants.RDF_RESOURCE].Value;
 						
-			XmlNode referNode = descNode.SelectSingleNode( DAMLConstants.PROFILE_REFERS_TO, m_mgr );
-			epData.RefersTo = referNode.Attributes[DAMLConstants.RDF_RESOURCE].Value;
+			XmlNode referNode = descNode.SelectSingleNode( DamlConstants.PROFILE_REFERS_TO, m_mgr );
+			epData.RefersTo = referNode.Attributes[DamlConstants.RDF_RESOURCE].Value;
 
 			return epData;
 		}
@@ -720,16 +741,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_HAS_PROCESS, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_HAS_PROCESS, m_mgr );
 				
 				if( node == null )
 					return "";
 
-				strRetVal = node.Attributes[DAMLConstants.RDF_RESOURCE].Value;
+				strRetVal = node.Attributes[DamlConstants.RDF_RESOURCE].Value;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -748,16 +768,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_QUALITY_RATING, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_QUALITY_RATING, m_mgr );
 				
 				if( node == null )
 					return "";
 
-				strRetVal = node.Attributes[DAMLConstants.RDF_RESOURCE].Value;
+				strRetVal = node.Attributes[DamlConstants.RDF_RESOURCE].Value;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -776,16 +795,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_GEOG_RADIUS, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_GEOG_RADIUS, m_mgr );
 				
 				if( node == null )
 					return "";
 
-				strRetVal = node.Attributes[DAMLConstants.RDF_RESOURCE].Value;
+				strRetVal = node.Attributes[DamlConstants.RDF_RESOURCE].Value;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -804,16 +822,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_PROVIDED_BY + "/" + DAMLConstants.PROFILE_SERVICE_PROVIDER + "/" + DAMLConstants.PROFILE_WEB_URL, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_PROVIDED_BY + "/" + DamlConstants.PROFILE_SERVICE_PROVIDER + "/" + DamlConstants.PROFILE_WEB_URL, m_mgr );
 				
 				if( node == null )
 					return "";
 				
 				strRetVal = node.InnerText;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -832,16 +849,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_PROVIDED_BY + "/" + DAMLConstants.PROFILE_SERVICE_PROVIDER + "/" + DAMLConstants.PROFILE_PHYSICAL_ADDRESS, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_PROVIDED_BY + "/" + DamlConstants.PROFILE_SERVICE_PROVIDER + "/" + DamlConstants.PROFILE_PHYSICAL_ADDRESS, m_mgr );
 				
 				if( node == null )
 					return "";
 				
 				strRetVal = node.InnerText;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -860,16 +876,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_PROVIDED_BY + "/" + DAMLConstants.PROFILE_SERVICE_PROVIDER + "/" + DAMLConstants.PROFILE_EMAIL, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_PROVIDED_BY + "/" + DamlConstants.PROFILE_SERVICE_PROVIDER + "/" + DamlConstants.PROFILE_EMAIL, m_mgr );
 				
 				if( node == null )
 					return "";
 				
 				strRetVal = node.InnerText;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -888,16 +903,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_PROVIDED_BY + "/" + DAMLConstants.PROFILE_SERVICE_PROVIDER + "/" + DAMLConstants.PROFILE_FAX, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_PROVIDED_BY + "/" + DamlConstants.PROFILE_SERVICE_PROVIDER + "/" + DamlConstants.PROFILE_FAX, m_mgr );
 				
 				if( node == null )
 					return "";
 				
 				strRetVal = node.InnerText;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -916,16 +930,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_PROVIDED_BY + "/" + DAMLConstants.PROFILE_SERVICE_PROVIDER + "/" + DAMLConstants.PROFILE_PHONE, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_PROVIDED_BY + "/" + DamlConstants.PROFILE_SERVICE_PROVIDER + "/" + DamlConstants.PROFILE_PHONE, m_mgr );
 				
 				if( node == null )
 					return "";
 				
 				strRetVal = node.InnerText;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -944,16 +957,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_PROVIDED_BY + "/" + DAMLConstants.PROFILE_SERVICE_PROVIDER + "/" + DAMLConstants.PROFILE_NAME, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_PROVIDED_BY + "/" + DamlConstants.PROFILE_SERVICE_PROVIDER + "/" + DamlConstants.PROFILE_NAME, m_mgr );
 				
 				if( node == null )
 					return "";
 				
 				strRetVal = node.InnerText;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -972,17 +984,16 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_PROVIDED_BY + "/" + DAMLConstants.PROFILE_SERVICE_PROVIDER, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_PROVIDED_BY + "/" + DamlConstants.PROFILE_SERVICE_PROVIDER, m_mgr );
 				
 				if( node == null )
 					return "";
 
-				strRetVal = node.Attributes[DAMLConstants.RDF_ID].Value;
+				strRetVal = node.Attributes[DamlConstants.RDF_ID].Value;
 							
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 			
 			return strRetVal;
@@ -1001,16 +1012,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_REQUESTED_BY, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_REQUESTED_BY, m_mgr );
 				
 				if( node == null )
 					return "";
 
 				strRetVal = node.InnerText;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -1029,16 +1039,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_INTENDED_PURPOSE, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_INTENDED_PURPOSE, m_mgr );
 				
 				if( node == null )
 					return "";
 
 				strRetVal = node.InnerText;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -1057,16 +1066,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_TEXT_DESC, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_TEXT_DESC, m_mgr );
 				
 				if( node == null )
 					return "";
 
 				strRetVal = node.InnerText;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -1085,16 +1093,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.SERVICE_PRESENTED_BY, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.SERVICE_PRESENTED_BY, m_mgr );
 				
 				if( node == null )
 					return "";
 
-				strRetVal = node.Attributes[DAMLConstants.RDF_RESOURCE].Value;
+				strRetVal = node.Attributes[DamlConstants.RDF_RESOURCE].Value;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -1113,16 +1120,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE, m_mgr );
 
 				if( node == null )
 					return "";
 
-				strRetVal = node.Attributes[DAMLConstants.RDF_ID].Value;
+				strRetVal = node.Attributes[DamlConstants.RDF_ID].Value;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
@@ -1141,16 +1147,15 @@ namespace PSL.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLConstants.SERVICE_PROFILE + "/" + DAMLConstants.PROFILE_SERVICE_NAME, m_mgr );
+				XmlNode node = root.SelectSingleNode( DamlConstants.SERVICE_PROFILE + "/" + DamlConstants.PROFILE_SERVICE_NAME, m_mgr );
 				
 				if( node == null )
 					return "";
 
 				strRetVal = node.InnerText;
 			}
-			catch( Exception e )
+			catch( Exception /*e*/ )
 			{
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
 
 			return strRetVal;
