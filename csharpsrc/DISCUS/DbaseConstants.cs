@@ -3,7 +3,8 @@ using System;
 namespace PSL.DISCUS.Impl.DataAccess
 {
 	/// <summary>
-	/// Summary description for DbaseConstants.
+	/// Abstract class defines database constants,
+	/// database table names and column names
 	/// </summary>
 	public abstract class DBC
 	{
@@ -17,6 +18,7 @@ namespace PSL.DISCUS.Impl.DataAccess
 		// Registered Services Table
 		public static string RS_SERVICE_ID			= "RS_SERVICE_ID";
 		public static string RS_SERVICE_NAME		= "RS_SERVICENAME";
+		public static string RS_SERVICENAMESPACE	= "RS_SERVICENAMESPACE";
 		public static string RS_SERVICE_LOCATION	= "RS_SERVICE_LOCATION";
 
 		// Service Methods Table
@@ -30,7 +32,5 @@ namespace PSL.DISCUS.Impl.DataAccess
 		public static string TD_TREATY_ID			= "TD_TREATY_ID";
 		public static string TD_XML_TREATY			= "TD_XML_TREATY";
 		public static string TD_TREATY_STATUS		= "TD_TREATY_STATUS";
-
-		
-	}
+	}// End DBC
 }

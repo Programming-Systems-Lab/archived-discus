@@ -11,24 +11,30 @@ using PSL.DISCUS.Interfaces.DataAccess;
 namespace PSL.DISCUS.Impl.DataAccess
 {
 	/// <summary>
-	/// Summary description for ServiceSpaceDAO.
+	/// Service Space Data Access Object
+	/// ServiceServiceDAO encapsulates access to database information
+	/// of services spaces known to this service space
 	/// </summary>
 	public class ServiceSpaceDAO:IDataObj
 	{
 		// Database configuration file
 		private string DATACONFIG = DConst.DBASECONFIG_FILE;
+		// Source name for event logging
 		private const string SOURCENAME = "DataAccess.ServiceSpaceDAO";
 		private EventLog m_EvtLog;
+		// Database connection string
 		private string m_strConnect = "";
 		
+		/* Constructor */
 		public ServiceSpaceDAO()
 		{
 			try
 			{
+				// Initialize event logging facility
 				m_EvtLog = new EventLog( "Application" );
 				m_EvtLog.Source = SOURCENAME;
 				
-				// load config info, dbase, connection info etc.
+				// Load config info, dbase, connection info etc.
 				FileStream fs = File.Open( DATACONFIG, FileMode.Open );
 				TextReader tr = new StreamReader( fs );
 				string strConfigFile = tr.ReadToEnd();
@@ -39,6 +45,7 @@ namespace PSL.DISCUS.Impl.DataAccess
 				
 				// Use XPath to extract what info we need
 				XmlNode root =  doc.DocumentElement;
+				// Get dbase connection info
 				m_strConnect = root.SelectSingleNode( "ConnectionString" ).InnerText;
 
 				fs.Close();
@@ -50,18 +57,29 @@ namespace PSL.DISCUS.Impl.DataAccess
 			}
 		}
 		
+		/* Implementation IDataObj ExecuteCommandText method
+		 * Function executes an SQL command.
+		 * Input: strCmd - command to execute (typically an SQL query)
+		 * Return: true if command executes, false if errors occur
+		 */ 
 		public bool ExecuteCommandText( string strCmd )
 		{
 			bool bRetVal = false;
 		
 			try
 			{
+				// Create new connection
 				OdbcConnection Conn = new OdbcConnection( m_strConnect );
+				// Create new command
 				OdbcCommand Command = new OdbcCommand(strCmd);
 				Command.Connection = Conn;
+				// Open connection
 				Conn.Open();
+				// Execute command
 				Command.ExecuteReader();
+				// Close connection
 				Conn.Close();
+				// Set return value
 				bRetVal = true;
 			}
 			catch( System.Exception e )
@@ -74,6 +92,13 @@ namespace PSL.DISCUS.Impl.DataAccess
 			return bRetVal;
 		}
 		
+		/*	Function executes a command and returns a DataReader
+		 *  useful for retrieving values from the database
+		 *  Input: strCmd - command, typically and SQL query
+		 *	Return: DataReader resulting from executing command
+		 *			DataReader may be null if command contains 
+		 *			errors or caused and exception to be raised.
+		 */
 		public OdbcDataReader ExecuteReader( string strCmd )
 		{
 			OdbcDataReader dr = null;
@@ -93,14 +118,19 @@ namespace PSL.DISCUS.Impl.DataAccess
 				m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
 			}
 			return dr;
-		}
+		}// End ExecuteReader
 
+		/*	Function registers a GateKeeper in the service space 
+		 *  database.
+		 *  Input strGateKeeper			- name of GateKeeper
+		 *		  strWSDLURL			- location of Gatekeeper
+		 *	Return: true if GateKeeper registered successfully, false
+		 *			otherwise
+		 */ 
 		public bool RegisterGateKeeper( string strGateKeeper, string strWSDLURL )
 		{
 			bool bRetVal = false;
 			
-			// strWSDLURL NOT URL encoded string
-
 			if( strGateKeeper.Length == 0 || strWSDLURL.Length == 0 )
 				return false;
 
@@ -114,6 +144,12 @@ namespace PSL.DISCUS.Impl.DataAccess
 			return bRetVal;
 		}
 
+		/*	Function unregisters a GateKeeper in the service space 
+		 *  database.
+		 *  Input strGateKeeper			- name of GateKeeper
+		 *	Return: true if GateKeeper unregistered successfully, false
+		 *			otherwise
+		 */ 
 		public bool UnregisterGateKeeper( string strGateKeeper )
 		{
 			bool bRetVal = false;
@@ -127,6 +163,13 @@ namespace PSL.DISCUS.Impl.DataAccess
 			return bRetVal;
 		}
 
+		/*	Function updates the locaton of a GateKeeper in the service space 
+		 *  database.
+		 *  Input strGateKeeper			- name of GateKeeper
+		 *		  strNewWSDLURL			- new location of Gatekeeper
+		 *	Return: true if GateKeeper location updated successfully, false
+		 *			otherwise
+		 */ 
 		public bool UpdateGateKeeperWSDL( string strGateKeeper, string strNewWSDLURL )
 		{
 			bool bRetVal = false;
@@ -141,6 +184,10 @@ namespace PSL.DISCUS.Impl.DataAccess
 			return bRetVal;
 		}
 		
+		/*	Function gets the location of a gatekeeper 
+		 *  Input: strGateKeeper - name of GateKeeper
+		 *  Return: GateKeeper location if it exists, "" otherwise
+		 */
 		public string GetGateKeeperWSDLURL( string strGateKeeper )
 		{
 			string strWSDLURL = "";

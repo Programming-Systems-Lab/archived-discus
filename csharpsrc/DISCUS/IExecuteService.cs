@@ -3,7 +3,7 @@ using System;
 namespace PSL.DISCUS.Interfaces
 {
 	/// <summary>
-	/// Summary description for IExecuteService.
+	/// Interface for all execution proxies/brokers
 	/// </summary>
 	public interface IExecuteService
 	{

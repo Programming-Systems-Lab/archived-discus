@@ -3,7 +3,7 @@ using System;
 namespace PSL.DISCUS.Interfaces
 {
 	/// <summary>
-	/// Summary description for IGateKeeper.
+	/// GateKeeper interface
 	/// </summary>
 	public interface IGateKeeper:IResourceAcquire,IExecuteService
 	{

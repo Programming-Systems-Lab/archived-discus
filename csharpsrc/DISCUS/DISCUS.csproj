@@ -82,6 +82,11 @@
                     AssemblyName = "Microsoft.Data.Odbc"
                     HintPath = "..\..\..\..\Program Files\Microsoft.NET\Odbc.Net\Microsoft.Data.Odbc.dll"
                 />
+                <Reference
+                    Name = "System.Web.Services"
+                    AssemblyName = "System.Web.Services"
+                    HintPath = "..\..\..\..\WINNT\Microsoft.NET\Framework\v1.0.3705\System.Web.Services.dll"
+                />
             </References>
         </Build>
         <Files>
@@ -112,17 +117,27 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "DiscusConf.xml"
+                    Link = "..\..\bin\DiscusConf.xml"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "DynamicRequest.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "DynProxyUtil.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "GateKeeper.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
                     RelPath = "IDataObj.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IDynamicProxy.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -142,7 +157,7 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "ISecurity.cs"
+                    RelPath = "ProxyGen.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

@@ -1,6 +1,6 @@
 
 using System;
-
+// DISCUS system constants
 namespace PSL.DISCUS.Impl
 {
 	/// <summary>
@@ -9,7 +9,7 @@ namespace PSL.DISCUS.Impl
 	public abstract class DConst
 	{
 		// Contains system wide settings e.g location of
-		// dynamic proxy cache
+		// Dynamic Proxy Cache
 		public static string DISCUSCONFIG_FILE = "DiscusConf.xml";
 		public static string DEFAULT_PXY_DIR = "PxyCache";
 		// Database configuration file, contains dbase connection

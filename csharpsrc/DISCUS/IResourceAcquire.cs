@@ -3,7 +3,7 @@ using System;
 namespace PSL.DISCUS.Interfaces
 {
 	/// <summary>
-	/// Summary description for IResourceAcquire.
+	/// IResourceAcquire interface
 	/// </summary>
 	public interface IResourceAcquire
 	{
