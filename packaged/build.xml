@@ -1,0 +1,262 @@
+<project name="discus-security" default="usage" basedir=".">
+
+    <property file="build.properties"/>
+
+    <property name="src" value="../../../.."/>
+    <property name="dist" value="dist"/>
+    <property name="build" value="../../../../build"/>
+    <property name="config" value="config"/>
+    <property name="lib" value="lib"/>
+    <property name="db" value="db"/>
+    <property name="keys" value="keys"/>
+
+    <property name="jar-file" value="discus-security.jar"/>
+    <property name="gui-jar-file" value="discus-gui.jar"/>
+    <property name="war-file" value="discus-security.war"/>
+
+    <property name="sql.src" value="config/security_db_schema_hsqldb.sql"/>
+    <property name="hsqldb.jar" value="hsqldb.jar"/>
+    <property name="discus-security" value="build/server"/>
+
+    <path id="project.classpath">
+        <pathelement location="${config}"/>
+        <fileset dir="${lib}" includes="*.jar"/>
+        <fileset dir="${jwsdp.home}/common/endorsed" includes="*.jar"/>
+        <fileset dir="${jwsdp.home}/common/lib" includes="*.jar"/>
+
+        <!--<pathelement location="${jwsdp.home}/common/lib/jdbc2_0-stdext.jar"/>-->
+    </path>
+
+    <path id="compile.classpath">
+        <fileset dir="${jwsdp.home}/common/lib" includes="*.jar"/>
+        <fileset dir="${jwsdp.home}/common/endorsed" includes="*.jar"/>
+        <fileset dir="${lib}" includes="*.jar" excludes="discus*.jar"/>
+    </path>
+
+    <target name="usage">
+        <echo>
+            Welcome to the DISCUS Security Manager build file.
+            To install the security manager, use "ant install".
+            To recompile the source files, use "ant makejar".
+        </echo>
+    </target>
+
+
+    <target name="init">
+     	<mkdir dir="${dist}" />
+     	<mkdir dir="${db}" />
+    </target>
+
+	<target name="clean">
+        <delete dir="${dist}" />
+		<delete dir="${db}" />
+
+	</target>
+
+    <target name="compile">
+        <mkdir dir="${build}"/>
+        <javac srcdir="${src}"
+            destdir="${build}"
+            classpathref="compile.classpath"/>
+    </target>
+    
+    
+
+    <target name="xrpcc">
+      <echo message="Running xrpcc..."/>
+      <exec executable="${xrpcc}">
+         <arg line="-classpath ${build}" />
+         <arg line="-server" />
+         <arg line="-keep" />
+         <arg line="-d ${build}" />
+         <arg line="${config}/xrpcc-config.xml" />
+      </exec>
+
+      <echo message="Updating config files..."/>
+      <copy file="${build}/SecurityManagerService_Config.properties"
+          todir="${config}/WEB-INF" overwrite="true"/>
+      <copy file="${build}/SecurityManagerService.wsdl"
+          tofile="${config}/WEB-INF/SecurityServices.wsdl.orig"
+          overwrite="true" />
+
+      <echo message="Cleaning up xrpcc-generated source files..."/>
+      <delete>
+          <fileset dir="${build}" includes="**/*.java"/>
+      </delete>
+  </target>
+
+    <target name="makejar">
+        <jar jarfile="${lib}/${jar-file}">
+            <fileset dir="${build}" includes="psl/discus/javasrc/**/*.class"/>
+
+        </jar>
+    </target>
+
+    <target name="make-gui-jar">
+        <jar jarfile="${lib}/${gui-jar-file}">
+            <fileset dir="${build}" includes="psl/discus/gui/*.class"/>
+            <fileset dir="${build}" includes="psl/discus/javasrc/*.class"/>
+        </jar>
+    </target>
+
+    <target name="config">
+
+        <copy file="${config}/SecurityManager.properties.orig" tofile="${config}/SecurityManager.properties" overwrite="true"/>
+        <replace file="${config}/SecurityManager.properties" token="%DRIVER_CLASS%" value="${jdbc.driver.class}"/>
+        <replace file="${config}/SecurityManager.properties" token="%JDBC_URL%" value="${jdbc.url}"/>
+        <replace file="${config}/SecurityManager.properties" token="%JDBC_USERNAME%" value="${jdbc.username}"/>
+        <replace file="${config}/SecurityManager.properties" token="%JDBC_PASSWORD%" value="${jdbc.password}"/>
+        <replace file="${config}/SecurityManager.properties" token="%SERVICESPACE_ID%" value="${servicespace.id}"/>
+        <replace file="${config}/SecurityManager.properties" token="%JWSDP_URL%" value="${jwsdp.url}"/>
+        <copy file="${config}/SecurityManager.properties" todir="${config}/WEB-INF" overwrite="true"/>
+
+        <copy file="${config}/WEB-INF/SecurityServices.wsdl.orig" tofile="${config}/WEB-INF/SecurityServices.wsdl" overwrite="true"/>
+        <replace file="${config}/WEB-INF/SecurityServices.wsdl" token="REPLACE_WITH_ACTUAL_URL"
+        value="${jwsdp.url}/discus-security/jaxrpc/SecurityManagerService"/>
+
+        <copy file="${config}/SecurityGUI.properties.orig" tofile="${config}/SecurityGUI.properties" overwrite="true"/>
+        <replace file="${config}/SecurityGUI.properties" token="%DRIVER_CLASS%" value="${jdbc.driver.class}"/>
+        <replace file="${config}/SecurityGUI.properties" token="%JDBC_URL%" value="${jdbc.url}"/>
+        <replace file="${config}/SecurityGUI.properties" token="%JDBC_USERNAME%" value="${jdbc.username}"/>
+        <replace file="${config}/SecurityGUI.properties" token="%JDBC_PASSWORD%" value="${jdbc.password}"/>
+
+        <copy file="${config}/WEB-INF/log4j.properties.orig" tofile="${config}/WEB-INF/log4j.properties" overwrite="true"/>
+        <replace file="${config}/WEB-INF/log4j.properties" token="%GUI_SIDE%" value="${gui.side}"/>
+        <replace file="${config}/WEB-INF/log4j.properties" token="%GUI_HOST%" value="${gui.host}"/>
+        <replace file="${config}/WEB-INF/log4j.properties" token="%GUI_PORT%" value="${gui.port}"/>
+    </target>
+
+
+    <target name="makehsqldb" depends="init">
+        <echo message="Creating hsqldb database and initializing with some default values..."/>
+        <sql
+            driver="org.hsqldb.jdbcDriver"
+            url="jdbc:hsqldb:db/discus-security"
+            userid="sa"
+            password=""
+            src="${sql.src}"
+            print="true"
+            classpathref="project.classpath">
+        </sql>
+    </target>
+
+    <target name="addkeystore">
+        <echo message="Adding KeyStore object to database at ${jdbc.url}..."/>
+        <java
+            classname="psl.discus.javasrc.security.KeyStoreDAO"
+            classpathref="project.classpath">
+            <arg line="${keys}/keystore${servicespace.id}.jks discus"/>
+        </java>
+    </target>
+
+	<target name="dbmanager">
+		<echo>
+		
+	PLEASE NOTE:
+	
+	Use "HSQL Database Standalone" as the type, and change the URL to:
+	
+		${jdbc.url}
+		
+		</echo>
+		<java classname="org.hsqldb.util.DatabaseManager"
+			classpathref="project.classpath" fork="true"/>
+	</target>
+
+    <target name="gui">
+        <echo message="Starting GUI..."/>
+        <java dir="${config}" fork="true" classpathref="project.classpath" classname="psl.discus.javasrc.security.SecurityGUI"/>
+    </target>
+
+    <target name="discusgui">
+        <echo message="Starting Discus GUI..."/>
+        <java fork="true" classpathref="project.classpath" classname="psl.discus.gui.DiscusGuiClient"/>
+    </target>
+
+    <target name="uddiserver">
+        <echo message="Starting UDDI P2P server..."/>
+        <java fork="true" classpathref="project.classpath"
+            dir="${jxta.dir}"
+            classname="psl.discus.javasrc.p2p.Server">
+            <jvmarg value="-Dnet.jxta.tls.principal=discus"/>
+            <jvmarg value="-Dnet.jxta.tls.password=discuscus"/>
+            <jvmarg value="-Djuddi.home=${config}" />
+            </java>
+    </target>
+
+    <target name="udditester">
+        <echo message="Starting UDDI P2P tester..."/>
+        <java fork="true" classpathref="project.classpath"
+            dir="${jxta.dir}"
+            classname="psl.discus.javasrc.uddi.UddiP2PTesterGUI">
+            <jvmarg value="-Dnet.jxta.tls.principal=discus"/>
+            <jvmarg value="-Dnet.jxta.tls.password=discuscus"/>
+            <jvmarg value="-Djuddi.home=${config}" />
+            </java>
+    </target>
+
+   <target name="makewar" description="Packages the WAR file">
+        <echo message="Packaging the WAR file...."/>
+        <delete file="${dist}/${war-file}" />
+        <war warfile="${dist}/${war-file}" webxml="${config}/WEB-INF/web.xml">
+        	<fileset dir="${config}/WEB-INF" includes="*.wsdl"/>
+            <classes dir="${config}/WEB-INF" includes="*.properties"/>
+            <lib dir="${lib}" />
+        </war>
+    </target>
+
+    <target name="copy">
+        <echo message="Copying files to JWSDP server..." />
+
+        <copy file="${dist}/${war-file}" todir="${jwsdp.home}/webapps"/>
+        <mkdir dir="${jwsdp.home}/work/discus-security-db"/>
+        <copy todir="${jwsdp.home}/work/discus-security-db">
+            <fileset dir="db"/>
+        </copy>
+    </target>
+
+
+    <target name="install">
+
+        <antcall target="clean"/>
+        <antcall target="init"/>
+        <!--
+        <antcall target="makehsqldb"/>
+        <antcall target="addkeystore"/>
+        -->
+        <antcall target="config"/>
+        <antcall target="makewar"/>
+        <antcall target="copy"/>
+
+        <echo>
+-------------------------------------------------------------------------------
+Congratulations, the discus security manager should now be installed correctly.
+You can now start the JWSDP Tomcat server.
+
+The SecurityServiceManager should be at
+	${jwsdp.url}/discus-security/jaxrpc/SecurityManagerService
+
+        </echo>
+        <echo>
+To run the SecurityManager GUI, type "ant gui" in the current directory.
+You may have to modify the connection URL (in Windows the C:\ might get mangled).
+
+To run the Discus GUI, type "ant discusgui".
+
+To look at the database, type "ant dbmanager" in the current directory.
+Use driver: ${jdbc.driver.class}
+    and URL ${jdbc.url}
+
+-------------------------------------------------------------------------------
+       	</echo>
+        
+    </target>
+
+    <target name="refresh">
+        <antcall target="makejar"/>
+        <antcall target="makewar"/>
+        <antcall target="copy"/>
+    </target>
+
+
+</project>

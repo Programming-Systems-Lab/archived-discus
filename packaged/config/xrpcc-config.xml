@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns="http://java.sun.com/xml/ns/jax-rpc/ri/config">
+
+    <service name="SecurityManagerService"
+        packageName="psl.discus.javasrc.services"
+        targetNamespace="http://localhost/wsdl"
+        typeNamespace="http://localhost/types">
+        <interface name="psl.discus.javasrc.services.SecurityManagerService"
+            servantName="psl.discus.javasrc.services.SecurityManagerServiceImpl"
+            soapAction="SecurityService"
+            soapActionBase="http://balrog:8080/jaxrpc/"/>
+    </service>
+
+</configuration>

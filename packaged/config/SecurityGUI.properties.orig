@@ -1,0 +1,6 @@
+#SecurityGUI properties
+#Wed Jun 12 14:03:45 EDT 2002
+driverClass=%DRIVER_CLASS%
+connectionUrl=%JDBC_URL%
+password=%JDBC_PASSWORD%
+username=%JDBC_USERNAME%

@@ -1,0 +1,14 @@
+
+# jdbc connection properties
+driverClass=%DRIVER_CLASS%
+connectionUrl=%JDBC_URL%
+username=%JDBC_USERNAME%
+password=%JDBC_PASSWORD%
+
+# keystore properties
+keyStorePass=discus
+privateKeyAlias=%SERVICESPACE_ID%
+privateKeyPass=discus
+certAlias=%SERVICESPACE_ID%
+
+gatekeeper.accesspoint=%JWSDP_URL%/gatekeeper

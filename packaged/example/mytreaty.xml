@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<Treaty xmlns="http://localhost/Discus/Schema/Treaty.xsd">
+    <TreatyID>0</TreatyID>
+    <ClientServiceSpace>1</ClientServiceSpace>
+    <ProviderServiceSpace>0</ProviderServiceSpace>
+    <ServiceInfo>
+        <ServiceName>service1</ServiceName>
+        <ServiceMethod>
+            <MethodName>getData</MethodName>
+            <Parameter>foo</Parameter>
+            <Parameter>bar</Parameter>
+        </ServiceMethod>
+        <ServiceMethod>
+            <MethodName>getData</MethodName>
+            <Parameter>blah</Parameter>
+        </ServiceMethod>
+    </ServiceInfo>
+</Treaty>

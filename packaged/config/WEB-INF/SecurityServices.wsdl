@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<definitions name="SecurityManagerService" targetNamespace="http://localhost/wsdl" xmlns:tns="http://localhost/wsdl" xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns2="http://localhost/types" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+  <types>
+    <schema targetNamespace="http://localhost/types" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://localhost/types" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:soap-enc="http://schemas.xmlsoap.org/soap/encoding/" xmlns="http://www.w3.org/2001/XMLSchema">
+      <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+      <complexType name="ArrayOfstring">
+        <complexContent>
+          <restriction base="soap-enc:Array">
+            <attribute ref="soap-enc:arrayType" wsdl:arrayType="string[]"/></restriction></complexContent></complexType></schema></types>
+  <message name="SecurityManagerService_doRequestCheck">
+    <part name="String_1" type="xsd:string"/>
+    <part name="boolean_2" type="xsd:boolean"/></message>
+  <message name="SecurityManagerService_doRequestCheckResponse">
+    <part name="result" type="ns2:ArrayOfstring"/></message>
+  <message name="SecurityManagerService_revokeTreaty">
+    <part name="int_1" type="xsd:int"/></message>
+  <message name="SecurityManagerService_revokeTreatyResponse">
+    <part name="result" type="ns2:ArrayOfstring"/></message>
+  <message name="SecurityManagerService_signDocument">
+    <part name="String_1" type="xsd:string"/></message>
+  <message name="SecurityManagerService_signDocumentResponse">
+    <part name="result" type="ns2:ArrayOfstring"/></message>
+  <message name="SecurityManagerService_verifyDocument">
+    <part name="String_1" type="xsd:string"/></message>
+  <message name="SecurityManagerService_verifyDocumentResponse">
+    <part name="result" type="ns2:ArrayOfstring"/></message>
+  <message name="SecurityManagerService_verifyTreaty">
+    <part name="String_1" type="xsd:string"/>
+    <part name="boolean_2" type="xsd:boolean"/></message>
+  <message name="SecurityManagerService_verifyTreatyResponse">
+    <part name="result" type="ns2:ArrayOfstring"/></message>
+  <portType name="SecurityManagerService">
+    <operation name="doRequestCheck" parameterOrder="String_1 boolean_2">
+      <input message="tns:SecurityManagerService_doRequestCheck"/>
+      <output message="tns:SecurityManagerService_doRequestCheckResponse"/></operation>
+    <operation name="revokeTreaty" parameterOrder="int_1">
+      <input message="tns:SecurityManagerService_revokeTreaty"/>
+      <output message="tns:SecurityManagerService_revokeTreatyResponse"/></operation>
+    <operation name="signDocument" parameterOrder="String_1">
+      <input message="tns:SecurityManagerService_signDocument"/>
+      <output message="tns:SecurityManagerService_signDocumentResponse"/></operation>
+    <operation name="verifyDocument" parameterOrder="String_1">
+      <input message="tns:SecurityManagerService_verifyDocument"/>
+      <output message="tns:SecurityManagerService_verifyDocumentResponse"/></operation>
+    <operation name="verifyTreaty" parameterOrder="String_1 boolean_2">
+      <input message="tns:SecurityManagerService_verifyTreaty"/>
+      <output message="tns:SecurityManagerService_verifyTreatyResponse"/></operation></portType>
+  <binding name="SecurityManagerServiceBinding" type="tns:SecurityManagerService">
+    <operation name="doRequestCheck">
+      <input>
+        <soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" use="encoded" namespace="http://localhost/wsdl"/></input>
+      <output>
+        <soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" use="encoded" namespace="http://localhost/wsdl"/></output>
+      <soap:operation soapAction="SecurityService"/></operation>
+    <operation name="revokeTreaty">
+      <input>
+        <soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" use="encoded" namespace="http://localhost/wsdl"/></input>
+      <output>
+        <soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" use="encoded" namespace="http://localhost/wsdl"/></output>
+      <soap:operation soapAction="SecurityService"/></operation>
+    <operation name="signDocument">
+      <input>
+        <soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" use="encoded" namespace="http://localhost/wsdl"/></input>
+      <output>
+        <soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" use="encoded" namespace="http://localhost/wsdl"/></output>
+      <soap:operation soapAction="SecurityService"/></operation>
+    <operation name="verifyDocument">
+      <input>
+        <soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" use="encoded" namespace="http://localhost/wsdl"/></input>
+      <output>
+        <soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" use="encoded" namespace="http://localhost/wsdl"/></output>
+      <soap:operation soapAction="SecurityService"/></operation>
+    <operation name="verifyTreaty">
+      <input>
+        <soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" use="encoded" namespace="http://localhost/wsdl"/></input>
+      <output>
+        <soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" use="encoded" namespace="http://localhost/wsdl"/></output>
+      <soap:operation soapAction="SecurityService"/></operation>
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="rpc"/></binding>
+  <service name="SecurityManagerService">
+    <port name="SecurityManagerServicePort" binding="tns:SecurityManagerServiceBinding">
+      <soap:address location="http://balrog:8080/discus-security/jaxrpc/SecurityManagerService"/></port></service></definitions>

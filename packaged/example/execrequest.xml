@@ -1,0 +1,7 @@
+<ExecServiceMethodRequest>
+    <TreatyID>-1863754984</TreatyID>
+    <ServiceName>service1</ServiceName>
+    <MethodName>getDataByFooAndBar</MethodName>
+    <Parameter>foo</Parameter>
+    <Parameter>bar</Parameter>
+</ExecServiceMethodRequest>
