@@ -3,11 +3,21 @@ using System.Collections;
 
 namespace PSL.DISCUS.DAML
 {
+	public enum enuProcessSubTaskType
+	{
+		Sequence, // process:Sequence attribute
+		Choice	// process:Choice attribute
+	};
+
 	public class DAMLProcess
 	{
 		// All Processes have...
 		protected enuProcessType m_Type = enuProcessType.AtomicProcess;
 		protected string m_strName = "";
+		// Map input names to number of restrictions
+		protected Hashtable m_InputRestrictionMap = new Hashtable();
+		// Composite processes only have...
+		protected enuProcessSubTaskType m_SubTaskType;
 		
 		// Each of these types represented as an RDFProperty
 		// A collection of inputs 
@@ -27,7 +37,7 @@ namespace PSL.DISCUS.DAML
 		// A collection of Parameters
 		protected ArrayList m_arrParameters = new ArrayList();
 		// A collection of sub-steps (applicable for composite processes only)
-		// protected ArrayList m_arrSubProcesses = new ArrayList();
+		protected ArrayList m_arrSubProcesses = new ArrayList();
 		
 		public DAMLProcess()
 		{
@@ -40,6 +50,15 @@ namespace PSL.DISCUS.DAML
 			{ return m_Type; }
 			set
 			{ m_Type = value; }
+		}
+
+		// ONLY for Composite processes - should subclass to hide?
+		public enuProcessSubTaskType SubTaskType
+		{
+			get
+			{ return m_SubTaskType; }
+			set
+			{ m_SubTaskType = value; }
 		}
 
 		public string Name
@@ -98,6 +117,18 @@ namespace PSL.DISCUS.DAML
 			{ return (RDFProperty[]) m_arrParameters.ToArray( typeof(RDFProperty) ); }
 		}
 
+		public DAMLProcess[] SubProcesses
+		{
+			get
+			{ return (DAMLProcess[]) m_arrSubProcesses.ToArray( typeof(DAMLProcess) ); }
+		}
+		
+		public int GetInputRestriction( string strInputName )
+		{
+			if( !m_InputRestrictionMap.ContainsKey( strInputName ) )
+				return 0;
+			else return (int) m_InputRestrictionMap[strInputName];
+		}
 		
 		// AddXXXX
 		public void AddInput( RDFProperty data )
@@ -172,8 +203,23 @@ namespace PSL.DISCUS.DAML
 		{
 			m_arrParameters.AddRange( arrData );
 		}
-
-
+		public void AddSubProcess( DAMLProcess data )
+		{
+			if( ProcessType == enuProcessType.CompositeProcess )
+				m_arrSubProcesses.Add( data );
+			else throw new InvalidOperationException( "Only Composite Processes can have SubProcesses" );
+		}
+		public void AddSubProcess( DAMLProcess[] arrData )
+		{
+			if( ProcessType == enuProcessType.CompositeProcess )
+				m_arrSubProcesses.AddRange( arrData );
+			else throw new InvalidOperationException( "Only Composite Processes can have SubProcesses" );
+		}
+		public void AddInputRestriction( string strInput, int nRestriction )
+		{
+			m_InputRestrictionMap.Add( strInput, nRestriction );
+		}
+		
 		// ClearXXXX
 		public void ClearInputs()
 		{
@@ -213,6 +259,30 @@ namespace PSL.DISCUS.DAML
 		public void ClearParameters()
 		{
 			m_arrParameters.Clear();
+		}
+
+		public void ClearSubProcesses()
+		{
+			m_arrSubProcesses.Clear();
+		}
+		
+		public void ClearRestrictionMap()
+		{
+			m_InputRestrictionMap.Clear();
+		}
+
+		public void ClearAll()
+		{
+			this.ClearCoConditions();
+			this.ClearConditionalOutputs();
+			this.ClearCoOutputs();
+			this.ClearEffects();
+			this.ClearInputs();
+			this.ClearOutputs();
+			this.ClearParameters();
+			this.ClearPreconditons();
+			this.ClearRestrictionMap();
+			this.ClearSubProcesses();
 		}
 
 		// HasXXXX
@@ -260,6 +330,27 @@ namespace PSL.DISCUS.DAML
 			get
 			{ return m_arrParameters.Count > 0; }
 		}
+		
+		public bool HasSubProcesses
+		{
+			get
+			{
+				// Only Composite Processes can have subprocesses
+				if( ProcessType != enuProcessType.CompositeProcess )
+					return false;
 
+				return m_arrSubProcesses.Count > 0;
+			}
+		}
+
+		public bool HasData
+		{
+			get
+			{
+				bool bLVal = ( HasInputs && HasOutputs ) && ( HasPreconditions && HasEffects );
+				bool bRVal = ( HasConditionalOutputs && HasCoConditions ) && ( HasCoOutputs && HasParameters );
+				return ( bLVal && bRVal ) && HasSubProcesses;
+			}
+		}
 	}
 }

@@ -19,6 +19,8 @@ namespace PSL.DISCUS.DAML
 	/// </summary>
 	public class DAMLProcessModel:DAMLContainer
 	{
+		public const int DEFAULT_RESTRICTION = 1;
+
 		public DAMLProcessModel()
 		{
 			// Init inherited members
@@ -29,6 +31,43 @@ namespace PSL.DISCUS.DAML
 		}
 
 			
+		public string[] AtomicProcesses
+		{
+			get
+			{ return GetProcesses( enuProcessType.AtomicProcess ); }
+		}
+
+		public string[] CompositeProcesses
+		{
+			get
+			{ return GetProcesses( enuProcessType.CompositeProcess ); }
+		}
+		
+		public string[] SimpleProcesses
+		{
+			get
+			{ return GetProcesses( enuProcessType.SimpleProcess ); }
+		}
+
+		public string[] AllProcesses
+		{
+			get
+			{
+				ArrayList arrProcesses = new ArrayList();
+				
+				string[] arrAtomic = AtomicProcesses;
+				string[] arrComposite = CompositeProcesses;
+				string[] arrSimple = SimpleProcesses;
+				
+				// Add all to our collection
+				arrProcesses.AddRange( arrAtomic );
+				arrProcesses.AddRange( arrComposite );
+				arrProcesses.AddRange( arrSimple );
+
+				return (string[]) arrProcesses.ToArray( typeof( System.String ) );
+			}
+		}
+
 		public DAMLProcess GetProcessData( string strProcessName, enuProcessType processType )
 		{
 			DAMLProcess retVal = new DAMLProcess();
@@ -74,7 +113,7 @@ namespace PSL.DISCUS.DAML
 				// Set process type
 				retVal.ProcessType = processType;
 				
-				// Get inputs
+				// Get inputs from querying RDFProperty nodes in document
 				strXPath = DAMLConstants.RDF_PROPERTY + "/" + DAMLConstants.RDFS_SUBPROPERTYOF + "[@" +  DAMLConstants.RDF_RESOURCE + "='" + strBaseUri + DAMLConstants.INPUT + "']" + "/" + "following-sibling::" + DAMLConstants.RDFS_DOMAIN + "[@" + DAMLConstants.RDF_RESOURCE + "='#" + strProcessName + "']"; 
 				XmlNodeList lstNodes = root.SelectNodes( strXPath, m_mgr );
 				
@@ -83,7 +122,30 @@ namespace PSL.DISCUS.DAML
 					RDFProperty data = GetNodeData( node );
 					retVal.AddInput( data );
 				}
+				
+				// Get additional inputs from the process node itself
+				// they may be hidden under restictions tagged with
+				// daml:sameValueAs
+				strXPath =  DAMLConstants.DAML_CLASS + "[@" + DAMLConstants.RDF_ID + "='" + retVal.Name + "']" + "/" + DAMLConstants.RDFS_SUBCLASSOF + "/" + DAMLConstants.DAML_RESTRICTION + "/" + DAMLConstants.DAML_ON_PROPERTY + "[@" + DAMLConstants.RDF_RESOURCE + "='" + strBaseUri + DAMLConstants.INPUT + "']" + "/" + "following-sibling::" + DAMLConstants.DAML_SAMEVALUESAS;
+				lstNodes = root.SelectNodes( strXPath, m_mgr );
 
+				foreach( XmlNode node in lstNodes )
+				{
+					string strSameValueAs = node.Attributes[DAMLConstants.RDF_RESOURCE].Value;
+					strSameValueAs = strSameValueAs.Trim( new char[] {'#'} );
+										
+					// Go get RDFProperty data
+					strXPath = DAMLConstants.RDF_PROPERTY + "[@" + DAMLConstants.RDF_ID + "='" + strSameValueAs + "']" + "/" + DAMLConstants.RDFS_DOMAIN;
+					XmlNode domainNode = root.SelectSingleNode( strXPath, m_mgr );
+
+					// Add to list of inputs
+					if( domainNode != null )
+					{
+						RDFProperty data = GetNodeData( domainNode );
+						retVal.AddInput( data );
+					}
+				}
+								
 				// Get outputs
 				strXPath = DAMLConstants.RDF_PROPERTY + "/" + DAMLConstants.RDFS_SUBPROPERTYOF + "[@" +  DAMLConstants.RDF_RESOURCE + "='" + strBaseUri + DAMLConstants.OUTPUT + "']" + "/" + "following-sibling::" + DAMLConstants.RDFS_DOMAIN + "[@" + DAMLConstants.RDF_RESOURCE + "='#" + strProcessName + "']"; 
 				lstNodes = root.SelectNodes( strXPath, m_mgr );
@@ -153,6 +215,27 @@ namespace PSL.DISCUS.DAML
 					RDFProperty data = GetNodeData( node );
 					retVal.AddParameter( data );
 				}
+
+				// For each input, fill the process' InputRestrictionMap
+				// search on process name
+				if( retVal.HasInputs )
+				{
+					foreach( RDFProperty Input in retVal.Inputs )
+					{
+						int nRestriction = GetInputRestrictions( retVal.Name, Input.Name );
+						if( nRestriction == 0 )
+							nRestriction = DEFAULT_RESTRICTION;
+						retVal.AddInputRestriction( Input.Name, nRestriction );
+					}
+				}
+
+				// If we are dealing with a complex process we must go get
+				// the substeps - need to get process:<type> data
+				if( processType == enuProcessType.CompositeProcess )
+				{
+					retVal.SubTaskType = GetProcessSubTaskType( retVal.Name );
+					retVal.AddSubProcess( GetSubProcesses( retVal.Name ) );
+				}
 			}
 			catch( Exception e )
 			{
@@ -161,7 +244,7 @@ namespace PSL.DISCUS.DAML
 			return retVal;
 		}
 		
-		private RDFProperty GetNodeData( XmlNode node )
+        private RDFProperty GetNodeData( XmlNode node )
 		{
 			// Go up to parent node
 			XmlNode propertyNode = node.ParentNode;
@@ -183,44 +266,139 @@ namespace PSL.DISCUS.DAML
 
 			return data;
 		}
-
-		public String[] AtomicProcesses
+		
+		private int GetInputRestrictions( string strProcessName, string strInput )
 		{
-			get
-			{ return GetProcesses( enuProcessType.AtomicProcess ); }
-		}
+			XmlNode root = m_doc.DocumentElement;
 
-		public String[] CompositeProcesses
-		{
-			get
-			{ return GetProcesses( enuProcessType.CompositeProcess ); }
+			string strXPath = DAMLConstants.DAML_CLASS + "[@" + DAMLConstants.RDF_ID + "='" + strProcessName + "']" + "/" + DAMLConstants.RDFS_SUBCLASSOF + "/" + DAMLConstants.DAML_RESTRICTION + "/" + DAMLConstants.DAML_ON_PROPERTY + "[@" + DAMLConstants.RDF_RESOURCE + "='#" + strInput + "']";
+
+			XmlNode node = root.SelectSingleNode( strXPath, m_mgr );
+
+			if( node == null )
+				return 0;
+
+			XmlNode restrictionNode = node.ParentNode;
+			XmlNode cardinalityNode = restrictionNode.Attributes[DAMLConstants.DAML_CARDINALITY];
+			if( cardinalityNode == null )
+				return 0;
+			else return Int32.Parse( cardinalityNode.Value );
 		}
 		
-		public String[] SimpleProcesses
+		private enuProcessSubTaskType GetProcessSubTaskType( string strProcessName )
 		{
-			get
-			{ return GetProcesses( enuProcessType.SimpleProcess ); }
-		}
-
-		public string[] AllProcesses
-		{
-			get
+			XmlNode root = m_doc.DocumentElement;
+			string strBaseUri = "";
+				
+			foreach( string prefix in m_mgr )
 			{
-				ArrayList arrProcesses = new ArrayList();
-				
-				string[] arrAtomic = AtomicProcesses;
-				string[] arrComposite = CompositeProcesses;
-				string[] arrSimple = SimpleProcesses;
-				
-				// Add all to our collection
-				arrProcesses.AddRange( arrAtomic );
-				arrProcesses.AddRange( arrComposite );
-				arrProcesses.AddRange( arrSimple );
-
-				return (string[]) arrProcesses.ToArray( typeof( System.String ) );
+				if( prefix == DAMLConstants.PROCESS_NS )
+				{
+					strBaseUri = m_mgr.LookupNamespace( prefix );
+					break;
+				}
 			}
+
+			string strXPath = DAMLConstants.DAML_CLASS + "[@" + DAMLConstants.RDF_ID + "='" + strProcessName + "']" + "/" + DAMLConstants.RDFS_SUBCLASSOF + "[@" + DAMLConstants.RDF_RESOURCE + "='" + strBaseUri + DAMLConstants.DAML_COMPOSITE_PROCESS + "']" + "/" + "following-sibling::" + DAMLConstants.RDFS_SUBCLASSOF;
+			XmlNode SubClassOfNode = root.SelectSingleNode( strXPath, m_mgr );
+				
+			if( SubClassOfNode == null )
+				throw new Exception( "Complex process " + strProcessName + " data not found" );
+
+			// Get process:<type>
+			strXPath = ".//" + DAMLConstants.DAML_CLASS + "[@" + DAMLConstants.RDF_ABOUT + "]";
+			XmlNode dataNode = SubClassOfNode.SelectSingleNode( strXPath, m_mgr );
+
+			if( dataNode == null )
+				throw new Exception( "No process:<type> data provided for complex process " + strProcessName + " document is invalid" );
+
+			if( dataNode.Attributes[DAMLConstants.RDF_ABOUT].Value == DAMLConstants.PROCESS_CHOICE )
+				return enuProcessSubTaskType.Choice;
+			else return enuProcessSubTaskType.Sequence;
 		}
+		
+		public DAMLProcess[] GetSubProcesses( string strProcessName )
+		{
+			ArrayList lstSubProcesses = new ArrayList();
+
+			try
+			{
+				XmlNode root = m_doc.DocumentElement;
+				string strBaseUri = "";
+				
+				foreach( string prefix in m_mgr )
+				{
+					if( prefix == DAMLConstants.PROCESS_NS )
+					{
+						strBaseUri = m_mgr.LookupNamespace( prefix );
+						break;
+					}
+				}
+
+				string strXPath = DAMLConstants.DAML_CLASS + "[@" + DAMLConstants.RDF_ID + "='" + strProcessName + "']" + "/" + DAMLConstants.RDFS_SUBCLASSOF + "[@" + DAMLConstants.RDF_RESOURCE + "='" + strBaseUri + DAMLConstants.DAML_COMPOSITE_PROCESS + "']" + "/" + "following-sibling::" + DAMLConstants.RDFS_SUBCLASSOF;
+				XmlNode SubClassOfNode = root.SelectSingleNode( strXPath, m_mgr );
+				
+				if( SubClassOfNode == null )
+					return (DAMLProcess[]) lstSubProcesses.ToArray( typeof(DAMLProcess) );
+
+				// Use fuzzy paths from here -> "//" operator looking for any matching
+				// child node - more expensive but intermediate nodes are not 
+				// interesting/contain no info we can use
+
+				strXPath = ".//" + DAMLConstants.DAML_LIST_OF_INSTANCES_OF + "/" + DAMLConstants.DAML_CLASS;
+				XmlNodeList lstInstances = SubClassOfNode.SelectNodes( strXPath, m_mgr );
+				
+				foreach( XmlNode node in lstInstances )
+				{
+					string strProcess = node.Attributes[DAMLConstants.RDF_ABOUT].Value;
+					strProcess = strProcess.Trim( new Char[] { '#' } );
+					enuProcessType processType = GetProcessType( strProcess );
+					DAMLProcess process = GetProcessData( strProcess, processType );
+					lstSubProcesses.Add( process );
+				}
+			}
+			catch( Exception e )
+			{
+				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
+			}
+			return (DAMLProcess[]) lstSubProcesses.ToArray( typeof(DAMLProcess) );
+		}
+
+		private enuProcessType GetProcessType( string strProcessName )
+		{
+			// process may be atomic, simple or complex
+			string strBaseUri = "";
+				
+			foreach( string prefix in m_mgr )
+			{
+				if( prefix == DAMLConstants.PROCESS_NS )
+				{
+					strBaseUri = m_mgr.LookupNamespace( prefix );
+					break;
+				}
+			}
 			
+			XmlNode root = m_doc.DocumentElement;
+
+			string strXPathAtomicProcess = DAMLConstants.DAML_CLASS + "[@" + DAMLConstants.RDF_ID + "='" + strProcessName + "']" + "/" + DAMLConstants.RDFS_SUBCLASSOF + "[@" + DAMLConstants.RDF_RESOURCE + "='" + strBaseUri + DAMLConstants.DAML_ATOMIC_PROCESS + "']";
+			string strXPathSimpleProcess = DAMLConstants.DAML_CLASS + "[@" + DAMLConstants.RDF_ID + "='" + strProcessName + "']" + "/" + DAMLConstants.RDFS_SUBCLASSOF + "[@" + DAMLConstants.RDF_RESOURCE + "='" + strBaseUri + DAMLConstants.DAML_SIMPLE_PROCESS + "']";
+			string strXPathCompositeProcess = DAMLConstants.DAML_CLASS + "[@" + DAMLConstants.RDF_ID + "='" + strProcessName + "']" + "/" + DAMLConstants.RDFS_SUBCLASSOF + "[@" + DAMLConstants.RDF_RESOURCE + "='" + strBaseUri + DAMLConstants.DAML_COMPOSITE_PROCESS + "']";
+
+			XmlNode resultNode = root.SelectSingleNode( strXPathAtomicProcess, m_mgr );
+			if( resultNode != null )
+				return enuProcessType.AtomicProcess;
+
+			resultNode = root.SelectSingleNode( strXPathSimpleProcess, m_mgr );
+			if( resultNode != null )
+				return enuProcessType.SimpleProcess;
+
+			resultNode = root.SelectSingleNode( strXPathCompositeProcess, m_mgr );
+			if( resultNode != null )
+				return enuProcessType.CompositeProcess;
+			
+			throw new Exception( "Process " + strProcessName + " does not exist" );
+		}
+
 		private string[] GetProcesses( enuProcessType processType )
 		{
 			ArrayList arrProcess = new ArrayList();

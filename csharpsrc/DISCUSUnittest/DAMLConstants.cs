@@ -90,11 +90,19 @@ namespace PSL.DISCUS.DAML
 		public const string DAML_VERSIONINFO = DAML_NS + ":versionInfo";
 		public const string DAML_IMPORTS = DAML_NS + ":imports";
 		public const string DAML_SAMEVALUESAS = DAML_NS + ":sameValuesAs";
+		public const string DAML_RESTRICTION = DAML_NS + ":Restriction";
+		public const string DAML_ON_PROPERTY = DAML_NS + ":onProperty";
+		public const string DAML_CARDINALITY = DAML_NS + ":cardinality";
+		public const string DAML_COLLECTION = DAML_NS + ":collection";
+		public const string DAML_INTERSECTION_OF = DAML_NS + ":intersectionOf";
+		public const string DAML_LIST_OF_INSTANCES_OF = DAML_NS + ":listOfInstancesOf";
 		// RDF Constants (attributes)
 		public const string RDF_RESOURCE = RDF_NS + ":resource";
 		public const string RDF_COMMENT = RDF_NS + ":comment";
 		public const string RDF_ID = RDF_NS + ":ID";
 		public const string RDF_PROPERTY = RDF_NS + ":Property";
+		public const string RDF_PARSE_TYPE = RDF_NS + ":parseType";
+		public const string RDF_ABOUT = RDF_NS + ":about";
 		// RDFS Constants (attributes)
 		public const string RDFS_SUBCLASSOF = RDFS_NS + ":subClassOf";
 		public const string RDFS_SUBPROPERTYOF = RDFS_NS + ":subPropertyOf";
@@ -134,6 +142,9 @@ namespace PSL.DISCUS.DAML
 		public const string PROFILE_CONDITION_DESC = PROFILE_NS + ":ConditionDescription";
 		public const string PROFILE_CONDITION_NAME = PROFILE_NS + ":conditionName";
 		public const string PROFILE_STATEMENT = PROFILE_NS + ":statement";
+		// Constants related to Processes
+		public const string PROCESS_SEQUENCE = PROCESS_NS + ":Sequence";
+		public const string PROCESS_CHOICE = PROCESS_NS + ":Choice";
 		// IOPE Constants - Inputs, Outputs, PreConditions, Effects
 		public const string INPUT = "input";
 		public const string OUTPUT = "output";
@@ -144,6 +155,9 @@ namespace PSL.DISCUS.DAML
 		public const string CO_CONDITION = "coCondition";
 		public const string CO_OUTPUT = "coOutput";
 		public const string PARAMETER = "parameter";
+		// Misc constants used in ProcessModels
+		public const string PROCESS_COMPONENTS = "components";
+		public const string PROCESS_COMPOSED_OF = "composedOf";
 
 		//*********************************************************************//
 
@@ -155,7 +169,7 @@ namespace PSL.DISCUS.DAML
 		public const string DAML_SIMPLE_PROCESS = "SimpleProcess";
 		public const string DAML_COMPOSITE_PROCESS = "CompositeProcess";
 		public const string DAML_ATOMIC_PROCESS = "AtomicProcess";
-
+		
 		public DAMLConstants()
 		{}
 	}

@@ -298,11 +298,8 @@ namespace DISCUSUnittest
 				//arrRes = process.AllProcesses;
 				//arrRes = process.GetInputsOfNamedProcess( "LocateBook" );
 				
-				DAMLProcess res = process.GetProcessData( "LocateBook", enuProcessType.AtomicProcess );
-				
-				
-				
-				
+				DAMLProcess res = process.GetProcessData( "ExpandedCongoBuy", enuProcessType.CompositeProcess );
+								
 				//DAMLServiceProfile profile = new DAMLServiceProfile();
 				// Load DAML from web/file too big to hardcode in source file
 				// exceeds 2K compiler limit

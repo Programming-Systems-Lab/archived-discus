@@ -115,7 +115,6 @@ namespace PSL.DISCUS.DAML
 	/// </summary>
 	public class DAMLServiceProfile:DAMLContainer
 	{
-				
 		public DAMLServiceProfile()
 		{
 			// Init inherited members
