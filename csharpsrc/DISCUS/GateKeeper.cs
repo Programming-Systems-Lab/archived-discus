@@ -35,6 +35,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		// DoRequestCheck
 		private string REQUEST_CHECK_METHOD = "doRequestCheck";
 		private string SIGN_DOCUMENT_METHOD = "signDocument";
+		private string VERIFY_DOCUMENT_METHOD = "verifyDocument";
 		private string VERIFY_TREATY_METHOD = "verifyTreaty";
 		private int SECURITY_MANAGER_STATUS_FIELD = 0;
 		private string SECURITY_MANAGER_ERROR_CODE = "-1";
@@ -261,16 +262,50 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			return strRetVal;
 		}
 		
+		private string VerifyDocument( string strXmlDoc )
+		{
+			string strRetVal = "";
+	
+			try
+			{
+				string[] arrSecurityManagerResponse = null;
+				// Interact with SecurityManagerService via reflection
+				InternalRegistry ireg = new InternalRegistry();
+				string strLocation = ireg.GetServiceLocation( SECURITY_MANAGER );
+				if( strLocation.Length == 0 )
+					throw new System.Exception( "Cannot Find Security Manager" );
+				
+				object[] objParams = new Object[1];
+				objParams[0] = strXmlDoc;
+				object objExecResult = Execute( SECURITY_MANAGER, VERIFY_DOCUMENT_METHOD, objParams );
+				if( objExecResult != null )
+				{
+					arrSecurityManagerResponse = objExecResult as string[];
+						strRetVal = arrSecurityManagerResponse[1];
+				}
+			}
+			catch( System.Exception e )
+			{
+				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );		
+			}
+			
+			return strRetVal;
+		}
+		
+		
 		private string[] DoRequestCheck( string strXMLExecRequest, bool bSigned )
 		{
 			string[] arrRetVal = null;
 			
-			//arrRetVal = new string[2];
-			//arrRetVal[0] = "1";
-			//arrRetVal[1] = strXMLExecRequest;
-			//int c = 9;
-			//if( c == 9 )
-			//	return arrRetVal;
+			// Workaround Security Manager
+			//*****************************************************************************
+			/*arrRetVal = new string[2];
+			arrRetVal[0] = "1";
+			arrRetVal[1] = strXMLExecRequest;
+			int c = 9;
+			if( c == 9 )
+				return arrRetVal;*/
+			//*****************************************************************************
 
 			try
 			{
@@ -295,7 +330,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			return arrRetVal;
 		}
 		
-		private string GenerateServiceProxy( string strServiceName, string strServiceLocation, string strServiceAccessPoint )
+		private string GenerateProxy( string strName, string strLocation, string strAccessPoint )
 		{
 			string strRetVal = "";
 
@@ -304,13 +339,13 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				// Create a dynamic request
 				DynamicRequest req = new DynamicRequest();	
 				// Resolve service name
-				req.serviceName = strServiceName;
+				req.serviceName = strName;
 				// Set properties of the Dynamic request
 				req.filenameSource = req.serviceName;
 				// Location of wsdl file to use for proxy generation
-				req.wsdlFile = strServiceLocation;
+				req.wsdlFile = strLocation;
 				// Service Access Point
-				req.baseURL = strServiceAccessPoint;
+				req.baseURL = strAccessPoint;
 				if( req.baseURL.Length == 0 )
 				{
 					// Issue warning, Proxy will ONLY function as expected if
@@ -341,7 +376,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			string strServiceLocation = ireg.GetServiceLocation( strServiceName );
 			string strServiceAccessPoint =  ireg.GetServiceAccessPoint( strServiceName );
 			
-			strRetVal = GenerateServiceProxy( strServiceName, strServiceLocation, strServiceAccessPoint );
+			strRetVal = GenerateProxy( strServiceName, strServiceLocation, strServiceAccessPoint );
 
 			return strRetVal;
 		}
@@ -376,7 +411,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				string strAssembly = "";
 				if( strServiceLocation.ToLower().StartsWith( "http://" ) )
 				{
-					strAssembly = GenerateServiceProxy( strServiceName, strServiceLocation, strServiceAccessPoint );
+					strAssembly = GenerateProxy( strServiceName, strServiceLocation, strServiceAccessPoint );
 					// If no assembly generated, report error and exit
 					if( strAssembly.Length == 0 )
 						throw new System.Exception( "Error generating proxy to " + strServiceName + " using WSDL ref: " + strServiceLocation );
@@ -475,7 +510,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					// Deserialize Execution request
 					execReq = new ExecServiceMethodRequestType();
 					XmlSerializer ser = new XmlSerializer( execReq.GetType() );
-					XmlReader xt = new XmlTextReader( arrSecurityManagerResponse[1], XmlNodeType.Document, null );
+					XmlReader xt = new XmlTextReader( strXMLExecRequest, XmlNodeType.Document, null );
 					xt.Read();
 					object objInst = ser.Deserialize( xt );
 					execReq = objInst as ExecServiceMethodRequestType;
@@ -512,7 +547,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				string strAssembly = "";
 				if( strServiceLocation.ToLower().StartsWith( "http://" ) )
 				{
-					strAssembly = GenerateServiceProxy( execReq.ServiceName, strServiceLocation, strServiceAccessPoint );
+					strAssembly = GenerateProxy( execReq.ServiceName, strServiceLocation, strServiceAccessPoint );
 					// If no assembly generated, report error and exit
 					if( strAssembly.Length == 0 )
 						throw new System.Exception( "Error generating proxy to " + execReq.ServiceName + " using WSDL ref: " + strServiceLocation );
@@ -648,14 +683,15 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					// Read entire stream, this is our return value
 					strRetVal = reader.ReadToEnd();
 
-					string strTemp = SignDocument( strRetVal );
+					
+					// SignDocument strips off <?xml version="1.0"?>\n\n
+					string strSigned = SignDocument( strRetVal );
+					string strVerified = VerifyDocument( strSigned );
 					
 					// Close reader
 					reader.Close();
 					// Close stream
 					ms.Close();
-
-					
 				}
 				
 				
@@ -750,6 +786,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 
 			return strRetVal;
 		}
+
 		[SecurityPermission(SecurityAction.Assert, Flags = SecurityPermissionFlag.AllFlags)]
 		public string[] ExecuteAlphaProtocol( string strAlphaProtocol )
 		{
