@@ -79,7 +79,7 @@ public class RequestHandler extends org.apache.axis.handlers.BasicHandler {
         try {
             // 1. pull the request element out of the SOAP envelope
             //Message msg = msgContext.getRequestMessage();
-            SOAPEnvelope reqSoapEnv = msg.getSOAPPart().getAsSOAPEnvelope();
+            SOAPEnvelope reqSoapEnv = (SOAPEnvelope) msg.getSOAPPart().getEnvelope();
             Element reqSoapBody = reqSoapEnv.getFirstBody().getAsDOM();
 
             // 2. build up a response element for UDDI4j to 'saveToXML()' into
