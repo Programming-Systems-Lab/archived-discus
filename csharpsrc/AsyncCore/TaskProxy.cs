@@ -80,10 +80,32 @@ namespace PSL.AsyncCore
 		// single proxy - if so we may want to add an event to notify clients
 		// when a proxy is being reset so that it passes what data it has
 		// in the reset event
-		public AutoResetEvent Condition
+		//public AutoResetEvent Condition
+		//{
+		//	get
+		//	{ return m_condition; }
+		//}
+		
+
+		public void WaitOnProxySignal()
 		{
-			get
-			{ return m_condition; }
+			if( m_nTasksPending == 0 )
+				return;
+			else m_condition.WaitOne();
+		}
+
+		public void WaitOnProxySignal( TimeSpan timeout, bool bExitContext )
+		{
+			if( m_nTasksPending == 0 )
+				return;
+			else m_condition.WaitOne( timeout, bExitContext );
+		}
+
+		public void WaitOnProxySignal( int nTimeout, bool bExitContext )
+		{
+			if( m_nTasksPending == 0 )
+				return;
+			else m_condition.WaitOne( nTimeout, bExitContext );
 		}
 
 		/// <summary>
@@ -180,7 +202,7 @@ namespace PSL.AsyncCore
 		/// task requests hence calling AddTaskRequest after this state change will
 		/// result in an InvalidOperationException being thrown.
 		/// </summary>
-		public void WaitOnTasks()
+		public void StartWait()
 		{
 			lock( m_requestQ.SyncRoot )
 			{

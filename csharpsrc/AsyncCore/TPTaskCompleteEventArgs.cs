@@ -11,6 +11,7 @@ namespace PSL.AsyncCore
 	public sealed class TPTaskCompleteEventArgs:EventArgs
 	{
 		// May be object or string (exception message)
+				
 		private object m_objResult = null;
 		private bool m_bErrorsOccurred = false;
 		private Guid m_taskID = Guid.Empty;
@@ -34,6 +35,10 @@ namespace PSL.AsyncCore
 			{ m_bErrorsOccurred = true; }
 		}
 
+		/// <summary>
+		/// Property gets/sets the results of a TaskRequest being completed
+		/// in the event of errors this is set to the ExceptionMessage property
+		/// </summary>
 		public object Result
 		{
 			get
@@ -42,6 +47,9 @@ namespace PSL.AsyncCore
 			{ m_objResult = value; }
 		}
 
+		/// <summary>
+		/// gets/sets the TaskID of a TaskRequest
+		/// </summary>
 		public Guid TaskID
 		{
 			get
@@ -50,7 +58,10 @@ namespace PSL.AsyncCore
 			{ m_taskID = value; }
 		}
 
-		// Cannot be set
+		/// <summary>
+		/// gets the Exception Message which may have beed set during exection of a
+		/// TaskRequest. Cannot be set by client.
+		/// </summary>
 		public string ExceptionMessage
 		{
 			get
