@@ -101,11 +101,11 @@ namespace PSL.DISCUS.DAML
 
 			switch( filter )
 			{
-				case enuIOPESearchBy.PARAM_DESC: strXPath = BuildExpression( filter );
+				case enuIOPESearchBy.COND_DESC: strXPath = BuildExpression( filter );
 					strXPath += "[@" + DAMLServiceProfile.RDF_ID + "='" + strSearchKey + "']";
 					return strXPath;
 				
-				case enuIOPESearchBy.PARAM_NAME: strXPath = BuildExpression( filter );
+				case enuIOPESearchBy.COND_NAME: strXPath = BuildExpression( filter );
 					strXPath += "[." + "='" + strSearchKey + "']";
 					return strXPath;
 				
@@ -136,11 +136,11 @@ namespace PSL.DISCUS.DAML
 
 			switch( filter )
 			{
-				case enuIOPESearchBy.PARAM_DESC: strXPath = BuildExpression( filter );
+				case enuIOPESearchBy.COND_DESC: strXPath = BuildExpression( filter );
 					strXPath += "[@" + DAMLServiceProfile.RDF_ID + "='" + strSearchKey + "']";
 					return strXPath;
 				
-				case enuIOPESearchBy.PARAM_NAME: strXPath = BuildExpression( filter );
+				case enuIOPESearchBy.COND_NAME: strXPath = BuildExpression( filter );
 					strXPath += "[." + "='" + strSearchKey + "']";
 					return strXPath;
 				

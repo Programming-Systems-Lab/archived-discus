@@ -325,9 +325,11 @@ namespace DISCUSUnittest
 				// Valid combinations
 				string strRes = "";
 				
-				strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_NAME, "packagingSelection" );
-				strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_DESC, "PackagingSelection" );
-				
+				//strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_NAME, "packagingSelection" );
+				//strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_DESC, "PackagingSelection" );
+				//strRes = profile.IOParamRestrictedTo(  enuIOPEType.Input, enuIOPESearchBy.PARAM_DESC, "PackagingSelection" );
+				//strRes = profile.PEStatement( enuIOPEType.Effect, enuIOPESearchBy.COND_DESC, "BuyEffectType" );
+
 				/*
 				strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_DESC, "xyz" );
 				strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_NAME, "xyz" );

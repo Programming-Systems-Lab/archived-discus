@@ -361,6 +361,85 @@ namespace PSL.DISCUS.DAML
 		
 		
 		// Methods
+		public string PEStatement( enuIOPEType iopeType, enuIOPESearchBy iopeFilter, string strFilter )
+		{
+			string strRetVal = "";
+			
+			if( iopeType == enuIOPEType.Input || iopeType == enuIOPEType.Output )
+				throw new ArgumentException( "Invalid iopeType value - expect Precondition or Effect" );
+
+			// Create Expression Builder instance
+			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( iopeType );
+			// Build XPath Expression
+			string strXPathExpr = DAMLServiceProfile.SERVICE_PROFILE + IBuilder.BuildExpression( iopeFilter, strFilter );
+			XmlNode root = m_doc.DocumentElement;
+			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
+			
+			if( node == null  )
+				return "";
+
+			// If we searched by ParameterName then we need to go one level up to the
+			// parent (ParameterDescription) node before processing
+			if( iopeFilter == enuIOPESearchBy.COND_NAME )
+				node = node.ParentNode;
+
+			XmlNode stmntNode = node.SelectSingleNode( DAMLServiceProfile.PROFILE_STATEMENT, m_mgr );
+			if( stmntNode == null )
+				return "";
+
+			XmlAttributeCollection attColl = stmntNode.Attributes;
+
+			foreach( XmlAttribute att in attColl )
+			{
+				if( att.Name == DAMLServiceProfile.RDF_RESOURCE )
+				{
+					strRetVal = att.Value;
+					break;
+				}
+			}
+			
+			return strRetVal;
+		}
+
+		public string IOParamRestrictedTo( enuIOPEType iopeType, enuIOPESearchBy iopeFilter, string strFilter )
+		{
+			string strRetVal = "";
+			
+			if( iopeType == enuIOPEType.Precondition || iopeType == enuIOPEType.Effect )
+				throw new ArgumentException( "Invalid iopeType value - expect Precondition or Effect" );
+			
+			// Create Expression Builder instance
+			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( iopeType );
+			// Build XPath Expression
+			string strXPathExpr = DAMLServiceProfile.SERVICE_PROFILE + IBuilder.BuildExpression( iopeFilter, strFilter );
+			XmlNode root = m_doc.DocumentElement;
+			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
+			
+			if( node == null  )
+				return "";
+
+			// If we searched by ParameterName then we need to go one level up to the
+			// parent (ParameterDescription) node before processing
+			if( iopeFilter == enuIOPESearchBy.PARAM_NAME )
+				node = node.ParentNode;
+
+			XmlNode restrictNode = node.SelectSingleNode( DAMLServiceProfile.PROFILE_RESTRICTED_TO, m_mgr );
+			if( restrictNode == null )
+				return "";
+
+			XmlAttributeCollection attColl = restrictNode.Attributes;
+
+			foreach( XmlAttribute att in attColl )
+			{
+				if( att.Name == DAMLServiceProfile.RDF_RESOURCE )
+				{
+					strRetVal = att.Value;
+					break;
+				}
+			}
+			
+			return strRetVal;
+		}
 
 		public string IOPERefersTo( enuIOPEType iopeType, enuIOPESearchBy iopeFilter, string strFilter )
 		{
