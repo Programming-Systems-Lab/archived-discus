@@ -29,7 +29,16 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		private string m_strPxyCacheDir = "";
 		// Proxy Generator
 		private ProxyGen m_pxyGen;
-
+		// SecurityManagerService
+		private string SECURITY_MANAGER = "SecurityManagerService";
+		// SecurityManagerServiceMethods
+		// DoRequestCheck
+		private string REQUEST_CHECK_METHOD = "doRequestCheck";
+		private string SIGN_DOCUMENT_METHOD = "signDocument";
+		private string VERIFY_TREATY_METHOD = "verifyTreaty";
+		private int SECURITY_MANAGER_STATUS_FIELD = 0;
+		private string SECURITY_MANAGER_ERROR_CODE = "-1";
+ 
 		// Inner ExecRequext class
 		class ExecRequest
 		{
@@ -195,14 +204,20 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		
 		}
 		
-		public string EnlistServicesByName( string strXMLTreatyReq, string strXMLCredentials )
+		public string EnlistServicesByName( string strXMLTreatyReq )
 		{
 			string strRetVal = "";
-			
+			object[] objParams = new object[2];
+			objParams[0] = strXMLTreatyReq;
+			objParams[1] = false;
+			object objRes = null;
+
+			objRes = Execute( SECURITY_MANAGER, VERIFY_TREATY_METHOD, objParams );
+
 			return strRetVal;
 		}
 
-		public bool RequestServiceByName( string strServiceName, string strXMLCredentials )
+		public bool RequestServiceByName( string strServiceName )
 		{
 			// Validate Credentials
 			
@@ -216,30 +231,442 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		
 		}
 /**************************************************************/
+		private string SignDocument( string strXmlDoc )
+		{
+			string strRetVal = "";
+	
+			try
+			{
+				string[] arrSecurityManagerResponse = null;
+				// Interact with SecurityManagerService via reflection
+				InternalRegistry ireg = new InternalRegistry();
+				string strLocation = ireg.GetServiceLocation( SECURITY_MANAGER );
+				if( strLocation.Length == 0 )
+					throw new System.Exception( "Cannot Find Security Manager" );
+				
+				object[] objParams = new Object[1];
+				objParams[0] = strXmlDoc;
+				object objExecResult = Execute( SECURITY_MANAGER, SIGN_DOCUMENT_METHOD, objParams );
+				if( objExecResult != null )
+				{
+					arrSecurityManagerResponse = objExecResult as string[];
+					strRetVal = arrSecurityManagerResponse[1];
+				}
+			}
+			catch( System.Exception e )
+			{
+				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );		
+			}
+			
+			return strRetVal;
+		}
+		
+		private string[] DoRequestCheck( string strXMLExecRequest, bool bSigned )
+		{
+			string[] arrRetVal = null;
+			
+			//arrRetVal = new string[2];
+			//arrRetVal[0] = "1";
+			//arrRetVal[1] = strXMLExecRequest;
+			//int c = 9;
+			//if( c == 9 )
+			//	return arrRetVal;
+
+			try
+			{
+				// Interact with SecurityManagerService via reflection
+				InternalRegistry ireg = new InternalRegistry();
+				string strLocation = ireg.GetServiceLocation( SECURITY_MANAGER );
+				if( strLocation.Length == 0 )
+					throw new System.Exception( "Cannot Find Security Manager" );
+				
+				object[] objParams = new Object[2];
+				objParams[0] = strXMLExecRequest;
+				objParams[1] = false;
+				object objExecResult = Execute( SECURITY_MANAGER, REQUEST_CHECK_METHOD, objParams );
+				if( objExecResult != null )
+					arrRetVal = objExecResult as string[];
+			}
+			catch( System.Exception e )
+			{
+				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );		
+			}
+
+			return arrRetVal;
+		}
+		
+		private string GenerateServiceProxy( string strServiceName, string strServiceLocation, string strServiceAccessPoint )
+		{
+			string strRetVal = "";
+
+			try
+			{
+				// Create a dynamic request
+				DynamicRequest req = new DynamicRequest();	
+				// Resolve service name
+				req.serviceName = strServiceName;
+				// Set properties of the Dynamic request
+				req.filenameSource = req.serviceName;
+				// Location of wsdl file to use for proxy generation
+				req.wsdlFile = strServiceLocation;
+				// Service Access Point
+				req.baseURL = strServiceAccessPoint;
+				if( req.baseURL.Length == 0 )
+				{
+					// Issue warning, Proxy will ONLY function as expected if
+					// WSDL file contains the service access point
+					string strMsg = "Service did not provide a Base URL (Service Access Point), generated proxy may not function as expected";
+					m_EvtLog.WriteEntry( strMsg, EventLogEntryType.Warning );
+				}
+				// Where to store generated proxy
+				req.proxyPath = m_strPxyCacheDir;
+				// Pass Dynamic request to proxy generator
+				strRetVal = m_pxyGen.GenerateAssembly( req );	
+			}
+			catch( System.Exception e )
+			{
+				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );		
+			}
+
+			return strRetVal;
+		}
+
+		private string GenerateServiceProxy( string strServiceName )
+		{
+			string strRetVal = "";
+			if( strServiceName.Length == 0 )
+				return strRetVal;
+			
+			InternalRegistry ireg = new InternalRegistry();
+			string strServiceLocation = ireg.GetServiceLocation( strServiceName );
+			string strServiceAccessPoint =  ireg.GetServiceAccessPoint( strServiceName );
+			
+			strRetVal = GenerateServiceProxy( strServiceName, strServiceLocation, strServiceAccessPoint );
+
+			return strRetVal;
+		}
+
+		public object Execute( string strServiceName, string strServiceMethod, object[] objParams )
+		{
+			object objInvokeResult = null;
+			try
+			{
+				if( strServiceName.Length == 0 || strServiceMethod.Length == 0 )
+					throw new System.Exception( "Invalid Arguments Passed to Execute" );
+				
+				InternalRegistry ireg = new InternalRegistry();
+				string strServiceLocation = ireg.GetServiceLocation( strServiceName );
+				string strServiceNamespace = ireg.GetServiceNamespace( strServiceName );
+				string strServiceAccessPoint = ireg.GetServiceAccessPoint( strServiceName );
+				
+				// Quick checks for valid data returned from database
+				if( strServiceLocation.Length == 0 )
+					throw new Exception( "Cannot Find Location of Service: " + strServiceName );
+				// Verify that service supports method
+				if( !ireg.MethodExists( strServiceName, strServiceMethod ) )
+					throw new Exception( "Service: " + strServiceName + " does not support method: " + strServiceMethod );
+	
+				// Resolve Web Service Proxy Location
+				// Do Runtime ProxyGeneration if necessary				
+				// If service location is a link to a WSDL file
+				// then we must generate a proxy to the webservice,
+				// store the proxy in the proxy cache, update our
+				// database and set strServiceLocation to the generated
+				// proxy. Must also change service namespace in dbase
+				string strAssembly = "";
+				if( strServiceLocation.ToLower().StartsWith( "http://" ) )
+				{
+					strAssembly = GenerateServiceProxy( strServiceName, strServiceLocation, strServiceAccessPoint );
+					// If no assembly generated, report error and exit
+					if( strAssembly.Length == 0 )
+						throw new System.Exception( "Error generating proxy to " + strServiceName + " using WSDL ref: " + strServiceLocation );
+								
+					// Update database location of service, point to
+					// dynamic proxy, change namespace the dynamic proxy namespace
+					ireg.UpdateServiceLocation( strServiceName, strAssembly );
+					ireg.UpdateServiceNamespace( strServiceName, DynamicRequest.DEFAULT_PROXY_NAMESPACE );
+					// Set Service name to Fully qualified 
+					// name i.e <Namespace>.<servicename>
+					// necessary for reflection
+					strServiceName = DynamicRequest.DEFAULT_PROXY_NAMESPACE + "." + strServiceName;
+				}
+				else
+				{
+					// Fully qualify service name with namespace
+					// necesary for reflection
+					if( strServiceNamespace.Length > 0 )
+						strServiceName = strServiceNamespace + "." + strServiceName;
+					// Set assembly location
+					strAssembly = strServiceLocation;
+				}
+				
+				// Load Assembly containing web service proxy
+				Assembly a = Assembly.LoadFrom( strAssembly );
+				// Get the correct type (ProxyClass)
+				Type ProxyType = a.GetType( strServiceName );
+				// Create an instance of the Proxy Class
+				Object objProxy = a.CreateInstance( strServiceName );
+				if( objProxy == null || ProxyType == null )
+				{
+					string strError = "Cannot create type/proxy instance ";
+					strError += strServiceName;
+					strError += " in assembly ";
+					strError += strAssembly;
+					throw new System.Exception( strError );
+				}
+
+				// Check whether Proxy class has a property
+				// called Url, valid for generated
+				// proxies, if it does check its value
+				// if value is empty fill in proxy access point
+				PropertyInfo Url = ProxyType.GetProperty( "Url" );
+				if( Url != null )
+				{
+					string strUrl = (string) Url.GetValue( objProxy, null );
+					if( strUrl.Length == 0 )
+						Url.SetValue( objProxy, strServiceAccessPoint, null );
+				}
+
+				// Proxy Method Invocation
+				objInvokeResult = ProxyType.InvokeMember( strServiceMethod,
+								  BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Static,
+								  null,
+								  objProxy,
+								  objParams );
+
+			}
+			catch( System.Exception e )
+			{
+				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );		
+			}
+
+			return objInvokeResult;
+		}
+
 //IExecuteService Impl		
 		[SecurityPermission(SecurityAction.Assert, Flags = SecurityPermissionFlag.AllFlags)]
 		public string ExecuteServiceMethod( string strXMLExecRequest )
 		{
 			string strRetVal = "";
 			string strError = "";
+            ExecServiceMethodRequestType execReq = null;
+			InternalRegistry ireg = new InternalRegistry();
 
 			try
 			{
-				// 7 stages for execution
-				// 1) Validate schema of strXMLExecRequest
-				// 2) Do Security check
-				// 3) Extraction of parameters
-				// 4) Resolve Web Service Proxy Location (Proxy may have to be generated at runtime)
-				// 5) Runtime Deserializtion of parameters
-				// 6) Proxy Method Invocation
-				// 7) Serialize and return results
+				// 6 stages for execution
+				// 1) Do Security check
+				// 2) Extraction of parameters
+				// 3) Resolve Web Service Proxy Location (Proxy may have to be generated at runtime)
+				// 4) Runtime Deserializtion of parameters
+				// 5) Proxy Method Invocation
+				// 6) Serialize and return results
+							
+				// Stage 1 - Do Security Check
+				// Contact SecurityManageService
+				// Pass request, get back string []
+				// Status code and actual XML request
+				string[] arrSecurityManagerResponse = DoRequestCheck( strXMLExecRequest, false );
+				if( arrSecurityManagerResponse == null || arrSecurityManagerResponse[SECURITY_MANAGER_STATUS_FIELD].CompareTo( SECURITY_MANAGER_ERROR_CODE ) == 0 )
+					throw new System.Exception( "Security Exception: Request Not Verified" );
+				
+				try
+				{
+					// Deserialize Execution request
+					execReq = new ExecServiceMethodRequestType();
+					XmlSerializer ser = new XmlSerializer( execReq.GetType() );
+					XmlReader xt = new XmlTextReader( arrSecurityManagerResponse[1], XmlNodeType.Document, null );
+					xt.Read();
+					object objInst = ser.Deserialize( xt );
+					execReq = objInst as ExecServiceMethodRequestType;
+				}
+				catch( System.Exception e )
+				{
+					throw new Exception( "Error Deserializing Service Execution Request " + e.Message ); 
+				}
+
+				// Stage 2 - Cleaning of parameters
+				/*for( int x = 0; x < execReq.m_Parameter.Count; x++ )
+				{
+					string strParamData = (string) execReq.m_Parameter[i];
+					
+					int nFirstIndex = strParamData.IndexOf( "<string>" );
+					int nLastIndex = strParamData.IndexOf( "</string>" );
+					if( nFirstIndex != -1 && nLastIndex != -1 )
+					{
+						int nStartIndex = nFirstIndex + 8;
+						int nLength = nLastIndex - nStartIndex;
+					}
+				}*/
+				
+				// Stage 3 - Resolve Web Service Proxy Location
+				// Do Runtime ProxyGeneration if necessary				
+				// If service location is a link to a WSDL file
+				// then we must generate a proxy to the webservice,
+				// store the proxy in the proxy cache, update our
+				// database and set strServiceLocation to the generated
+				// proxy. Must also change service namespace in dbase
+				string strServiceLocation = ireg.GetServiceLocation( execReq.ServiceName );
+				string strServiceNamespace = ireg.GetServiceNamespace( execReq.ServiceName );
+				string strServiceAccessPoint = ireg.GetServiceAccessPoint( execReq.ServiceName );
+				string strAssembly = "";
+				if( strServiceLocation.ToLower().StartsWith( "http://" ) )
+				{
+					strAssembly = GenerateServiceProxy( execReq.ServiceName, strServiceLocation, strServiceAccessPoint );
+					// If no assembly generated, report error and exit
+					if( strAssembly.Length == 0 )
+						throw new System.Exception( "Error generating proxy to " + execReq.ServiceName + " using WSDL ref: " + strServiceLocation );
+								
+					// Update database location of service, point to
+					// dynamic proxy, change namespace the dynamic proxy namespace
+					ireg.UpdateServiceLocation( execReq.ServiceName, strAssembly );
+					ireg.UpdateServiceNamespace( execReq.ServiceName, DynamicRequest.DEFAULT_PROXY_NAMESPACE );
+					// Set Service name to Fully qualified 
+					// name i.e <Namespace>.<servicename>
+					// necessary for reflection
+					execReq.ServiceName = DynamicRequest.DEFAULT_PROXY_NAMESPACE + "." + execReq.ServiceName;
+				}
+				else
+				{
+					// Fully qualify service name with namespace
+					// necesary for reflection
+					if( strServiceNamespace.Length > 0 )
+						execReq.ServiceName = strServiceNamespace + "." + execReq.ServiceName;
+					// Set assembly location
+					strAssembly = strServiceLocation;
+				}
 			
-				// Stage 1
+				// Load Assembly containing web service proxy
+				bool bProxyMethodHasParameters = false;
+				Assembly a = Assembly.LoadFrom( strAssembly );
+				// Get the correct type (ProxyClass)
+				Type ProxyType = a.GetType( execReq.ServiceName );
+				// Create an instance of the Proxy Class
+				Object objProxy = a.CreateInstance( execReq.ServiceName );
+				if( objProxy == null || ProxyType == null )
+				{
+					strError = "Cannot create type/proxy instance ";
+					strError += execReq.ServiceName;
+					strError += " in assembly ";
+					strError += strAssembly;
+					throw new System.Exception( strError );
+				}
 
-				// Stage 2
+				// Check whether Proxy class has a property
+				// called Url, valid for generated
+				// proxies, if it does check its value
+				// if value is empty fill in proxy access point
+				PropertyInfo Url = ProxyType.GetProperty( "Url" );
+				if( Url != null )
+				{
+					string strUrl = (string) Url.GetValue( objProxy, null );
+					if( strUrl.Length == 0 )
+						Url.SetValue( objProxy, strServiceAccessPoint, null );
+				}
+				
+				// Once we have a Proxy Object and a Type instance
+				// use reflection to get info on method to be
+				// executed.
+				MethodInfo mInfo = ProxyType.GetMethod( execReq.MethodName );
+				if( mInfo == null )
+				{
+					strError = "Cannot find method ";
+					strError += execReq.MethodName;
+					strError += " of Proxy ";
+					strError += execReq.ServiceName;
+					strError += " loaded from assembly ";
+					strError += strAssembly;
+					throw new System.Exception( strError );
+				}
+				
+				// Get info on parameters expected by Proxy method
+				ParameterInfo[] arrParamInfo = mInfo.GetParameters();
+				if( arrParamInfo.Length > 0 )
+					bProxyMethodHasParameters = true;
+				
+				Object[] param = null;
 
-				// Stage 3 - Extraction of parameters
-				InternalRegistry ireg = new InternalRegistry();
+				if( bProxyMethodHasParameters )
+				{
+					// Parameters passed not equal to
+					// parameters expected
+					// (is method overloading an issue?? - probably not with dynamically generated proxies)
+					if( execReq.m_Parameter.Count != arrParamInfo.Length )
+						throw new System.Exception( "Wrong Number of Arguments Passed" );
+					
+					// Create array to hold parameters
+					param = new Object[arrParamInfo.Length];
+
+					// Try deserialization
+					for( int i = 0; i < execReq.m_Parameter.Count; i++ )
+					{
+						// Get the expected type
+						Type paramType = arrParamInfo[i].ParameterType;
+						// Create XmlSerializer
+						XmlSerializer xs = new XmlSerializer( paramType );
+						// Read in Xml doc representing parameter
+						System.Xml.XmlReader xt = new XmlTextReader( (string) execReq.m_Parameter[i], XmlNodeType.Document, null );
+						xt.Read(); 
+						// Deserialize
+						Object paramInst = xs.Deserialize( xt );
+						// Store in parameter array
+						param[i] = (Object) paramInst;
+					}
+				}// End if bProxyMethodHasParameters
+				
+				// Stage 5 - Proxy Method Invocation
+				Object objInvokeResult = null;
+				if( bProxyMethodHasParameters )
+					objInvokeResult = ProxyType.InvokeMember( execReq.MethodName,
+						BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Static,
+						null,
+						objProxy,
+						param );
+ 
+				else objInvokeResult = ProxyType.InvokeMember( execReq.MethodName,
+						 BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Static,
+						 null,
+						 objProxy,
+						 null );
+
+				// Stage 6 - Serialize and return results
+				if( objInvokeResult != null )
+				{
+					// Otherwise serialize results to XML
+					// Get returned type
+					Type returnType = objInvokeResult.GetType();
+					// Create XmlSerializer
+					XmlSerializer ser = new XmlSerializer( returnType );
+					// Create a memory stream
+					MemoryStream ms = new MemoryStream();
+					// Serialize to stream ms
+					ser.Serialize( ms, objInvokeResult );
+					// Goto start of stream
+					ms.Seek( 0, System.IO.SeekOrigin.Begin );
+					// Create a stream reader
+					TextReader reader = new StreamReader( ms );
+					// Read entire stream, this is our return value
+					strRetVal = reader.ReadToEnd();
+
+					string strTemp = SignDocument( strRetVal );
+					
+					// Close reader
+					reader.Close();
+					// Close stream
+					ms.Close();
+
+					
+				}
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				/*InternalRegistry ireg = new InternalRegistry();
 				// Load Execution request
 				XmlDocument doc = new XmlDocument();
 				doc.LoadXml( strXMLExecRequest );
@@ -254,17 +681,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				
 				string strServiceName = serviceName.InnerText;
 				string strServiceMethod = serviceMethod.InnerText;
-				string strServiceLocation = ireg.GetServiceLocation( strServiceName );
-				string strServiceNamespace = ireg.GetServiceNamespace( strServiceName );
-				string strServiceAccessPoint = ireg.GetServiceAccessPoint( strServiceName );
-
-				// Quick checks for valid data returned from database
-				if( strServiceLocation.Length == 0 )
-					return "<GKError>Service Not Found</GKError>";
-				// Verify that service supports method
-				if( !ireg.MethodExists( strServiceName, serviceMethod.InnerText ) )
-					return "<GKError>Service Method Not Found</GKError>";
-
+				
 				// Get Paramters
 				// Parameters must be passed in correct order
 				XmlNodeList lstParamNodes = root.SelectNodes( "/ExecServiceMethodRequest/Parameter" );
@@ -294,47 +711,8 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					y++;
 				}
 				
-				// Stage 4 - Resolve Web Service Proxy Location
-				// Do Runtime ProxyGeneration if necessary				
-				// If service location is a link to a WSDL file
-				// then we must generate a proxy to the webservice,
-				// store the proxy in the proxy cache, update our
-				// database and set strServiceLocation to the generated
-				// proxy. Must also change service namespace in dbase
-				string strAssembly = "";
-				if( strServiceLocation.ToLower().StartsWith( "http://" ) )
-				{
-					// Create a dynamic request
-					DynamicRequest req = new DynamicRequest();	
-					// Resolve service name
-					req.serviceName = strServiceName;
-					// Set properties of the Dynamic request
-					req.filenameSource = req.serviceName;
-					// Location of wsdl file to use for proxy generation
-					req.wsdlFile = strServiceLocation;
-					// Service Access Point
-					req.baseURL = strServiceAccessPoint;
-					if( req.baseURL.Length == 0 )
-					{
-						// Issue warning, Proxy will ONLY function as expected if
-						// WSDL file contains the service access point
-						string strMsg = "Service did not provide a Base URL (Service Access Point), generated proxy may not function as expected";
-						m_EvtLog.WriteEntry( strMsg, EventLogEntryType.Warning );
-					}
-					// Where to store generated proxy
-					req.proxyPath = m_strPxyCacheDir;
-					// Pass Dynamic request to proxy generator
-					strAssembly = m_pxyGen.GenerateAssembly( req );
-					// If no assembly generated, report error and exit
-					if( strAssembly.Length == 0 )
-					{
-						// Report error generating proxy
-						strError = "Error generating proxy to WSDL ref: ";
-						strError += strServiceLocation;
-						m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
-						return "<GKError>Proxy Generation Failed</GKError>";
-					}
 				
+					
 					// Update database location of service, point to
 					// dynamic proxy, change namespace the dynamic proxy namespace
 					ireg.UpdateServiceLocation( strServiceName, strAssembly );
@@ -354,126 +732,16 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					strAssembly = strServiceLocation;
 				}
 				
-				// Stage 5 - Runtime Deserializtion of parameters
-				// Load Assembly containing web service proxy
-				bool bProxyMethodHasParameters = false;
-				Assembly a = Assembly.LoadFrom( strAssembly );
-				// Get the correct type (ProxyClass)
-				Type ProxyType = a.GetType( strServiceName );
-				// Create an instance of the Proxy Class
-				Object objProxy = a.CreateInstance( strServiceName );
-				if( objProxy == null || ProxyType == null )
-				{
-					strError = "Cannot create type/proxy instance ";
-					strError += strServiceName;
-					strError += " in assembly ";
-					strError += strAssembly;
-					m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
-					return "<GKError>Reflection Failed</GKError>";
-				}
+				// Stage 4 - 
 				
-				// Check whether Proxy class has a property
-				// called Url, valid for generated
-				// proxies, if it does check its value
-				// if value is empty fill in proxy access point
-				PropertyInfo Url = ProxyType.GetProperty( "Url" );
-				if( Url != null )
-				{
-					string strUrl = (string) Url.GetValue( objProxy, null );
-					if( strUrl.Length == 0 )
-						Url.SetValue( objProxy, strServiceAccessPoint, null );
-				}
-
-				// Once we have a Proxy Object and a Type instance
-				// use reflection to get info on method to be
-				// executed.
-				MethodInfo mInfo = ProxyType.GetMethod( strServiceMethod );
-				if( mInfo == null )
-				{
-					strError = "Cannot find method ";
-					strError += strServiceMethod;
-					strError += " of Proxy ";
-					strError += strServiceName;
-					strError += " loaded from assembly ";
-					strError += strAssembly;
-					m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
-					return "<GKError>Service Method Not Found</GKError>";
-				}
 				
-				// Get info on parameters expected by Proxy method
-				ParameterInfo[] arrParamInfo = mInfo.GetParameters();
-				if( arrParamInfo.Length > 0 )
-					bProxyMethodHasParameters = true;
-
-				Object[] param = null;
-
-				if( bProxyMethodHasParameters )
-				{
-					// Parameters passed not equal to
-					// parameters expected
-					// (is method overloading an issue?? - probably not with dynamically generated proxies)
-					if( arrParams.Length != arrParamInfo.Length )
-						return "<GKError>Wrong Number of Arguments Passed</GKError>";
-					
-					// Create array to hold parameters
-					param = new Object[arrParamInfo.Length];
-
-					// Try deserialization
-					for( int i = 0; i < arrParamInfo.Length; i++ )
-					{
-						// Get the expected type
-						Type paramType = arrParamInfo[i].ParameterType;
-						// Create XmlSerializer
-						XmlSerializer xs = new XmlSerializer( paramType );
-						// Read in Xml doc representing parameter
-						System.Xml.XmlReader xt = new XmlTextReader( arrParams[i], XmlNodeType.Document, null );
-						xt.Read(); 
-						// Deserialize
-						Object paramInst = xs.Deserialize( xt );
-						// Store in parameter array
-						param[i] = (Object) paramInst;
-					}
-				}// End if bProxyMethodHasParameters
 				
-				// Stage 6 - Proxy Method Invocation
-				Object objInvokeResult = null;
-				if( bProxyMethodHasParameters )
-					objInvokeResult = ProxyType.InvokeMember( strServiceMethod,
-						BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Static,
-						null,
-						objProxy,
-						param );
- 
-				else objInvokeResult = ProxyType.InvokeMember( strServiceMethod,
-						 BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Static,
-						 null,
-						 objProxy,
-						 null );
-
-				// Stage 7 - Serialize and return results
-				if( objInvokeResult == null )
+				
+				
+				
 					return "";
 				
-				// Otherwise serialize results to XML
-				// Get returned type
-				Type returnType = objInvokeResult.GetType();
-				// Create XmlSerializer
-				XmlSerializer ser = new XmlSerializer( returnType );
-				// Create a memory stream
-				MemoryStream ms = new MemoryStream();
-				// Serialize to stream ms
-				ser.Serialize( ms, objInvokeResult );
-				// Goto start of stream
-				ms.Seek( 0, System.IO.SeekOrigin.Begin );
-				// Create a stream reader
-				TextReader reader = new StreamReader( ms );
-				// Read entire stream, this is our return value
-				strRetVal = reader.ReadToEnd();
-
-				// Close reader
-				reader.Close();
-				// Close stream
-				ms.Close();
+				*/
 			}
 			catch( System.Exception e )
 			{
@@ -482,153 +750,6 @@ namespace PSL.DISCUS.Impl.GateKeeper
 
 			return strRetVal;
 		}
-		
-		/* Function executes a service method.
-		 * Input: nTreatyID			- ID of the treaty to verify service use against
-		 *		  strServiceName	- service we wish to use
-		 *		  strServiceMethod	- service method we wisk to use
-		 *		  paramaeters 		- array of parameters to pass to service method	
-		 */
-		/*[SecurityPermission(SecurityAction.Assert, Flags = SecurityPermissionFlag.AllFlags)]
-		public Object ExecuteServiceMethod( int nTreatyID, string strServiceName, string strServiceMethod, Object[] parameters )
-		{
-			// Verify treatyID, method name and params
-
-			// Runtime resolution of web service references stored in dbase
-			// lookup service name and method
-			// if servicelocation contains "http://" then
-			// service is a web service and a proxy may have to be 
-			// generated @ runtime, the generated proxy is stored
-			// locally, the local proxy location may replace the web ref.
-			
-			// Check registered service information
-			InternalRegistry ireg = new InternalRegistry();
-			object objResult = null;
-			// Get service location
-			string strServiceLocation = ireg.GetServiceLocation( strServiceName );
-			string strServiceAccessPoint = ireg.GetServiceAccessPoint( strServiceName );
-			// Get Service namespace
-			string strServiceNamespace = ireg.GetServiceNamespace( strServiceName );
-            if( strServiceLocation.Length == 0 )
-				return null;
-			// Verify that service supports method
-			if( !ireg.MethodExists( strServiceName, strServiceMethod ) )
-				return null;
-			
-			// If service location is a link to a WSDL file
-			// then we must generate a proxy to the webservice,
-			// store the proxy in the proxy cache, update our
-			// database and set strServiceLocation to the generated
-			// proxy. Must also change service namespace in dbase
-			string strAssembly = "";
-			
-			if( strServiceLocation.ToLower().StartsWith( "http://" ) )
-			{
-				// Create a dynamic request
-				DynamicRequest req = new DynamicRequest();	
-				// Resolve service name
-				int nIndex = strServiceName.LastIndexOf( "." );
-				if( nIndex == -1 )
-					req.serviceName = strServiceName;
-				else req.serviceName = strServiceName.Substring( nIndex + 1 );
-
-				// Set properties of the Dynamic request
-				req.filenameSource = req.serviceName;
-				// Location of wsdl file to use for proxy generation
-				req.wsdlFile = strServiceLocation;
-				// Service Access Point
-				req.baseURL = strServiceAccessPoint;
-				if( req.baseURL.Length == 0 )
-				{
-					// Issue warning, Proxy will ONLY function as expected if
-					// WSDL file contains the service access point
-					string strMsg = "Service did not provide a Base URL (Service Access Point), generated proxy may not function as expected";
-					m_EvtLog.WriteEntry( strMsg, EventLogEntryType.Warning );
-				}
-				// Where to store generated proxy
-				req.proxyPath = m_strPxyCacheDir;
-				// Pass Dynamic request to proxy generator
-				strAssembly = m_pxyGen.GenerateAssembly( req );
-				// If no assembly generated, report error and exit
-				if( strAssembly.Length == 0 )
-				{
-					// Report error generating proxy
-					string strError = "Error generating proxy to WSDL ref: ";
-					strError += strServiceLocation;
-					m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
-					return null;
-				}
-				
-				// Update database location of service, point to
-				// dynamic proxy, change namespace the dynamic proxy namespace
-				ireg.UpdateServiceLocation( strServiceName, strAssembly );
-				ireg.UpdateServiceNamespace( strServiceName, req.dynNamespace );
-				// Set Service name to Fully qualified 
-				// name i.e <Namespace>.<servicename>
-				// necessary for reflection
-				strServiceName = req.dynNamespace + "." + req.serviceName;
-			}
-			else
-			{
-				// Fully qualify service name with namespace
-				// necesary for reflection
-				if( strServiceNamespace.Length > 0 )
-					strServiceName = strServiceNamespace + "." + strServiceName;
-				// Set assembly location
-				strAssembly = strServiceLocation;
-			}
- 						
-			// Use reflection to execute method
-			try
-			{
-				// Load assembly from file
-				Assembly a = Assembly.LoadFrom( strAssembly );
-				// Get the correct type (typename must be fully qualified with namespace)
-				Type tDyn = a.GetType( strServiceName );
-				
-				// Create an instance of the type
-				Object obj = Activator.CreateInstance( tDyn );
-				try
-				{
-					PropertyInfo Url = tDyn.GetProperty( "Url" );
-					// Check whether object has a property
-					// called Url, valid for generated
-					// proxies, if it does check its value
-					// if value is empty fill in proxy access point
-					if( Url != null )
-					{
-						string strUrl = (string) Url.GetValue( obj, null );
-						if( strUrl.Length == 0 )
-							Url.SetValue( obj, strServiceAccessPoint, null );
-					}
-				}
-				catch( System.Exception e )
-				{
-					string strE = e.Message;
-				}
-				
-				// Invoke method
-				objResult = tDyn.InvokeMember( strServiceMethod, 
-											   BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Static,
-											   null,
-											   obj,
-											   parameters ); 
-			}
-			catch( System.Exception e )
-			{
-				string strError = "Error Executing Method: ";
-				strError += strServiceMethod + " of service: ";
-				strError += strServiceName + " errmsg-> ";
-				strError += e.Message;
-				m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
-			}
-
-			// return result
-			return objResult;
-		}// End ExecuteServiceMethod
-		
-		*/
-
 		[SecurityPermission(SecurityAction.Assert, Flags = SecurityPermissionFlag.AllFlags)]
 		public string[] ExecuteAlphaProtocol( string strAlphaProtocol )
 		{
@@ -862,223 +983,6 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			return arrRetVal;
 		}
 		
-		/*[SecurityPermission(SecurityAction.Assert, Flags = SecurityPermissionFlag.AllFlags)]
-		public int ExecuteAlphaProtocol( string strAlphaProtocol )
-		{
-			if( strAlphaProtocol.Length == 0 )
-				return 0;
-
-			try
-			{
-				Queue execQ = new Queue();
-				XmlTextReader xt = new XmlTextReader( strAlphaProtocol, XmlNodeType.Document, null );
-
-				// Execute an alpha protocol from file
-				// XmlTextReader xt = new XmlTextReader( "DemoAlpha.xml" );
-				// Add namespaces expected in alpha protocol so our xpath queries work
-				XmlNamespaceManager mgr = new XmlNamespaceManager( xt.NameTable );
-				mgr.AddNamespace( "xlang", "http://schemas.microsoft.com/bixtalk/xlang" );
-				mgr.AddNamespace( "xs", "http://www.w3.org/2001/XMLSchema" );
-									
-				XmlDocument doc = new XmlDocument();
-				doc.Load( xt );
-					
-				XmlNode root = doc.DocumentElement;
-				XmlNode seq = root.SelectSingleNode( "//xlang:sequence", mgr );
-					
-				// Check whether first child in sequence starts an activation
-				// if not sequence is invalid
-					
-				// Get all children of sequence, these are the actions to be carried out
-				if( seq.HasChildNodes )
-				{
-					XmlNode startNode = seq.FirstChild;
-					XmlAttributeCollection attCol = startNode.Attributes;
-					XmlNode activation = attCol.GetNamedItem( "activation" );
-					if( activation == null || activation.Value.ToLower().CompareTo( "true" ) != 0 )
-						return 0;  //invalid sequence
-						
-					// Create list of actions
-					XmlNodeList lstActions = seq.ChildNodes;
-					// For each action create an execution request
-					// and add to a queue
-					foreach( XmlNode n in lstActions )
-					{
-						XmlAttributeCollection att = n.Attributes;
-						if( att.Count > 0 )
-						{
-							ExecutionRequest e = new ExecutionRequest();
-							XmlNode val = att.GetNamedItem( "gatekeeper" );
-							if( val != null )
-								e.m_strGKName = val.Value;
-							val = att.GetNamedItem( "servicename" );
-							if( val != null )
-								e.m_strServiceName = val.Value;
-							val = att.GetNamedItem( "operation" );
-							if( val != null )
-								e.m_strMethod = val.Value;
-							if( n.HasChildNodes )
-							{
-								XmlNodeList lstParams = n.ChildNodes;
-								foreach( XmlNode p in lstParams )
-								{
-									XmlAttributeCollection paramAtt = p.Attributes;
-									XmlNode type = paramAtt.GetNamedItem( "type" );
-									if( type == null )
-										return 0; //all specified params must have a (simeple xsd) type 
-									string strType = type.Value;
-
-									// Do mapping from (xsd type) xs:xyz to system type
-									if( strType.ToLower().IndexOf( "xs:string" ) != -1 )
-									{
-										Object obj = p.InnerText;
-										e.m_Params.Add( obj );
-									}
-									if( strType.ToLower().IndexOf( "xs:int" ) != -1 )
-									{
-										Object obj = Int32.Parse( p.InnerText );
-										e.m_Params.Add( obj );
-									}
-								}
-							}
-							// Add request to execution queue
-							execQ.Enqueue( e );
-						}
-					}
-
-					// Determine whether requests can be serviced locally
-					// Need to create treaty/treaties with all
-					// GateKeepers that must be contacted
-					// Need to copy execution Q to a list, sort by GKName
-					// & create a consolidated treaty to be passed to
-					// any external GK requesting use of its services
-											
-					// Service each execution request
-					IEnumerator it = execQ.GetEnumerator();
-					InternalRegistry ireg = new InternalRegistry();
-					string strGKLocation = "";
-					string strGKAccessPoint = "";
-					string strGKNamespace = "";
-					string strAssembly = "";
-
-					while( it.MoveNext() )
-					{
-						ExecutionRequest exec = (ExecutionRequest) it.Current;
-						
-						strGKLocation = ireg.GetGateKeeperLocation( exec.m_strGKName );
-						strGKAccessPoint = ireg.GetGateKeeperLocation( exec.m_strGKName );
-						strGKNamespace = ireg.GetGateKeeperNamespace( exec.m_strGKName );
-						
-						if( strGKLocation.Length == 0 )
-							continue;
-
-						if( strGKLocation.ToLower().StartsWith( "http://" ) )
-						{
-							// Create a dynamic request
-							DynamicRequest req = new DynamicRequest();	
-							req.serviceName = exec.m_strGKName;
-							// Set properties of the Dynamic request
-							req.filenameSource = req.serviceName;
-							// Location of wsdl file to use for proxy generation
-							req.wsdlFile = strGKLocation;
-							// Service Access Point
-							req.baseURL = strGKAccessPoint;
-							if( req.baseURL.Length == 0 )
-							{
-								// Issue warning, Proxy will ONLY function as expected if
-								// WSDL file contains the service access point
-								string strMsg = "Service did not provide a Base URL (Service Access Point), generated proxy may not function as expected";
-								m_EvtLog.WriteEntry( strMsg, EventLogEntryType.Warning );
-							}
-							// Where to store generated proxy
-							req.proxyPath = m_strPxyCacheDir;
-							// Pass Dynamic request to proxy generator
-							strAssembly = m_pxyGen.GenerateAssembly( req );
-							// If no assembly generated, report error and exit
-							if( strAssembly.Length == 0 )
-							{
-								// Report error generating proxy
-								string strError = "Error generating proxy to WSDL ref: ";
-								strError += strGKLocation;
-								m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
-								return 0;
-							}
-				
-							// Update database location of service, point to
-							// dynamic proxy, change namespace the dynamic proxy namespace
-							ireg.UpdateGateKeeperLocation( exec.m_strGKName, strAssembly );
-							ireg.UpdateGateKeeperNamespace( exec.m_strGKName, req.dynNamespace );
-							// Set Service name to Fully qualified 
-							// name i.e <Namespace>.<servicename>
-							// necessary for reflection
-							exec.m_strGKName = req.dynNamespace + "." + req.serviceName;
-						}
-						else
-						{
-							if( strGKNamespace.Length > 0 )
-								exec.m_strGKName = strGKNamespace + "." + exec.m_strGKName;
-							strAssembly = strGKLocation;
-						}
-						
-						
-						// Load assembly from file
-						Assembly a = Assembly.LoadFrom( strAssembly );
-						// Get the correct type (typename must be fully qualified with namespace)
-						Type tDyn = a.GetType( exec.m_strGKName );
-				
-						// Create an instance of the type
-						Object obj = a.CreateInstance( exec.m_strGKName );
-						PropertyInfo Url = tDyn.GetProperty( "Url" );
-						// Check whether object has a property
-						// called Url, valid for generated
-						// proxies, if it does check its value
-						// if value is empty fill in proxy access point
-						if( Url != null )
-						{
-							string strUrl = (string) Url.GetValue( obj, null );
-							if( strUrl.Length == 0 )
-								Url.SetValue( obj, strGKAccessPoint, null );
-						}
-						
-						// Trace
-						string strTrace = "Executing method: ";
-						strTrace += exec.m_strMethod;
-						strTrace += " against GK: ";
-						strTrace += exec.m_strGKName;
-						m_EvtLog.WriteEntry( strTrace, EventLogEntryType.Information );
-						
-						Object[] parameters = new Object[4];
-						object objResult = null;
-						parameters[0] = exec.m_nTreatyID;
-						parameters[1] = exec.m_strServiceName;
-						parameters[2] = exec.m_strMethod;
-						if( exec.m_Params.Count > 0 )
-							parameters[3] = exec.m_Params.ToArray();
-						else parameters[3] = null;
-
-						// Invoke method
-						objResult = tDyn.InvokeMember( "ExecuteServiceMethod", 
-							BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Static,
-							null,
-							obj,
-							parameters ); 
-						
-						if( objResult != null )
-						{
-							strTrace = "Exec succeeded - results returned";
-							m_EvtLog.WriteEntry( strTrace, EventLogEntryType.Information );
-						}
-					}
-				}
-			}
-			catch( System.Exception e )
-			{
-				string strError = "Error executing Alpha-protocol : ";
-				strError += e.Message;
-				m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
-				return 0;
-			}
-			return 1;
-		}*/
+		
 	}// End GateKeeper
 }

@@ -8,9 +8,9 @@ namespace PSL.DISCUS.Interfaces
 	public interface IResourceAcquire
 	{
 		// Returns an XML treaty as a response
-		string EnlistServicesByName( string strXMLTreatyReq, string strXMLCredentials );
+		string EnlistServicesByName( string strXMLTreatyReq );
 		// Returns either true or false based on the service requested and the credentials
-		bool RequestServiceByName( string strServiceName, string strXMLCredentials );
+		bool RequestServiceByName( string strServiceName );
 		// Revoke a treaty
 		void RevokeTreaty( int nTreatyID );
 		// Dissolve a treaty

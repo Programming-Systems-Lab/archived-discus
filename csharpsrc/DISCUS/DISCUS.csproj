@@ -137,6 +137,11 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "ExecServiceMethodRequestType.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "GateKeeper.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
