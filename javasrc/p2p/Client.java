@@ -19,17 +19,17 @@ import org.w3c.dom.Element;
 import org.w3c.dom.*;
 import psl.discus.javasrc.security.*;
 import psl.discus.javasrc.shared.FakeDataSource;
+import psl.discus.javasrc.shared.DAOException;
 
 import javax.sql.DataSource;
 import javax.xml.parsers.*;
 import java.io.*;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.*;
 
 /**
  * Initial implementation of the JXTA client for finding p2p UDDI services
  * and sendingto them UDDI requests
- * A lot of this code was borrowed directly fromfrom the JXTA Programmer's Guide,
+ * A lot of this code was borrowed directly from the JXTA Programmer's Guide,
  * http://www.jxta.org/jxtaprogguide_final.pdf
  *
  * @author matias
@@ -61,6 +61,7 @@ public class Client implements PipeMsgListener {
 
     private DocumentBuilder db;
     private SignatureManager signatureManager;
+    private ClientDAO clientDAO;
     private Element inputPipeXMLAd;
     private XMLSerializer xmlSerializer;
 
@@ -105,6 +106,8 @@ public class Client implements PipeMsgListener {
             throw new RuntimeException("Could not initialize SignatureManager: " + e);
         }
 
+        clientDAO = new ClientDAO(ds);
+
         xmlSerializer = new XMLSerializer();
         OutputFormat format = new OutputFormat();
         format.setOmitXMLDeclaration(true);
@@ -112,6 +115,18 @@ public class Client implements PipeMsgListener {
 
         startJxta();
         createInputPipe();
+
+        // load known pipes
+        try {
+            Vector endpoints = clientDAO.getServiceSpaceEndpoints();
+            for (Enumeration e = endpoints.elements(); e.hasMoreElements();) {
+                ServiceSpaceEndpoint endpoint = (ServiceSpaceEndpoint) e.nextElement();
+                knownPipeAds.put(endpoint.getPipeAdvertisement().getID(),endpoint);
+            }
+        }
+        catch (DAOException e) {
+            throw new RuntimeException("Could not initialize Client: " + e);
+        }
     }
 
     private void startJxta() {
@@ -222,9 +237,10 @@ public class Client implements PipeMsgListener {
 
         final int BIND_TIMEOUT = 15000;
 
-        for (Enumeration pipeAds = knownPipeAds.elements(); pipeAds.hasMoreElements();) {
+        for (Enumeration endpoints = knownPipeAds.elements(); endpoints.hasMoreElements();) {
             try {
-                PipeAdvertisement pipeAdv = (PipeAdvertisement) pipeAds.nextElement();
+                ServiceSpaceEndpoint endpoint = (ServiceSpaceEndpoint) endpoints.nextElement();
+                PipeAdvertisement pipeAdv = (PipeAdvertisement) endpoint.getPipeAdvertisement();
 
                 // create the output pipe endpoint to connect
                 // to the server, try 3 times to bind the pipe endpoint to
@@ -468,11 +484,13 @@ public class Client implements PipeMsgListener {
                                 }
                             }
 
-                            // TODO finally, we might want to check if we actually trust this peer enough
+                            // TODO: we might want to check if we actually trust this peer enough
 
                             // ok, if we got here we're all OK
                             logger.info("Adding pipe for service from peer " + peerAdv.getName());
-                            knownPipeAds.put(pipeAd.getID(), pipeAd);
+                            // TODO: use actual service space id
+                            ServiceSpaceEndpoint endpoint = clientDAO.addPipeAdvertisement(-1,pipeAd);
+                            knownPipeAds.put(pipeAd.getID(), endpoint);
 
                         } catch (Exception e) {
                             logger.debug("could not verify advertisement: " + e);
