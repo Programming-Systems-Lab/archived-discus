@@ -8,13 +8,13 @@
 <xlang:behavior>
 	<xlang:body>
 		<xlang:sequence>
-			<xlang:action activation="true" gatekeeper="PSLGateKeeper" servicename="QuoteBinding" operation="getPrice">
-				<parameter type="xs:string">1861005458</parameter>
+			<xlang:action activation="true" gatekeeper="PSLGatekeeper1" servicename="QuoteBinding" operation="getPrice">
+				<parameter><![CDATA[<?xml version="1.0"?><string>1861005458</string>]]></parameter>
 			</xlang:action>
-			<xlang:action gatekeeper="PSLGateKeeper" servicename="GeoCash" operation="GetATMLocations">
-				<parameter type="xs:string">10025</parameter>
+			<xlang:action gatekeeper="PSLGatekeeper1" servicename="GeoCash" operation="GetATMLocations">
+				<parameter><![CDATA[<?xml version="1.0"?><string>10025</string>]]></parameter>
 			</xlang:action>
-			<xlang:action gatekeeper="PSLGateKeeper" servicename="XMethodsQuery" operation="getAllServiceSummaries">
+			<xlang:action gatekeeper="PSLGatekeeper1" servicename="XMethodsQuery" operation="getAllServiceSummaries">
 			</xlang:action>
 		</xlang:sequence>
 	</xlang:body>
