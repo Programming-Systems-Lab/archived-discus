@@ -10,13 +10,10 @@ import javax.naming.Context;
 import psl.discus.javasrc.security.*;
 import psl.discus.javasrc.security.SecurityManager;
 
-import psl.discus.javasrc.security.FakeDataSource;
-import psl.discus.javasrc.security.Util;
+import psl.discus.javasrc.shared.FakeDataSource;
+import psl.discus.javasrc.shared.Util;
 
 import java.rmi.RemoteException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
 
 /**
  * @author Matias Pelenur
@@ -34,10 +31,11 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
         Util.debug("Initializing SecurityManagerService...");
 
         // For testing: [removed]
-        // DataSource ds = new FakeDataSource();
+        // RE-ADDED for Baltimore Demo - we are using a built-in hsqldb
+        DataSource ds = new FakeDataSource();
 
         // get datasource -- it should be defined in the server and web.xml configuration
-        DataSource ds  = null;
+        /*DataSource ds  = null;
 
         try {
             Context initCtx = new InitialContext();
@@ -46,6 +44,7 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
         } catch (NamingException e) {
             throw new RemoteException("Could not find datasource: " + e);
         }
+        */
 
         // create SignatureManager
         try {

@@ -1,4 +1,4 @@
-package psl.discus.javasrc.security;
+package psl.discus.javasrc.shared;
 
 
 /**

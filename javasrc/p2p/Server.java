@@ -29,6 +29,7 @@ import javax.xml.parsers.*;
 import javax.sql.DataSource;
 
 import psl.discus.javasrc.security.*;
+import psl.discus.javasrc.shared.FakeDataSource;
 
 /**
  *

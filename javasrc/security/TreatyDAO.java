@@ -10,6 +10,7 @@ import java.util.Date;
 import javax.sql.DataSource;
 
 import psl.discus.javasrc.schemas.treaty.Treaty;
+import psl.discus.javasrc.shared.*;
 
 /**
  * This class is used to save and retrieve Treaty objects from the database

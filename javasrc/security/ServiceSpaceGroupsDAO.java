@@ -1,5 +1,7 @@
 package psl.discus.javasrc.security;
 
+import psl.discus.javasrc.shared.DAOException;
+
 import java.sql.*;
 import java.util.*;
 

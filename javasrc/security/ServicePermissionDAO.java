@@ -1,5 +1,7 @@
 package psl.discus.javasrc.security;
 
+import psl.discus.javasrc.shared.*;
+
 import java.sql.*;
 import java.util.*;
 
@@ -119,7 +121,7 @@ public class ServicePermissionDAO {
 
         try {
             con = ds.getConnection();
-            String sql = "SELECT methodName, params, numinvokations, methodImplementation FROM " +
+            String sql = "SELECT permissionId, methodName, params, numinvokations, methodImplementation FROM " +
                          "ServicePermissions sp, ServiceSpaceGroups sg " +
                          "WHERE serviceName=? AND sp.groupid=sg.groupid AND sg.servicespaceid=? ";
             stmt = con.prepareStatement(sql);
@@ -213,7 +215,7 @@ public class ServicePermissionDAO {
      * NOTE: this is retrieved from the registered_services table, which is administered
      * by the GateKeeper
      * @return a Vector of Service objects
-     * @throws DAOException
+     * @throws psl.discus.javasrc.shared.DAOException
      */
     public Vector getRegisteredServices() throws DAOException {
 
@@ -251,7 +253,7 @@ public class ServicePermissionDAO {
      * NOTE: this is retrieved from the registered_services table, which is administered
      * by the GateKeeper
      * @return a Vector of Service objects
-     * @throws DAOException
+     * @throws psl.discus.javasrc.shared.DAOException
      */
     public Vector getMethodNames(int serviceId) throws DAOException {
 

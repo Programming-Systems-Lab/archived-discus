@@ -18,6 +18,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.ActionEvent;
 import java.awt.*;
 
+import psl.discus.javasrc.shared.*;
+
 /**
  *
  * @author  Matias

@@ -1,4 +1,6 @@
-package psl.discus.javasrc.security;
+package psl.discus.javasrc.shared;
+
+import psl.discus.javasrc.shared.DAOException;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;

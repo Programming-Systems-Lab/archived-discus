@@ -16,10 +16,12 @@ import javax.naming.*;
 import javax.sql.DataSource;
 import javax.xml.parsers.*;
 import java.io.*;
-import java.security.KeyStore;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.Properties;
+
+import psl.discus.javasrc.shared.FakeDataSource;
+import psl.discus.javasrc.shared.Util;
 
 
 /**
@@ -39,8 +41,15 @@ public class SignatureManagerImpl implements SignatureManager {
     private static KeyStore keyStore;       // the keystore is retrieved from the database
     private static PrivateKey privateKey;
 
+    static {
+        Util.debug("Initializing crypto...");
+        Init.init();
+        Util.debug("Crypto initialized.");
+    }
+
     private DocumentBuilder db;
     private String certAlias;
+    private Signature signSignature;
 
     public SignatureManagerImpl(DataSource ds)
             throws SignatureManagerException {
@@ -66,7 +75,10 @@ public class SignatureManagerImpl implements SignatureManager {
 
         try {
             InputStream in = this.getClass().getClassLoader().getResourceAsStream("SecurityManager.properties");
-            if (in != null) {
+            if (in == null) {
+                throw new SignatureManagerException("SignatureManagerImpl: could not find SecurityManager.properties");
+            }
+            else {
 
                 Properties props = new Properties();
                 props.load(in);
@@ -106,6 +118,15 @@ public class SignatureManagerImpl implements SignatureManager {
             }
         }
         Util.println("done.");
+
+        try {
+            signSignature = Signature.getInstance("SHA1withDSA");
+            signSignature.initSign(privateKey);
+        } catch (Exception e) {
+            throw new SignatureManagerException(e);
+        }
+
+
 
         // we will need a documentbuilder to create XML documents -- instantiate one here
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -188,6 +209,20 @@ public class SignatureManagerImpl implements SignatureManager {
             throw new SignatureManagerException(e);
         }
     }
+
+    /*
+    public byte[] signBytes(byte[] bytesToSign)
+        throws SignatureManagerException {
+
+        try {
+            signSignature.update(bytesToSign);
+            return signSignature.sign();
+        }
+        catch (Exception e)
+        {
+            throw new SignatureManagerException("could not sign bytes: " + e.getMessage());
+        }
+    }*/
 
     /**
      * (For web-service calls)
@@ -281,18 +316,10 @@ public class SignatureManagerImpl implements SignatureManager {
 
     }
 
-    /**
-     * Gets a known certificate. This can be used by the SecurityManager to
-     * vouch for other service spaces by signing their certificates (public keys)
-     * @return the Base64-encoded certificate
-     */
-    public String getCertificate(String cerificateAlias)
-        throws SignatureManagerException {
-
-
-
+    /**     * Gets a known certificate. This can be used by the SecurityManager to     * vouch for other service spaces by signing their certificates (public keys)     * @return the Base64-encoded certificate     */
+    public String getCertificate(String cerificateAlias)        throws SignatureManagerException {
+        throws new SignatureManagerException("not implemented yet");
     }
-
 
     static {
         Init.init();

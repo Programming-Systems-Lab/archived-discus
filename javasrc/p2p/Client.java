@@ -18,6 +18,7 @@ import org.apache.xml.serialize.OutputFormat;
 import org.w3c.dom.Element;
 import org.w3c.dom.*;
 import psl.discus.javasrc.security.*;
+import psl.discus.javasrc.shared.FakeDataSource;
 
 import javax.sql.DataSource;
 import javax.xml.parsers.*;
@@ -64,10 +65,9 @@ public class Client implements PipeMsgListener {
     private XMLSerializer xmlSerializer;
 
     public static void main(String args[]) {
-        Client myapp = new Client(new FakeDataSource());
+
         logger.debug("Starting Client peer ....");
-        myapp.startJxta();
-        myapp.createInputPipe();
+        Client myapp = new Client(new FakeDataSource());
 
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -110,9 +110,11 @@ public class Client implements PipeMsgListener {
         format.setOmitXMLDeclaration(true);
         xmlSerializer.setOutputFormat(format);
 
+        startJxta();
+        createInputPipe();
     }
 
-    public void startJxta() {
+    private void startJxta() {
         try {
             // create, and Start the default jxta NetPeerGroup
             netPeerGroup = PeerGroupFactory.newNetPeerGroup();
@@ -128,7 +130,10 @@ public class Client implements PipeMsgListener {
         pipeService = netPeerGroup.getPipeService();
 
         // Load locally-cached advertisments
-        try {
+        // NOTE: this is commented out because unfortunately JXTA will cache all
+        // received advertisements, even the ones that we want to ignore,
+        // so we need to keep the ones we want to cache separately.
+        /*try {
             Enumeration ads = discoveryService.getLocalAdvertisements(DiscoveryService.ADV,
                     "Name", "JXTASPEC:" + Server.SERVICE_NAME);
             while (ads.hasMoreElements()) {
@@ -139,16 +144,19 @@ public class Client implements PipeMsgListener {
             }
         } catch (IOException e) {
             logger.error("Problem getting local advertisements: " + e);
-        }
+        }*/
 
         ServiceFinder finder = new ServiceFinder();
         finder.start();
 
     }
 
+    /**
+     * Creates the local listener pipe to listen for responses from the other peers.
+     */
     private void createInputPipe() {
 
-        // create the local listener pipe to listen for responses from server
+        // first we try loading an existing pipe advertisement from file
         File advFile = new File(PIPE_ADV_FILE);
 
         if (!advFile.exists()) {
@@ -210,7 +218,7 @@ public class Client implements PipeMsgListener {
 
     }
 
-    private void sendMessageToAll(String message) {
+    private void sendMessageToAll(String queryString) {
 
         final int BIND_TIMEOUT = 15000;
 
@@ -244,7 +252,7 @@ public class Client implements PipeMsgListener {
                 Element main = doc.createElement(Server.DATA_TAG);
 
                 Element query = doc.createElement(Server.QUERY_TAG);
-                query.appendChild(doc.createTextNode("this is the query"));
+                query.appendChild(doc.createTextNode(queryString));
                 main.appendChild(query);
 
                 Node ad = doc.importNode(inputPipeXMLAd, true);

@@ -1,5 +1,7 @@
 package psl.discus.javasrc.security;
 
+import psl.discus.javasrc.shared.*;
+
 import java.sql.*;
 import java.io.*;
 import java.security.KeyStore;
