@@ -20,15 +20,16 @@ namespace PSL.DISCUS.Impl.DataAccess
 		public static string RS_SERVICE_NAME		= "RS_SERVICENAME";
 		public static string RS_SERVICENAMESPACE	= "RS_SERVICENAMESPACE";
 		public static string RS_SERVICE_LOCATION	= "RS_SERVICE_LOCATION";
-		//public static string RS_SERVICE_WSDL		= "RS_SERVICE_WSDL";
 		public static string RS_SERVICE_ACCESSPOINT	= "RS_SERVICE_ACCESSPOINT";
 
 		// Service Methods Table
 		public static string SM_METHODNAME			= "SM_METHODNAME";
 		
 		// Service Spaces Table
-		public static string SS_GATEKEEPER			= "SS_GATEKEEPER";
-		public static string SS_WSDL_FILE			= "SS_WSDL_FILE";
+		public static string SS_GK_NAME				= "SS_GK_NAME";
+		public static string SS_GK_NAMESPACE		= "SS_GK_NAMESPACE";
+		public static string SS_GK_LOCATION			= "SS_GK_LOCATION";
+		public static string SS_GK_ACCESSPOINT		= "SS_GK_ACCESSPOINT";
 
 		// Treaty Data Table
 		public static string TD_TREATY_ID			= "TD_TREATY_ID";

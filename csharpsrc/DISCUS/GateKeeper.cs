@@ -202,7 +202,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			// proxy. Must also change service namespace in dbase
 			string strAssembly = "";
 			
-			if( strServiceLocation.ToLower().StartsWith( "http:" ) )
+			if( strServiceLocation.ToLower().StartsWith( "http://" ) )
 			{
 				// Create a dynamic request
 				DynamicRequest req = new DynamicRequest();	
