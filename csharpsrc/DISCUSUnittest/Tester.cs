@@ -77,6 +77,8 @@ namespace DISCUSUnittest
 		{
 			// GateKeeper instance
 			GateKeeper g = new GateKeeper();
+			//
+			//DynamicPxy.PSLGatekeeper1 g = new DynamicPxy.PSLGatekeeper1();
 			object objRes = null;
 			//InternalRegistry ireg = new InternalRegistry();
 			//ireg.UpdateServiceLocation( "SecurityManagerService", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl" );
@@ -84,11 +86,11 @@ namespace DISCUSUnittest
 
 			ExecServiceMethodRequestType e = new ExecServiceMethodRequestType();
 			// BNQuoteBinding
-			e.TreatyID = -115276743;
+			e.TreatyID = -1820085390;//-115276743;
 			e.ServiceName = "BNQuoteService";
 			e.MethodName = "getPrice";
-			e.m_Parameter.Clear();
-			e.m_Parameter.Add( "<?xml version=\"1.0\"?><string>1861005458</string>" );
+			e.m_ParamValue.Clear();
+			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>1861005458</string>" );
 
 			objRes = g.ExecuteServiceMethod( e.ToXml() );			
 
@@ -101,21 +103,21 @@ namespace DISCUSUnittest
 			// insert into serviceinvokationpermission values(100,'GeoCash','GetATMLocations','Zipcode',100000,'GetATMLocations');
 
 			// XMethodsQuery
-			/*e.ServiceName = "XMethodsQuery";
+			e.ServiceName = "XMethodsQuery";
 			e.MethodName = "getAllServiceSummaries";
-			e.m_Parameter.Clear();
+			e.m_ParamValue.Clear();
 			objRes = g.ExecuteServiceMethod( e.ToXml() );
 			
 			e.MethodName = "getServiceNamesByPublisher";
-			e.m_Parameter.Clear();
-			e.m_Parameter.Add( "<?xml version=\"1.0\"?><string>Interdata</string>" );
+			e.m_ParamValue.Clear();
+			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>Interdata</string>" );
 			objRes = g.ExecuteServiceMethod( e.ToXml() );
 
 			// GeoCash
 			e.ServiceName = "GeoCash";
 			e.MethodName = "GetATMLocations";
-			e.m_Parameter.Clear();
-			e.m_Parameter.Add( "<?xml version=\"1.0\"?><string>10025</string>" );
+			e.m_ParamValue.Clear();
+			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>10025</string>" );
 			objRes = g.ExecuteServiceMethod( e.ToXml() );
 
 			// Google
@@ -141,7 +143,7 @@ namespace DISCUSUnittest
 			{
 				//SetupServiceSpace();
 				//ResetServiceLocations();
-				TestServiceMethods();
+//				TestServiceMethods();
 
 				
 
@@ -151,6 +153,7 @@ namespace DISCUSUnittest
 			
 				//InternalRegistry ireg = new InternalRegistry();
 				//ireg.RegisterServiceMethod( "XMethodsQuery", "getServiceNamesByPublisher" );
+				//ireg.RegisterGateKeeper( "PSLGatekeeper1","", "http://localhost/PSLGatekeeper1/PSLGatekeeper1.asmx?WSDL", "http://localhost/PSLGatekeeper1/PSLGatekeeper1.asmx" );
 				//ireg.UpdateGateKeeperLocation( "PSLGatekeeper1", "http://localhost/PSLGatekeeper1/PSLGatekeeper1.asmx?WSDL" );
 
 				// Exec request with input paramters 
@@ -174,9 +177,12 @@ namespace DISCUSUnittest
 				
 				//string strData = root.InnerText;
 				
-				//string strAlpha = "<?xml version=\"1.0\" encoding=\"utf-8\"?><definitions name=\"DemoAlpha\" targetNamespace=\"http://psl.cs.columbia.edu\" xmlns:xlang=\"http://schemas.microsoft.com/bixtalk/xlang\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><!-- Simple demo using simple xlang constructs --><xlang:behavior><xlang:body><xlang:sequence><xlang:action activation=\"true\" gatekeeper=\"PSLGatekeeper1\" servicename=\"QuoteBinding\" operation=\"getPrice\"><parameter><![CDATA[<?xml version=\"1.0\"?><string>1861005458</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeper1\" servicename=\"GeoCash\" operation=\"GetATMLocations\"><parameter><![CDATA[<?xml version=\"1.0\"?><string>10025</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeper1\" servicename=\"XMethodsQuery\" operation=\"getAllServiceSummaries\"></xlang:action></xlang:sequence></xlang:body></xlang:behavior></definitions>";
-				//GateKeeper g = new GateKeeper();
-				//string [] arrRes = g.ExecuteAlphaProtocol( strAlpha );
+				string strAlpha = "<?xml version=\"1.0\" encoding=\"utf-8\"?><definitions name=\"DemoAlpha\" targetNamespace=\"http://psl.cs.columbia.edu\" xmlns:xlang=\"http://schemas.microsoft.com/bixtalk/xlang\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><!-- Simple demo using simple xlang constructs --><xlang:behavior><xlang:body><xlang:sequence><xlang:action activation=\"true\" gatekeeper=\"PSLGatekeeper1\" servicename=\"BNQuoteService\" operation=\"getPrice\"><parameter name=\"isbn\"><![CDATA[<?xml version=\"1.0\"?><string>1861005458</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeper1\" servicename=\"GeoCash\" operation=\"GetATMLocations\"><parameter name=\"Zipcode\"><![CDATA[<?xml version=\"1.0\"?><string>10025</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeper1\" servicename=\"XMethodsQuery\" operation=\"getAllServiceSummaries\"></xlang:action></xlang:sequence></xlang:body></xlang:behavior></definitions>";
+				GateKeeper g = new GateKeeper();
+				string [] arrRes = g.ExecuteAlphaProtocol( strAlpha );
+
+				//string strTreaty = "<?xml version=\"1.0\"?><Treaty xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://localhost/Discus/Schema/Treaty.xsd\"><ServiceInfo><ServiceMethod><Parameter>&lt;?xml version=\"1.0\"?&gt;&lt;string&gt;1861005458&lt;/string&gt;</Parameter><MethodName>getPrice</MethodName></ServiceMethod><ServiceName>BNQuoteService</ServiceName></ServiceInfo><ServiceInfo><ServiceMethod><Parameter>&lt;?xml version=\"1.0\"?&gt;&lt;string&gt;10025&lt;/string&gt;</Parameter><MethodName>GetATMLocations</MethodName></ServiceMethod><ServiceName>GeoCash</ServiceName></ServiceInfo><ServiceInfo><ServiceMethod><MethodName>getAllServiceSummaries</MethodName></ServiceMethod><ServiceName>XMethodsQuery</ServiceName></ServiceInfo><TreatyID>0</TreatyID><ClientServiceSpace>100</ClientServiceSpace><ProviderServiceSpace>PSLGatekeeper1</ProviderServiceSpace></Treaty>";
+				//g.EnlistServicesByName( strTreaty );
 				
 				/*ProxyGen pGen = new ProxyGen();
 				DynamicRequest req = new DynamicRequest();
