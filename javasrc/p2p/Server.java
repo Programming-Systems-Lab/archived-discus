@@ -15,12 +15,15 @@ import net.jxta.platform.ModuleClassID;
 import net.jxta.protocol.ModuleClassAdvertisement;
 import net.jxta.protocol.ModuleSpecAdvertisement;
 import net.jxta.protocol.PipeAdvertisement;
+import net.jxta.impl.util.Base64;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.xml.security.utils.XMLUtils;
 import org.xml.sax.InputSource;
+import org.apache.xml.serialize.*;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.w3c.dom.Element;
 
 import javax.xml.parsers.*;
 import javax.sql.DataSource;
@@ -41,7 +44,7 @@ import psl.discus.javasrc.security.*;
  * advertisement are published in the NetPeerGroup. Clients can
  * discover the module advertisements and create output pipes to
  * connect to the service. The server application creates an input
- * pipe that waits to receive messages.
+ * pipe and waits to receive messages.
  */
 public class Server implements PipeMsgListener {
 
@@ -60,7 +63,12 @@ public class Server implements PipeMsgListener {
     public static final MimeMediaType xmlMimeMediaType = new MimeMediaType("text/xml");
     private DocumentBuilder db;
     private SignatureManagerImpl signatureManager;
+    private XMLSerializer xmlSerializer;
+
     public static final String PIPE_TAG = "jxta:PipeAdvertisement";
+    public static final String MODULE_SPEC_ID_TAG = "ModuleSpecId";
+    public static final String PIPE_ID_TAG = "PipeId";
+    public static final String PARAM_TAG = "Parm";
 
 
     public static void main(String args[]) {
@@ -86,6 +94,11 @@ public class Server implements PipeMsgListener {
         catch (SignatureManagerException e) {
             throw new RuntimeException("Could not initialize SignatureManager: " + e);
         }
+
+        xmlSerializer = new XMLSerializer();
+        OutputFormat format = new OutputFormat();
+        format.setOmitXMLDeclaration(true);
+        xmlSerializer.setOutputFormat(format);
     }
 
     public void startJxta() {
@@ -235,35 +248,72 @@ public class Server implements PipeMsgListener {
                 // add the pipe advertisement to the ModuleSpecAdvertisement
                 moduleSpecAd.setPipeAdvertisement(pipeAd);
 
-                // TODO: add a signature and/or public key to this advertisement
-                StructuredDocument signatureDoc =
-                        StructuredDocumentFactory.newStructuredDocument(xmlMimeMediaType,"Parm","mysig");
+                // We need to add a signature and/or public key to this advertisement
+                // Since we can't sign the whole advertisement (because then it wouldn't be a normal
+                // JXTA advertisement), we add as a parameter the signed advertisement ID and pipe ID
+                // Additionally, we wrap the IDs in a "data" tag that is signed.
 
-                moduleSpecAd.setParam(signatureDoc);
+                // Change: for now, Base64-encode signed data! The reason for this is that
+                // JXTA changes the indenting/spacing, and the signature is broken when
+                // it gets to the client...
+                {
+                    org.w3c.dom.Document dataDoc = db.newDocument();
+                    Element data = dataDoc.createElement(DATA_TAG);
 
+                    Element msid = dataDoc.createElement(MODULE_SPEC_ID_TAG);
+                    msid.appendChild(dataDoc.createTextNode(moduleSpecAd.getID().toString()));
+                    data.appendChild(msid);
 
-                // display the advertisement as a plain text document.
-                logger.debug("Created service advertisement:");
-                StructuredTextDocument doc = (StructuredTextDocument)
-                        moduleSpecAd.getDocument(new MimeMediaType("text/xml"));
-                StringWriter str_out = new StringWriter();
-                doc.sendToWriter(str_out);
-                logger.debug(str_out.toString());
-                str_out.close();
+                    Element pipeid = dataDoc.createElement(PIPE_ID_TAG);
+                    pipeid.appendChild(dataDoc.createTextNode(pipeAd.getID().toString()));
+                    data.appendChild(pipeid);
 
+                    dataDoc.appendChild(data);
+
+                    dataDoc = signatureManager.signDocument(dataDoc);
+
+                    // debugging
+                    //XMLUtils.outputDOMc14nWithComments(dataDoc,System.out);
+                    xmlSerializer.setOutputByteStream(System.out);
+                    xmlSerializer.serialize(dataDoc);
+
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    //XMLUtils.outputDOMc14nWithComments(dataDoc,out);
+                    xmlSerializer.setOutputByteStream(out);
+                    xmlSerializer.serialize(dataDoc);
+                    out.close();
+
+                    String encoded = Base64.encodeBase64(out.toByteArray());
+
+                    StructuredTextDocument signatureDoc = (StructuredTextDocument)
+                            StructuredDocumentFactory.newStructuredDocument(xmlMimeMediaType, PARAM_TAG, encoded);
+                    moduleSpecAd.setParam(signatureDoc);
+                }
+                // debugging: display the advertisement as a plain text document.
+                {
+                    logger.debug("Created service advertisement:");
+                    StructuredTextDocument doc = (StructuredTextDocument)
+                            moduleSpecAd.getDocument(xmlMimeMediaType);
+                    StringWriter str_out = new StringWriter();
+                    doc.sendToWriter(str_out);
+                    logger.debug(str_out.toString());
+
+                }
                 // Ok the Module advertisement was created, just publish
                 // it in my local cache and into the NetPeerGroup.
                 discoveryService.publish(moduleSpecAd, DiscoveryService.ADV);
 
                 // and save it to file
-                FileOutputStream fout = new FileOutputStream(moduleSpecAdFile);
-                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fout));
-                doc = (StructuredTextDocument)
-                        moduleSpecAd.getDocument(xmlMimeMediaType);
-                doc.sendToWriter(out);
-                out.flush();
-                out.close();
-                logger.debug("saved new module spec advertisment");
+                {
+                    FileOutputStream fout = new FileOutputStream(moduleSpecAdFile);
+                    BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fout));
+                    StructuredTextDocument doc = (StructuredTextDocument)
+                            moduleSpecAd.getDocument(xmlMimeMediaType);
+                    doc.sendToWriter(out);
+                    out.flush();
+                    out.close();
+                    logger.debug("saved new module spec advertisment");
+                }
             } else {
                 // load module class ad from file
                 logger.debug("reading in module spec ad file");

@@ -1,32 +1,29 @@
 package psl.discus.javasrc.p2p;
 
-import java.io.*;
-import java.util.Enumeration;
-import java.util.Hashtable;
-
-import net.jxta.discovery.DiscoveryEvent;
-import net.jxta.discovery.DiscoveryListener;
-import net.jxta.discovery.DiscoveryService;
+import net.jxta.discovery.*;
 import net.jxta.document.*;
-import net.jxta.document.Document;
 import net.jxta.endpoint.Message;
 import net.jxta.endpoint.MessageElement;
 import net.jxta.exception.PeerGroupException;
+import net.jxta.id.IDFactory;
 import net.jxta.peergroup.PeerGroup;
 import net.jxta.peergroup.PeerGroupFactory;
 import net.jxta.pipe.*;
 import net.jxta.protocol.*;
-import net.jxta.id.IDFactory;
-import org.apache.log4j.*;
+import net.jxta.impl.util.Base64;
+import org.apache.log4j.Logger;
 import org.apache.xml.security.utils.XMLUtils;
-import org.w3c.dom.*;
+import org.apache.xml.serialize.XMLSerializer;
+import org.apache.xml.serialize.OutputFormat;
 import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
-
-import javax.xml.parsers.*;
-import javax.sql.DataSource;
-
+import org.w3c.dom.*;
 import psl.discus.javasrc.security.*;
+
+import javax.sql.DataSource;
+import javax.xml.parsers.*;
+import java.io.*;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
 /**
  * Initial implementation of the JXTA client for finding p2p UDDI services
@@ -64,6 +61,7 @@ public class Client implements PipeMsgListener {
     private DocumentBuilder db;
     private SignatureManager signatureManager;
     private Element inputPipeXMLAd;
+    private XMLSerializer xmlSerializer;
 
     public static void main(String args[]) {
         Client myapp = new Client(new FakeDataSource());
@@ -78,8 +76,7 @@ public class Client implements PipeMsgListener {
 
                 if (line.equals(CMD_MESSAGE)) {
                     myapp.sendMessageToAll("hi there");
-                }
-                else if (line.equals(CMD_QUIT)) {
+                } else if (line.equals(CMD_QUIT)) {
                     System.exit(0);
                 }
 
@@ -104,10 +101,14 @@ public class Client implements PipeMsgListener {
 
         try {
             signatureManager = new SignatureManagerImpl(ds);
-        }
-        catch (SignatureManagerException e) {
+        } catch (SignatureManagerException e) {
             throw new RuntimeException("Could not initialize SignatureManager: " + e);
         }
+
+        xmlSerializer = new XMLSerializer();
+        OutputFormat format = new OutputFormat();
+        format.setOmitXMLDeclaration(true);
+        xmlSerializer.setOutputFormat(format);
 
     }
 
@@ -129,7 +130,7 @@ public class Client implements PipeMsgListener {
         // Load locally-cached advertisments
         try {
             Enumeration ads = discoveryService.getLocalAdvertisements(DiscoveryService.ADV,
-                                                                      "Name", "JXTASPEC:" + Server.SERVICE_NAME);
+                    "Name", "JXTASPEC:" + Server.SERVICE_NAME);
             while (ads.hasMoreElements()) {
                 ModuleSpecAdvertisement msAdv = (ModuleSpecAdvertisement) ads.nextElement();
                 PipeAdvertisement pipeAdv = msAdv.getPipeAdvertisement();
@@ -186,16 +187,15 @@ public class Client implements PipeMsgListener {
         }
 
         try {
-            pipeService.createInputPipe(inputPipeAdv,this);
-        }
-        catch (IOException e) {
+            pipeService.createInputPipe(inputPipeAdv, this);
+        } catch (IOException e) {
             logger.error("could not create input pipe!: " + e);
         }
 
         // create XML representation for sending
         org.w3c.dom.Document doc = db.newDocument();
         inputPipeXMLAd = doc.createElement(Server.PIPE_TAG);
-        inputPipeXMLAd.setAttribute("xmlns:jxta","http://jxta.org");
+        inputPipeXMLAd.setAttribute("xmlns:jxta", "http://jxta.org");
         Element id = doc.createElement("Id");
         id.appendChild(doc.createTextNode(inputPipeAdv.getID().toString()));
         inputPipeXMLAd.appendChild(id);
@@ -240,24 +240,6 @@ public class Client implements PipeMsgListener {
                 // create the pipe message
                 Message msg = pipeService.createMessage();
 
-                //msg.setString(Server.DATA_TAG, message);
-                //StringBuffer xml = new StringBuffer(); //.append("<?xml version=\"1.0\" ?>");
-
-                /*net.jxta.document.Document pipeDoc = inputPipeAdv.getDocument(xmlMimeMediaType);
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                pipeDoc.sendToStream(out);
-                xml.append(out.toString());
-
-                StringReader reader = new StringReader(xml.toString());
-                org.w3c.dom.Document pipeXMLDoc = db.parse(new InputSource(reader));
-                XMLUtils.outputDOM(pipeXMLDoc, System.out);
-
-                org.w3c.dom.Document doc = db.newDocument();
-                org.w3c.dom.Element main = doc.createElement("main");
-                Node newNode = doc.importNode(pipeXMLDoc.getFirstChild(), true);
-                main.appendChild(newNode);
-                doc.appendChild(main);
-                */
                 org.w3c.dom.Document doc = db.newDocument();
                 Element main = doc.createElement(Server.DATA_TAG);
 
@@ -270,16 +252,12 @@ public class Client implements PipeMsgListener {
 
                 doc.appendChild(main);
 
-                //XMLUtils.outputDOM(doc, System.out);
-                //System.out.flush();
-
-                //logger.debug("signing...");
                 doc = signatureManager.signDocument(doc);
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 XMLUtils.outputDOM(doc, out);
                 //MessageElement element = msg.newMessageElement(Server.INPUT_PIPE_TAG,xmlMimeMediaType,pipeDoc.getStream());
-                MessageElement element = msg.newMessageElement(Server.DATA_TAG,xmlMimeMediaType,out.toByteArray());
+                MessageElement element = msg.newMessageElement(Server.DATA_TAG, xmlMimeMediaType, out.toByteArray());
                 msg.addElement(element);
 
                 // send the message to the service pipe
@@ -326,7 +304,7 @@ public class Client implements PipeMsgListener {
                 logger.debug("sending discovery request");
 
                 discoveryService.getRemoteAdvertisements(null, DiscoveryService.ADV,
-                                                         "Name", "JXTASPEC:" + Server.SERVICE_NAME, 1, this);
+                        "Name", "JXTASPEC:" + Server.SERVICE_NAME, 1, this);
                 try {
                     sleep(SLEEP_TIME);
                 } catch (InterruptedException e) {
@@ -342,22 +320,22 @@ public class Client implements PipeMsgListener {
          */
         public void discoveryEvent(DiscoveryEvent ev) {
             DiscoveryResponseMsg res = ev.getResponse();
-            logger.debug("got a discovery event");
+            //logger.debug("got a discovery event");
 
-            String peerAdvString = res.getPeerAdv();
+            PeerAdvertisement peerAdv = null;
             try {
                 // instantiate the peer advertisement
-                InputStream is = new ByteArrayInputStream((peerAdvString).getBytes());
-                PeerAdvertisement peerAdv = (PeerAdvertisement)
+                InputStream is = new ByteArrayInputStream((res.getPeerAdv()).getBytes());
+                peerAdv = (PeerAdvertisement)
                         AdvertisementFactory.newAdvertisement(xmlMimeMediaType, is);
 
                 if (!peerAdv.getName().startsWith("discus")) {
                     return;     // ignore non-discus peers
                 }
 
-                logger.debug(" [ Got a Discovery Response [" + res.getResponseCount() +
+                logger.debug("Got a Discovery Response [" + res.getResponseCount() +
                         " elements] from peer : " + peerAdv.getName() + " ]");
-            } catch (java.io.IOException e) {
+            } catch (IOException e) {
                 // bogus peer, skip this message all together.
                 logger.error("error parsing remote peer's advertisement");
                 return;
@@ -372,42 +350,131 @@ public class Client implements PipeMsgListener {
                     ModuleSpecAdvertisement moduleSpecAd = (ModuleSpecAdvertisement)
                             AdvertisementFactory.newAdvertisement
                             (xmlMimeMediaType, new ByteArrayInputStream(str.getBytes()));
-                    logger.debug(" got module spec id = " + moduleSpecAd.getID());
+                    logger.debug("got module spec id = " + moduleSpecAd.getID());
 
-                    // for debug: print the advertisement as a plain text document
-                    StructuredTextDocument doc = (StructuredTextDocument)
-                            moduleSpecAd.getDocument(new MimeMediaType("text/xml"));
+                    // for debugging: print the advertisement as a plain text document
+                    /*{
+                        StructuredTextDocument doc = (StructuredTextDocument)
+                                moduleSpecAd.getDocument(xmlMimeMediaType);
 
-                    StringWriter out = new StringWriter();
-                    doc.sendToWriter(out);
-                    logger.debug(out.toString());
-                    out.close();
-
-                    // Get the signature document
-                    StructuredDocument signatureDoc = moduleSpecAd.getParam();
-                    if (signatureDoc != null) {
-                        logger.debug("signature:");
-                        signatureDoc.sendToStream(System.out);
-                    }
+                        StringWriter out = new StringWriter();
+                        doc.sendToWriter(out);
+                        logger.debug(out.toString());
+                        out.close();
+                    }*/
 
                     // Get the pipe advertisement -- what we use to talk to the service
-                    PipeAdvertisement pipeadv = moduleSpecAd.getPipeAdvertisement();
-                    if (pipeadv == null) {
+                    PipeAdvertisement pipeAd = moduleSpecAd.getPipeAdvertisement();
+                    if (pipeAd == null) {
                         logger.debug("Error -- Null pipe advertisement!");
                         continue;
                     }
 
-                    if (knownPipeAds.get(pipeadv.getID()) != null) {
-                        logger.debug("pipe ad already known, ignoring.");
+                    if (knownPipeAds.get(pipeAd.getID()) != null) {
+                        logger.debug("pipe ad already known.");
                         continue;
                     } else {
-                        // add this pipe to our known pipes
-                        knownPipeAds.put(pipeadv.getID(),pipeadv);
+                        // we'll add this pipe to our known pipes -- but first, verify it!
+
+                        // Get the signature document
+                        StructuredDocument paramDoc = moduleSpecAd.getParam();
+                        if (paramDoc == null) {
+                            logger.debug("advertisement was not signed, ignoring.");
+                            continue;
+                        }
+
+                        // extract the signed data
+/*
+                        Enumeration children = paramDoc.getChildren();
+                        if (!children.hasMoreElements()) {
+                            logger.debug("param did not have signed data");
+                            continue;
+                        }
+
+                        TextElement dataDoc = (TextElement) children.nextElement();
+                        logger.debug("signed data:");
+                        String data = dataDoc.getTextValue();
+
+*/
+                        try {
+
+                            // base64-decode the signed data first
+                            String paramValue = (String)paramDoc.getValue();
+                            byte[] decoded = Base64.decodeBase64(paramValue);
+
+                            org.w3c.dom.Document doc = db.parse(new ByteArrayInputStream(decoded));
+                            //NodeList l = doc.getElementsByTagName(Server.DATA_TAG);
+
+                            //Node data = l.item(0);
+                            /*
+                            org.w3c.dom.Document dataDoc = db.newDocument();
+                            Node newData = dataDoc.importNode(data,true);
+                            dataDoc.appendChild(newData);
+                            */
+
+                            /*ByteArrayOutputStream out = new ByteArrayOutputStream();
+                            XMLUtils.outputDOM(data,out);
+
+                            org.w3c.dom.Document dataDoc = db.parse(new ByteArrayInputStream(out.toByteArray()));
+                            */
+
+                            // for debugging
+                            //XMLUtils.outputDOM(doc,System.out);
+
+                            /*
+                            SignatureManagerResponse response = signatureManager.verifyDocument(doc);
+
+                            // document was verified (otherwise an exception would have been thrown)
+                            // now check that the ID's match
+                            doc = response.document;
+                            */
+                            logger.warn("not verifying the module advertisement");
+
+                            {
+                                NodeList list = doc.getElementsByTagName(Server.MODULE_SPEC_ID_TAG);
+                                if (list == null || list.getLength() == 0) {
+                                    logger.debug("msId not found in signed data");
+                                    continue;
+                                } else {
+                                    Node node = list.item(0);
+                                    String givenId = ((Text) node.getFirstChild()).getData();
+                                    if (!givenId.equals(moduleSpecAd.getID().toString())) {
+                                        logger.debug("msid's didn't match!");
+                                        continue;
+                                    }
+                                }
+                            }
+
+                            {
+                                NodeList list = doc.getElementsByTagName(Server.PIPE_ID_TAG);
+                                if (list == null || list.getLength() == 0) {
+                                    logger.debug("pipeId not found in signed data");
+                                    continue;
+                                } else {
+                                    Node node = list.item(0);
+                                    String givenId = ((Text) node.getFirstChild()).getData();
+                                    if (!givenId.equals(pipeAd.getID().toString())) {
+                                        logger.debug("pipeId's didn't match!");
+                                        continue;
+                                    }
+                                }
+                            }
+
+                            // TODO finally, we might want to check if we actually trust this peer enough
+
+                            // ok, if we got here we're all OK
+                            logger.info("Adding pipe for service from peer " + peerAdv.getName());
+                            knownPipeAds.put(pipeAd.getID(), pipeAd);
+
+                        } catch (Exception e) {
+                            logger.debug("could not verify advertisement: " + e);
+                            continue;
+                        }
+
                     }
 
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    logger.debug("Client: Error sending message to the service");
+                } catch (Exception e) {
+                    logger.debug("problem getting module ad: " + e);
                 }
             }
         }
