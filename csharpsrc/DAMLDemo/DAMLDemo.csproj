@@ -92,6 +92,11 @@
                     AssemblyName = "System.Web.Services"
                     HintPath = "..\..\..\..\..\WINDOWS\Microsoft.NET\Framework\v1.0.3705\System.Web.Services.dll"
                 />
+                <Reference
+                    Name = "DAML"
+                    AssemblyName = "DAML"
+                    HintPath = "..\..\bin\DAML.dll"
+                />
             </References>
         </Build>
         <Files>
@@ -106,31 +111,6 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "DAMLConstants.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DAMLContainer.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DAMLProcess.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DAMLProcessModel.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "DAMLServiceProfile.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "frmMain.cs"
                     SubType = "Form"
                     BuildAction = "Compile"
@@ -141,23 +121,8 @@
                     BuildAction = "EmbeddedResource"
                 />
                 <File
-                    RelPath = "IIOPEXPathExprBuilder.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "IOPEXPathExprBuilderFactory.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "WeatherRetriever.cs"
                     SubType = "code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "XPathExprBuilders.cs"
-                    SubType = "Code"
                     BuildAction = "Compile"
                 />
             </Include>

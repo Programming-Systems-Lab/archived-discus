@@ -1,7 +1,7 @@
 <VisualStudioProject>
     <CSHARP>
         <Build>
-            <Settings ReferencePath = "" >
+            <Settings ReferencePath = "C:\pslroot\psl\discus\bin\" >
                 <Config
                     Name = "Debug"
                     EnableASPDebugging = "false"

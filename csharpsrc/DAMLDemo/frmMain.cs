@@ -5,7 +5,7 @@ using System.ComponentModel;
 using System.Windows.Forms;
 using System.Data;
 using System.IO;
-using PSL.DISCUS.DAML;
+using PSL.DAML;
 
 using System.Xml.Serialization;
 using System.Reflection;
