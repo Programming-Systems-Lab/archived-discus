@@ -117,6 +117,7 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame implements ClientEventL
         sendQueryButton = new javax.swing.JButton();
 
         textPane = new JTextPane();
+        textPane.setEditable(false);
         // initialize text pane with styles
         Style def = StyleContext.getDefaultStyleContext().
                                         getStyle(StyleContext.DEFAULT_STYLE);
@@ -136,11 +137,6 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame implements ClientEventL
             StyleConstants.setItalic(s, true);
             StyleConstants.setForeground(s, Color.red);
         }
-
-
-
-
-
 
 
         setTitle("UddiP2PTester");

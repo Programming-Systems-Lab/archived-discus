@@ -95,6 +95,7 @@ public class Client implements PipeMsgListener, Tags {
 
         if (client == null) {
             // instantiate a new client
+            logger.debug("Instantiating new Client");
             client = new Client(ds);
         }
         else if (client.ds != ds) {
@@ -186,7 +187,7 @@ public class Client implements PipeMsgListener, Tags {
         pipeService = netPeerGroup.getPipeService();
 
         // Load locally-cached advertisments
-        // NOTE: this is commented out because unfortunately JXTA will cache all
+        // NOTE: this is commented out because unfortdunately JXTA will cache all
         // received advertisements, even the ones that we want to ignore,
         // so we need to keep the ones we want to cache separately (in the database)
         /*try {
