@@ -10,7 +10,8 @@
     <property name="db" value="db"/>
     <property name="keys" value="keys"/>
 
-	<property name="juddi.dir" value="." />
+	<!-- this directory is relative to the jxta "run" directory -->
+	<property name="juddi.dir" value="../src/psl/discus/packaged" />
 
     <property name="jar-file" value="discus-security.jar"/>
     <property name="gui-jar-file" value="discus-gui.jar"/>
