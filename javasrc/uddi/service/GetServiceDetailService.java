@@ -28,6 +28,10 @@ import psl.discus.javasrc.shared.DiscusProperties;
 
 
 /**
+ * MODIFIED by matias
+ * The get_serviceDetail method always returns a fixed ServiceDetail object that has
+ * the access point for the gatekeeper.
+ *
  * @author  Steve Viens
  * @version 0.6
  */

@@ -28,6 +28,11 @@ import psl.discus.javasrc.security.ServicePermission;
 import psl.discus.javasrc.shared.DAOException;
 
 /**
+ * MODIFIED by matias
+ * The find_service method looks up the requested method on the security matrix for the
+ * calling service space, and either returns a fixed key if the service is allowed
+ * or nothing otherwise.
+ *
  * @author  Steve Viens
  * @version 0.6
  */

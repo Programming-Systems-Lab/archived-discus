@@ -33,11 +33,9 @@ import javax.sql.DataSource;
 import psl.discus.javasrc.security.*;
 
 /**
- * TODO:
- *  -check if there is more than one child in soap:SOAPBody
- *  -check for null service and null response
- *
- * *********************** MODIFIED by matias *************************
+ * MODIFED by matias
+ * Added a new invoke method that takes a ServiceSpace object, which gets put in the
+ * UDDIService that is called so that security checks can be performed.
  *
  * @author  Alex Ceponkus
  * @author  Steve Viens
