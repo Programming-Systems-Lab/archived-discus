@@ -31,7 +31,7 @@ namespace PSL.AsyncCore
 		/// Condition variable used to reference client provided
 		/// conditon variable
 		/// </summary>
-		private AutoResetEvent m_condition = null;
+		private AutoResetEvent m_condition = new AutoResetEvent( false );
 		
 		/// <summary>
 		/// Queue of TaskReqests
@@ -59,11 +59,8 @@ namespace PSL.AsyncCore
 		/// <param name="condition">Reference to a conditon variable
 		/// the TaskProxy will signal on when all TaskRequests queued
 		/// are ready.</param>
-		public TaskProxy( ref AutoResetEvent condition )
+		public TaskProxy()
 		{
-			// Set condition to non-signaled
-			condition.Reset();
-			m_condition = condition;
 		}
 
 		/// <summary>
@@ -75,18 +72,13 @@ namespace PSL.AsyncCore
 			get
 			{ return m_nTasksPending; }
 		}
-		
-		// Do we really want to do this? - Support multiple callers on a 
-		// single proxy - if so we may want to add an event to notify clients
-		// when a proxy is being reset so that it passes what data it has
-		// in the reset event
-		//public AutoResetEvent Condition
-		//{
-		//	get
-		//	{ return m_condition; }
-		//}
-		
 
+		public enuTaskProxyStatus Status
+		{
+			get
+			{ return m_status; }
+		}
+		
 		public void WaitOnProxySignal()
 		{
 			if( m_nTasksPending == 0 )

@@ -110,17 +110,25 @@ namespace PSL.AsyncCore
 		/// <param name="tceArg">TPTask completion event arguement</param>
 		private static void OnTPTaskComplete( TPTaskCompleteEventArgs tceArg )
 		{
-			lock( ClientNotification.SyncRoot )
+			try
 			{
-				if( ClientNotification.ContainsKey( tceArg.TaskID ) )
+				lock( ClientNotification.SyncRoot )
 				{
-					TaskRequest.NotificationCallback objNotify = (TaskRequest.NotificationCallback) ClientNotification[tceArg.TaskID];
-					// Notifiy specific client
-					objNotify( tceArg );
-					// Remove subscription
-					ClientNotification.Remove( tceArg.TaskID );
+					if( ClientNotification.ContainsKey( tceArg.TaskID ) )
+					{
+						TaskRequest.NotificationCallback objNotify = (TaskRequest.NotificationCallback) ClientNotification[tceArg.TaskID];
+						if( objNotify != null )
+						{
+							// Notifiy specific client
+							objNotify( tceArg );
+							// Remove subscription
+							ClientNotification.Remove( tceArg.TaskID );
+						}
+					}
 				}
 			}
+			catch( Exception /*e*/ )
+			{}
 		}
 		
 		/// <summary>
@@ -145,24 +153,29 @@ namespace PSL.AsyncCore
 
 			Guid taskID = Guid.Empty;
 
-			lock( TPTask.requestQ.SyncRoot )
+			try
 			{
-				// Generate Guid - task id if none exists
-				if( req.TaskID == Guid.Empty )
-					req.TaskID = Guid.NewGuid();
-				
-				taskID = req.TaskID;
+				lock( TPTask.requestQ.SyncRoot )
+				{
+					// Generate Guid - task id if none exists
+					if( req.TaskID == Guid.Empty )
+						req.TaskID = Guid.NewGuid();
+					
+					taskID = req.TaskID;
 
-				// Add request item to TPTask requestQ
-				TPTask.requestQ.Enqueue( req );
-			}// End-lock on TPTask.requestQ
+					// Add request item to TPTask requestQ
+					TPTask.requestQ.Enqueue( req );
+				}// End-lock on TPTask.requestQ
 
-			// Tag taskID to notification callback
-			lock( ClientNotification.SyncRoot )
-			{
-				if( taskID != Guid.Empty )
-					ClientNotification.Add( taskID, req.NotifyCb );
-			}// End-lock on ClientNotification
+				// Tag taskID to notification callback
+				lock( ClientNotification.SyncRoot )
+				{
+					if( taskID != Guid.Empty && req.NotifyCb != null )
+						ClientNotification.Add( taskID, req.NotifyCb );
+				}// End-lock on ClientNotification
+			}
+			catch( Exception /*e*/ )
+			{}
 
 			// Return taskID to client
 			return taskID;	
@@ -178,38 +191,43 @@ namespace PSL.AsyncCore
 			if( TPTask.Tasks != 0 )
 				return;
 
-			lock( lstTasks.SyncRoot )
+			try
 			{
-				// If shutting down then exit
-				if( bShuttingDown )
-					return;
-		
-				// If already initialized then exit
-				if( bInitialized )
-					return;
-				
-				// Hook up event handlers and flag initialized
-				if( !bInitialized )
+				lock( lstTasks.SyncRoot )
 				{
-					TPTask.TPTaskComplete += new TPTask.TPTaskCompleteHandler( OnTPTaskComplete );
-					bInitialized = true;
-				}
+					// If shutting down then exit
+					if( bShuttingDown )
+						return;
+			
+					// If already initialized then exit
+					if( bInitialized )
+						return;
+					
+					// Hook up event handlers and flag initialized
+					if( !bInitialized )
+					{
+						TPTask.TPTaskComplete += new TPTask.TPTaskCompleteHandler( OnTPTaskComplete );
+						bInitialized = true;
+					}
 
-				for( int i = 0; i < MIN_ACTIVE_TASKS; i++ )
-				{
-					TPTaskInit init = new TPTaskInit();
-					// Create new TPTask
-					init.Task = new TPTask( ref condition );
-					// Keep thread in ThreadPool
-					init.Task.RecycleTask = true;
-					// Create worker thread
-					init.Worker = new Thread( new ThreadStart( init.Task.Service ) );
-					// Start worker 
-					init.Worker.Start();
-					// Add this task to our list of tasks
-					lstTasks.Add( init );
-				}
-			}//End-Lock on lstTasks
+					for( int i = 0; i < MIN_ACTIVE_TASKS; i++ )
+					{
+						TPTaskInit init = new TPTaskInit();
+						// Create new TPTask
+						init.Task = new TPTask( ref condition );
+						// Keep thread in ThreadPool
+						init.Task.RecycleTask = true;
+						// Create worker thread
+						init.Worker = new Thread( new ThreadStart( init.Task.Service ) );
+						// Start worker 
+						init.Worker.Start();
+						// Add this task to our list of tasks
+						lstTasks.Add( init );
+					}
+				}//End-Lock on lstTasks
+			}//End-try
+			catch( Exception /*e*/ )
+			{}
 		}
 
 		/// <summary>

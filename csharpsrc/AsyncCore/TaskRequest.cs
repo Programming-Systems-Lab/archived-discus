@@ -101,7 +101,7 @@ namespace PSL.AsyncCore
 		public bool IsValid
 		{
 			get
-			{ return m_objTaskCb != null && m_objNotifyCb != null; } 
+			{ return m_objTaskCb != null; } 
 		}
 		
 		/// <summary>
