@@ -32,64 +32,68 @@ namespace DISCUSUnittest
 				RegServiceDAO s = new RegServiceDAO();
 				bool bStatus = false;
 				int nServiceID = -1;
-				/* nServiceID = s.RegisterService( "ServiceMap", "ServiceMappings", "C:\\Inetpub\\wwwroot\\ServiceMappings\\bin\\ServiceMappings.dll", "" );
-				if( nServiceID != -1 )
-				{
-					bStatus = s.RegisterServiceMethod( "ServiceMap", "GetServiceInfo" );
-					bStatus = s.RegisterServiceMethod( "ServiceMap", "GetNumServiceParams" );
-					bStatus = s.RegisterServiceMethod( "ServiceMap", "RateService" );
-				}
 			
-				// If Service location changed to WSDL ref then Service Access Point SHOULD be updated (in case BASE URL not included in WSDL)
-				bStatus = s.UpdateServiceLocation( "ServiceMap", "http://localhost/ServiceMappings/ServiceMap.asmx?WSDL" );
-				bStatus = s.UpdateServiceAccessPoint( "ServiceMap", "http://localhost/ServiceMappings/ServiceMap.asmx" );
-				
-				GateKeeper g = new GateKeeper();
-				Object [] objParams = new Object[1];
-				objParams[0] = "service";
-				string strResults = (string) g.ExecuteServiceMethod( 4, "ServiceMap", "GetServiceInfo", objParams );
-			
-				/*DynamicRequest req = new DynamicRequest();
-				req.dynNamespace = "dynProxy";
-				req.serviceName = "ServiceMap";
-				req.proxyPath = "C:";
-				req.wsdlFile = "http://localhost/ServiceMappings/ServiceMap.asmx?wsdl";
-				req.filenameSource = "ServiceMap";
-				ProxyGen pxyGen = new ProxyGen();
-				string strLoc = pxyGen.GenerateAssembly( req );
-				
-				object objResult = null;
-				object [] parameters = new Object[1];
-				parameters[0] = "1861005458";
-				Assembly a = Assembly.LoadFrom( strLoc );
-				Type tDyn = a.GetType( req.dynNamespace + "." + req.serviceName );
-				// Create an instance of the type
-				Object obj = Activator.CreateInstance( tDyn );
-				// Invoke method
-				objResult = tDyn.InvokeMember( "getPrice", 
-					BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Static,
-					null,
-					obj,
-					parameters ); 
-				*/			
-				
-				/*QuoteBinding b = new QuoteBinding();
-				b.Url = "http://services.xmethods.net:80/soap/servlet/rpcrouter";
-				float fltPrice = b.getPrice( "1861005458" );*/
-
 				// Register BookQuotes service
 				nServiceID = s.RegisterService( "QuoteBinding", "","http://www.xmethods.net/tmodels/BookQuote.wsdl","http://services.xmethods.net:80/soap/servlet/rpcrouter" ); 
 				if( nServiceID != -1 )
 					bStatus = s.RegisterServiceMethod( "QuoteBinding", "getPrice" );
 
+				nServiceID =  s.RegisterService( "GeoCash", "", "http://64.78.60.122/GeoCash.asmx?WSDL", "http://64.78.60.122/GeoCash.asmx" );
+				if( nServiceID != -1 )
+					bStatus = s.RegisterServiceMethod( "GeoCash", "GetATMLocations" );
+							
+				nServiceID = s.RegisterService( "XMethodsQuery", "", "http://www.xmethods.net/wsdl/query.wsdl","http://www.xmethods.net/interfaces/query" );
+				if( nServiceID != -1 )
+					bStatus = s.RegisterServiceMethod( "XMethodsQuery","getAllServiceSummaries" );
+				
 				GateKeeper g = new GateKeeper();
 				Object [] objParams = new Object[1];
 				objParams[0] = "1861005458";
 				float fltPrice = (float) g.ExecuteServiceMethod( 4, "QuoteBinding", "getPrice", objParams );
-			
+				  
+				Console.Write( "ISBN: " );
+				Console.Write( (string) objParams[0] );
+				Console.Write( " Price = " );
+				Console.WriteLine( fltPrice );
+				Console.Write( "\n" );
 
-				int x = 0;
-				x++;
+				objParams[0] = "10025";
+				string strLocations = (string) g.ExecuteServiceMethod( 4, "GeoCash", "GetATMLocations", objParams );
+				Console.Write( "ATM Locations: " );
+				Console.WriteLine( strLocations );
+				Console.Write( "\n" );
+
+				object res = g.ExecuteServiceMethod( 4, "XMethodsQuery", "getAllServiceSummaries", null );
+				System.Array arrRes = (System.Array) res;
+
+				for( int i = 0; i < arrRes.Length; i++ )
+				{
+					Type t = arrRes.GetValue(i).GetType();
+					
+					FieldInfo fName = t.GetField( "name" );
+					FieldInfo fid = t.GetField( "id" );
+					FieldInfo fDesc = t.GetField( "shortDescription" );
+					FieldInfo fWSDL = t.GetField( "wsdlURL" );
+					FieldInfo fPub = t.GetField( "publisherID" );
+
+					Console.WriteLine( "Service name: " + (string) fName.GetValue( arrRes.GetValue(i) ) );
+					Console.WriteLine( "Service ID: " + (string) fid.GetValue( arrRes.GetValue(i) ) );
+					Console.WriteLine( "Desc: " + (string) fDesc.GetValue( arrRes.GetValue(i) ) );
+					Console.WriteLine( "WSDL: " + (string) fWSDL.GetValue( arrRes.GetValue(i) ) );
+					Console.WriteLine( "PubID: " + (string) fPub.GetValue( arrRes.GetValue(i) ) );
+					Console.Write( "\n" );
+				}
+				
+				/*
+				 * Currently using services implemented/hosted on Apache, GLUE and .NET
+				 * need to add services implemented using Delphi and hosted on WASP/Tomcat
+				 * Need to add added reflection code.
+				 * 
+				 * 1) Facilitate extreme use of reflection on returned types
+				 * 2) Create web service wrapper for gatekeeper
+				 * 3) Integrate the security manager implementation with the gatekeeper
+				 * 
+				 * */
 			}
 			catch( System.Exception e )
 			{

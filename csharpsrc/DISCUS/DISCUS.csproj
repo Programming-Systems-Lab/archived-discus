@@ -167,19 +167,9 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "SampleTreaty.xml"
-                    Link = "..\..\..\..\Inetpub\wwwroot\Discus\Schema\SampleTreaty.xml"
-                    BuildAction = "Content"
-                />
-                <File
                     RelPath = "ServiceSpaceDAO.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "Treaty.xsd"
-                    Link = "..\..\..\..\Inetpub\wwwroot\Discus\Schema\Treaty.xsd"
-                    BuildAction = "Content"
                 />
                 <File
                     RelPath = "TreatyType.cs"
