@@ -63,8 +63,9 @@ namespace PSL.AsyncCore
 		/// <summary>
 		/// Condition variable used to synchronize TPTasks running in the TaskPool
 		/// </summary>
-		private AutoResetEvent m_condition = null;
-
+		private AutoResetSignalObject m_leaderSignal = null;
+		private ManualResetSignalObject m_workSignal = null;
+				
 		/// <summary>
 		/// After a thread becomes the leader, if there are no
 		/// pending requests the leader will exit the TaskPool
@@ -82,6 +83,7 @@ namespace PSL.AsyncCore
 		/// </summary>
 		private static bool bLeaderAvailable = false;
 
+		
 		/// <summary>
 		/// Returns the number of TPTask threads running in this process.
 		/// </summary>
@@ -91,7 +93,7 @@ namespace PSL.AsyncCore
 		/// Queue used to hold TaskRequests to service
 		/// <seealso cref="TaskRequest"/>
 		/// </summary>
-		internal static Queue requestQ = new Queue();
+		private static Queue requestQ = new Queue();
 		
 		/// <summary>
 		/// Ctor
@@ -99,9 +101,10 @@ namespace PSL.AsyncCore
 		/// </summary>
 		/// <param name="condition">Condition variable shared by all TPTasks in
 		/// a TaskPool</param>
-		public TPTask( ref AutoResetEvent condition )
+		internal TPTask( ref AutoResetSignalObject leaderSignal, ref ManualResetSignalObject workSignal )
 		{
-			m_condition = condition;
+			m_leaderSignal = leaderSignal;
+			m_workSignal = workSignal;
 		}
 
 		/// <summary>
@@ -148,6 +151,15 @@ namespace PSL.AsyncCore
 			get
 			{ return nNumTasks; }
 		}
+
+		public static void QueueTaskRequest( TaskRequest req )
+		{
+			lock( TPTask.requestQ.SyncRoot )
+			{
+				// Add request item to TPTask requestQ
+				TPTask.requestQ.Enqueue( req );
+			}
+		}
 		
 		/// <summary>
 		/// Procedure enforces the leader-followers behavior of TPTask threads
@@ -161,35 +173,53 @@ namespace PSL.AsyncCore
 			while( true )
 			{
 				// Begin critical section
-				Monitor.Enter( this );
-				// While a leader has been selected...wait around
-				while( bLeaderAvailable )
+				lock( this )
 				{
-					m_condition.WaitOne();
+					Console.WriteLine( "Checking for leader" );
+					// While a leader has been selected...wait around
+					while( bLeaderAvailable )
+					{
+						Console.WriteLine( "Waiting to be leader" );
+						m_leaderSignal.WaitOnSignal();
+						Console.WriteLine( "Received leader signal" );
+					}
+				
+					// Assert self as leader before leaving critical section
+					bLeaderAvailable = true;
+					// Leave critical section
+					Console.WriteLine( "Leaving as leader" );
 				}
 				
-				// Assert self as leader before leaving critical section
-				bLeaderAvailable = true;
-				// Leave critical section
-				Monitor.Exit( this );
+				// Only one thread active at this point
+				
+				Console.WriteLine( "Waiting on work" );
+
+				// waiting on work
+				m_workSignal.WaitOnSignal();
+
+				Console.WriteLine( "Got work" );
 
 				bool bExitLoop = false;
-				
+								
 				// Nothing else to do so this thread can exit or be recycled
 				if( requestQ.Count == 0 )
+				{
+					// No work to do so let other threads (next leader) wait on work
+					m_workSignal.Reset();
 					bExitLoop = true; 
-				
+				}
+								
 				// Begin critical section
-				Monitor.Enter( this );
+				lock( this )
+				{
+					// Signal self is no longer the leader
+					bLeaderAvailable = false;
 				
-				// Signal self is no longer the leader
-				bLeaderAvailable = false;
-			
-				Monitor.Exit( this );
-				
-				// Signal a follower to become the new leader
-				m_condition.Set();
-				
+					// Signal a follower to become the new leader
+					m_leaderSignal.Signal();
+					// Leave critical section
+				}
+								
 				if( bExitLoop )
 				{
 					// If this task is not marked as recyclable

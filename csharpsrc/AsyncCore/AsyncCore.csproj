@@ -82,6 +82,21 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "AutoResetSignalObject.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ISignalObject.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ManualResetSignalObject.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "TaskPool.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -93,6 +108,11 @@
                 />
                 <File
                     RelPath = "TaskRequest.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ThreadsafeSignalObject.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

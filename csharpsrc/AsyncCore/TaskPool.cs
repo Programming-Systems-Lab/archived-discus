@@ -49,8 +49,9 @@ namespace PSL.AsyncCore
 		/// Condition variable used to synchronize TPTask threads running in 
 		/// the TaskPool and ensure they abide by the leaders-followers model
 		/// </summary>
-		private static AutoResetEvent condition = new AutoResetEvent( true );
-
+		private static AutoResetSignalObject leaderSignal = new AutoResetSignalObject( false );
+		private static ManualResetSignalObject workSignal = new ManualResetSignalObject( false );
+			
 		/// <summary>
 		/// Indicates whether the TaskPool has been initialized or not
 		/// </summary>
@@ -76,7 +77,7 @@ namespace PSL.AsyncCore
 		public static int Threads
 		{
 			get
-			{return TPTask.Tasks; }
+			{ return TPTask.Tasks; }
 		}
 		
 		/// <summary>
@@ -155,7 +156,7 @@ namespace PSL.AsyncCore
 
 			try
 			{
-				lock( TPTask.requestQ.SyncRoot )
+				/*lock( TPTask.requestQ.SyncRoot )
 				{
 					// Generate Guid - task id if none exists
 					if( req.TaskID == Guid.Empty )
@@ -166,7 +167,18 @@ namespace PSL.AsyncCore
 					// Add request item to TPTask requestQ
 					TPTask.requestQ.Enqueue( req );
 				}// End-lock on TPTask.requestQ
+				*/
+				
+				// Generate Guid - task id if none exists
+				if( req.TaskID == Guid.Empty )
+					req.TaskID = Guid.NewGuid();
+					
+				taskID = req.TaskID;
 
+				TPTask.QueueTaskRequest( req );
+				
+				TaskPool.workSignal.Signal();
+				
 				// Tag taskID to notification callback
 				lock( ClientNotification.SyncRoot )
 				{
@@ -214,7 +226,7 @@ namespace PSL.AsyncCore
 					{
 						TPTaskInit init = new TPTaskInit();
 						// Create new TPTask
-						init.Task = new TPTask( ref condition );
+						init.Task = new TPTask( ref leaderSignal, ref workSignal );
 						// Keep thread in ThreadPool
 						init.Task.RecycleTask = true;
 						// Create worker thread
@@ -247,6 +259,9 @@ namespace PSL.AsyncCore
 			{
 				// Signal that we are shutting down
 				bShuttingDown = true;
+
+				workSignal.AllowReset = false;
+				workSignal.Signal();
 				
 				for( int i = 0; i < lstTasks.Count; i++ )
 				{
