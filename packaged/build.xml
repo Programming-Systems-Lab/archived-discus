@@ -10,6 +10,8 @@
     <property name="db" value="db"/>
     <property name="keys" value="keys"/>
 
+	<property name="juddi.dir" value="d:/matias/discus-project" />
+
     <property name="jar-file" value="discus-security.jar"/>
     <property name="gui-jar-file" value="discus-gui.jar"/>
     <property name="war-file" value="discus-security.war"/>
@@ -180,7 +182,7 @@
             classname="psl.discus.javasrc.p2p.Server">
             <jvmarg value="-Dnet.jxta.tls.principal=discus"/>
             <jvmarg value="-Dnet.jxta.tls.password=discuscus"/>
-            <jvmarg value="-Djuddi.home=${config}" />
+            <jvmarg value="-Djuddi.homeDir=${juddi.dir}" />
             </java>
     </target>
 
@@ -191,7 +193,6 @@
             classname="psl.discus.javasrc.uddi.UddiP2PTesterGUI">
             <jvmarg value="-Dnet.jxta.tls.principal=discus"/>
             <jvmarg value="-Dnet.jxta.tls.password=discuscus"/>
-            <jvmarg value="-Djuddi.home=${config}" />
             </java>
     </target>
 
