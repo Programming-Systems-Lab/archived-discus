@@ -37,10 +37,7 @@ import psl.discus.javasrc.shared.FakeDataSource;
  * public keys.
  * @author matias
  */
-public class SignatureManager {
-
-    public static final int STATUS_OK = 0;
-    public static final int STATUS_ERROR = -1;
+public class SignatureManagerImpl implements SignatureManager {
 
     // TODO: these settings should be gotten from somewhere else
     private static final String KEYSTORE_TYPE = "JKS";
@@ -57,7 +54,7 @@ public class SignatureManager {
 
     private DocumentBuilder db;
 
-    public SignatureManager(DataSource ds)
+    public SignatureManagerImpl(DataSource ds)
             throws SignatureManagerException {
 
         if (keyStore == null) {
@@ -176,7 +173,7 @@ public class SignatureManager {
             FileOutputStream fout = new FileOutputStream("testout.xml");
             XMLUtils.outputDOM(doc,fout);
 
-            VerificationResponse vr = verifyDocument(doc);
+            SignatureManagerResponse vr = verifyDocument(doc);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             XMLUtils.outputDOM(vr.document,out);
@@ -193,10 +190,10 @@ public class SignatureManager {
     /**
      * Verifies a signed XML document and returns the document and the id of the signing service space
      */
-    public VerificationResponse verifyDocument(Document signedDoc)
+    public SignatureManagerResponse verifyDocument(Document signedDoc)
             throws SignatureManagerException {
 
-        VerificationResponse vr = new VerificationResponse();
+        SignatureManagerResponse vr = new SignatureManagerResponse();
         try {
             Element nscontext = XMLUtils.createDSctx(signedDoc, "ds", Constants.SignatureSpecNS);
             Element sigElement = (Element) XPathAPI.selectSingleNode(signedDoc,"//ds:Signature[1]", nscontext);
@@ -267,7 +264,7 @@ public class SignatureManager {
         DocumentBuilder db = dbf.newDocumentBuilder();
         Document d = db.parse(new File(filename));
 
-        SignatureManager sigManager = new SignatureManager(new FakeDataSource());
+        SignatureManager sigManager = new SignatureManagerImpl(new FakeDataSource());
         Document signed = sigManager.signDocument(d);
 
         File f = new File(filename + ".signed.xml");
@@ -283,14 +280,10 @@ public class SignatureManager {
         DocumentBuilder db = dbf.newDocumentBuilder();
         Document d = db.parse(new File(filename + ".signed.xml"));
 
-        SignatureManager sigManager = new SignatureManager(new FakeDataSource());
-        VerificationResponse  vr = sigManager.verifyDocument(d);
+        SignatureManager sigManager = new SignatureManagerImpl(new FakeDataSource());
+        SignatureManagerResponse  vr = sigManager.verifyDocument(d);
 
         Util.debug(vr.alias);
     }
 
-    public static class VerificationResponse {
-        public Document document;      // the actual XML document, without the signature
-        public String alias;           // the alias of the certificate that signed it
-    }
 }

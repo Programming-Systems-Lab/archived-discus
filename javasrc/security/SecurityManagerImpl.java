@@ -16,13 +16,12 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
+import org.apache.xml.security.utils.XMLUtils;
 import psl.discus.javasrc.schemas.execServiceMethodRequest.ExecServiceMethodRequest;
 import psl.discus.javasrc.schemas.treaty.ServiceInfo;
 import psl.discus.javasrc.schemas.treaty.ServiceMethod;
 import psl.discus.javasrc.schemas.treaty.Treaty;
-import psl.discus.javasrc.schemas.treaty.TreatyDAO;
-import psl.discus.javasrc.shared.FakeDataSource;
-import psl.discus.javasrc.shared.Util;
+import psl.discus.javasrc.shared.*;
 
 public class SecurityManagerImpl implements SecurityManager {
 
@@ -74,7 +73,7 @@ public class SecurityManagerImpl implements SecurityManager {
                 // verify treaty document.
                 // from the verification we get the service space id
 
-                SignatureManager.VerificationResponse vr = signatureManager.verifyDocument(treatyDoc);
+                SignatureManagerResponse vr = signatureManager.verifyDocument(treatyDoc);
                 treatyDoc = vr.document;
                 requesterId = Util.parseInt(vr.alias);
                 treaty.setClientServiceSpace(vr.alias);
@@ -145,7 +144,7 @@ public class SecurityManagerImpl implements SecurityManager {
             if (signed) {
                 // verify document.
                 // from the verification we get the service space id
-                SignatureManager.VerificationResponse vr = signatureManager.verifyDocument(requestDoc);
+                SignatureManagerResponse vr = signatureManager.verifyDocument(requestDoc);
                 requestDoc = vr.document;
                 requester = vr.alias;
             }
@@ -158,7 +157,11 @@ public class SecurityManagerImpl implements SecurityManager {
             // right now, we are doing linear searches... but the Treaty class could use a
             // hashtable or something like it to make searching more efficient.
 
-            Treaty treaty = treatyDAO.getTreaty(request.getTreatyID());
+            TreatyData treatyData = treatyDAO.getTreaty(request.getTreatyID());
+            if (treatyData.getStatus() != TreatyData.STATUS_CURRENT)
+                throw new SecurityManagerException("Treaty has been revoked or is not current.");
+
+            Treaty treaty = treatyData.getTreaty();
             if (requester != null && !treaty.getClientServiceSpace().equals(requester))
                 throw new SecurityManagerException("Treaty requester does not match execute method requester");
 
@@ -170,7 +173,7 @@ public class SecurityManagerImpl implements SecurityManager {
                     for (Enumeration methods = serviceInfo.enumerateServiceMethod(); methods.hasMoreElements();) {
                         ServiceMethod method = (ServiceMethod) methods.nextElement();
                         if (method.getMethodImplementation().equals(request.getMethodName())) {
-                            if (method.getParameterCount() == request.getParameterCount()) {
+                            if (method.getParameterCount() == request.getFilledParameterCount()) {
                                 int numInvokations = method.getNumInvokations();
                                 if (numInvokations > 0) {
                                     // OK! method is authorized
@@ -183,25 +186,49 @@ public class SecurityManagerImpl implements SecurityManager {
                             break;  // we already found the correct method, so search no more
                         }
                     }
-                    break;  // we already found the correct service, so search no more
+                    /// removed: break;  // we already found the correct service, so search no more
+                    /// we may get several ServiceInfo tags for the same service
                 }
             }
 
             // if the method was authorized, we need to save changes to this treaty
             if (authorized) {
-                treatyDAO.modifyTreaty(treaty.getTreatyID(), treaty);
-                return new String[] { STATUS_OK , "OK" };
-            }
-            else {
+                treatyDAO.updateTreaty(treaty);
+
+            } else {
                 if (error == null)
                     error = "Service or method implementation not found.";
-                return new String[] { STATUS_ERROR, error };
             }
+
+            // write back request document into string to return it
+            // (if it was signed, we return an unsigned version for the gatekeeper)
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            XMLUtils.outputDOM(requestDoc,out);
+            String returnXML = out.toString();
+
+            if (error == null)
+                return new String[] {STATUS_OK, returnXML};
+            else
+                return new String[] {STATUS_ERROR, error};
 
         } catch (Exception e) {
             return new String[]{STATUS_ERROR, e.getMessage()};
         }
 
+    }
+
+    /**
+     * Revokes a treaty. Returns STATUS_OK if revoked OK, or STATUS_ERROR and an error message
+     * if the operation failed.
+     */
+    public String[] revokeTreaty(int treatyid) {
+
+        try {
+            treatyDAO.updateTreatyStatus(treatyid, TreatyData.STATUS_REVOKED);
+            return new String[] { STATUS_OK, "OK" };
+        } catch (DAOException e) {
+            return new String[] { STATUS_ERROR, e.getMessage() };
+        }
     }
 
     public String addServiceSpace(String serviceSpaceXMLDoc) {
@@ -236,7 +263,7 @@ public class SecurityManagerImpl implements SecurityManager {
         }
 
         DataSource ds = new FakeDataSource();
-        SecurityManagerImpl manager = new SecurityManagerImpl(ds, new SignatureManager(ds));
+        SecurityManagerImpl manager = new SecurityManagerImpl(ds, new SignatureManagerImpl(ds));
         String[] result = manager.verifyTreaty(buf.toString(), true);
 
         Util.debug(result);

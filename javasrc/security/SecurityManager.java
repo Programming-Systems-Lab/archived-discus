@@ -38,8 +38,7 @@ public interface SecurityManager {
      * @returns an array of 2 strings, where the first string is the status code (0 is OK)
      * and the second string is the content (either treaty XML or error message)
      */
-    public String[] verifyTreaty(String treatyXML, boolean signed)
-            throws SecurityManagerException;
+    public String[] verifyTreaty(String treatyXML, boolean signed);
 
     /**
      * Checks if a requesting service space has permission to invoke a certain method
@@ -48,9 +47,14 @@ public interface SecurityManager {
      * @returns an array of 2 strings, where the first string is the status code (0 is OK)
      * and the second string is the error message, if any
      */
-    public String[] doRequestCheck(String requestXML, boolean signed)
-            throws SecurityManagerException;
+    public String[] doRequestCheck(String requestXML, boolean signed);
 
+
+    /**
+     * Revokes a treaty. Returns STATUS_OK if revoked OK, or STATUS_ERROR and an error message
+     * if the operation failed.
+     */
+    public String[] revokeTreaty(int treatyid);
 
     /*-----------------------------------------------------------------------------------------------*/
     /* Methods to modify the security matrix for this service space */
