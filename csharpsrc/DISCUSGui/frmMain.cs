@@ -86,6 +86,7 @@ namespace DISCUSGui
 			this.txtInput.Location = new System.Drawing.Point(8, 8);
 			this.txtInput.Multiline = true;
 			this.txtInput.Name = "txtInput";
+			this.txtInput.ScrollBars = System.Windows.Forms.ScrollBars.Both;
 			this.txtInput.Size = new System.Drawing.Size(424, 176);
 			this.txtInput.TabIndex = 1;
 			this.txtInput.Text = "";
@@ -170,7 +171,8 @@ namespace DISCUSGui
 
 		private void btnLoadAlpha_Click(object sender, System.EventArgs e)
 		{
-			txtInput.Text = "<?xml version=\"1.0\" encoding=\"utf-8\"?><definitions name=\"DemoAlpha\" targetNamespace=\"http://psl.cs.columbia.edu\" xmlns:xlang=\"http://schemas.microsoft.com/bixtalk/xlang\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><!-- Simple demo using simple xlang constructs --><xlang:behavior><xlang:body><xlang:sequence><xlang:action activation=\"true\" gatekeeper=\"PSLGatekeeper1\" servicename=\"BNQuoteService\" operation=\"getPrice\"><parameter name=\"isbn\"><![CDATA[<?xml version=\"1.0\"?><string>1861005458</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeper1\" servicename=\"GeoCash\" operation=\"GetATMLocations\"><parameter name=\"Zipcode\"><![CDATA[<?xml version=\"1.0\"?><string>10025</string>]]></parameter></xlang:action></xlang:sequence></xlang:body></xlang:behavior></definitions>";
+			string strAlpha = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<definitions name=\"DemoAlpha\" targetNamespace=\"http://psl.cs.columbia.edu\" xmlns:xlang=\"http://schemas.microsoft.com/bixtalk/xlang\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n<!-- Simple demo using simple xlang constructs -->\n<xlang:behavior>\n<xlang:body>\n<xlang:sequence>\n<xlang:action activation=\"true\" gatekeeper=\"PSLGatekeeper1\" servicename=\"BNQuoteService\" operation=\"getPrice\">\n<parameter name=\"isbn\"><![CDATA[<?xml version=\"1.0\"?><string>1861005458</string>]]></parameter>\n</xlang:action>\n<xlang:action gatekeeper=\"PSLGatekeeper1\" servicename=\"GeoCash\" operation=\"GetATMLocations\">\n<parameter name=\"Zipcode\"><![CDATA[<?xml version=\"1.0\"?><string>10025</string>]]></parameter>\n</xlang:action>\n</xlang:sequence>\n</xlang:body>\n</xlang:behavior>\n</definitions>"; 
+			txtInput.Text = strAlpha.Replace( "\n", "\r\n" );
 		}
 
 		private void frmMain_Load(object sender, System.EventArgs e)
@@ -197,7 +199,7 @@ namespace DISCUSGui
 			foreach( EventLogEntry Entry in evtLog.Entries )
 			{
 				if( Entry.Source.CompareTo( "PSLGatekeeper1" ) == 0 )
-					txtOutput.AppendText( Entry.Message + "\n" );
+					txtOutput.AppendText( Entry.Message.Replace( "\n", "\r\n" ) + "\r\n" + "----------------------------------\r\n" );
 			}
 		}
 
@@ -209,7 +211,7 @@ namespace DISCUSGui
 			foreach( EventLogEntry Entry in evtLog.Entries )
 			{
 				if( Entry.Source.CompareTo( "PSLGatekeeper2" ) == 0 )
-					txtOutput.AppendText( Entry.Message + "\n" );
+					txtOutput.AppendText( Entry.Message.Replace( "\n", "\r\n" ) + "\r\n" + "----------------------------------\r\n" );
 			}
 		}
 
@@ -227,7 +229,7 @@ namespace DISCUSGui
 				if( arrRes != null )
 				{
 					for( int i = 0; i < arrRes.Length; i++ )
-						txtOutput.AppendText( arrRes[i] );
+						txtOutput.AppendText( arrRes[i].Replace( "\n", "\r\n" ) + "\r\n" + "----------------------------------\r\n" );
 				}
 			}
 		}
