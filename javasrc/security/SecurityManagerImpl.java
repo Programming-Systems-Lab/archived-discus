@@ -17,6 +17,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.apache.xml.security.utils.XMLUtils;
+import org.apache.log4j.Logger;
 import psl.discus.javasrc.schemas.execServiceMethodRequest.ExecServiceMethodRequest;
 import psl.discus.javasrc.schemas.treaty.ServiceInfo;
 import psl.discus.javasrc.schemas.treaty.ServiceMethod;
@@ -24,12 +25,15 @@ import psl.discus.javasrc.schemas.treaty.Treaty;
 
 public class SecurityManagerImpl implements SecurityManager {
 
-    DataSource ds;
-    SignatureManager signatureManager;
-    TreatyDAO treatyDAO;
-    DocumentBuilder db;
+    private DataSource ds;
+    private SignatureManager signatureManager;
+    private TreatyDAO treatyDAO;
+    private DocumentBuilder db;
 
-    Random random;  // used to create random ids for treaties
+    private Random random;  // used to create random ids for treaties
+
+    private static Logger treatyLogger = Logger.getLogger("TreatyLogger");
+    private static Logger encryptedTreatyLogger = Logger.getLogger("EncryptedTreatyLogger");
 
     public SecurityManagerImpl(DataSource ds, SignatureManager signatureManager)
             throws SecurityManagerException {
@@ -59,8 +63,6 @@ public class SecurityManagerImpl implements SecurityManager {
      */
     public String[] verifyTreaty(String treatyXML, boolean signed) {
 
-        Util.debug("Verifying treaty...");
-
         try {
 
             if (treatyXML == null)
@@ -73,30 +75,36 @@ public class SecurityManagerImpl implements SecurityManager {
             StringReader reader = new StringReader(treatyXML);
             Document treatyDoc = db.parse(new InputSource(reader));
             if (signed) {
+                encryptedTreatyLogger.info(treatyXML.replace('\n',' '));
+
                 // verify treaty document.
                 // from the verification we get the service space id
 
                 SignatureManagerResponse vr = signatureManager.verifyDocument(treatyDoc);
                 treatyDoc = vr.document;
                 requesterId = Util.parseInt(vr.alias);
+                Util.info("verifying signed treaty from service space " + requesterId);
 
             }
 
             treaty = Treaty.unmarshal(treatyDoc);
 
             // if treaty is unsigned, (requestid==0), just use the service space id they gave us
-            if (requesterId == 0)
+            if (requesterId == 0) {
                 requesterId = Util.parseInt(treaty.getClientServiceSpace());
-            else    // otherwise, use the one from the signature
+                Util.info("verifying unsigned treaty as if it came from service space " + requesterId);
+            }
+            else {   // otherwise, use the one from the signature
                 treaty.setClientServiceSpace(String.valueOf(requesterId));
+            }
 
             // now, for each service in the treaty, we get the authorized methods, and set
             // the authorized flag for each method accordingly
-            ServiceInvokationPermissionDAO dao = new ServiceInvokationPermissionDAO(ds);
+            ServicePermissionDAO dao = new ServicePermissionDAO(ds);
 
             for (Enumeration e = treaty.enumerateServiceInfo(); e.hasMoreElements();) {
                 ServiceInfo serviceInfo = (ServiceInfo) e.nextElement();
-                ServiceInvokationPermission permission = dao.getPermissions(requesterId, serviceInfo.getServiceName());
+                ServicePermission permission = dao.getPermissions(requesterId, serviceInfo.getServiceName());
 
                 for (Enumeration methods = serviceInfo.enumerateServiceMethod(); methods.hasMoreElements();) {
                     ServiceMethod method = (ServiceMethod) methods.nextElement();
@@ -124,8 +132,9 @@ public class SecurityManagerImpl implements SecurityManager {
             writer.close();
 
             Util.debug("Done verifying treaty.");
-
-            return new String[]{STATUS_OK, writer.toString(), String.valueOf(requesterId)};
+            String treatyData = writer.toString();
+            treatyLogger.info(treatyData.replace('\n',' '));
+            return new String[]{STATUS_OK, treatyData, String.valueOf(requesterId)};
 
         } catch (Exception e) {
             return new String[]{STATUS_ERROR, e.toString()};
@@ -138,8 +147,6 @@ public class SecurityManagerImpl implements SecurityManager {
     }
 
     public String[] doRequestCheck(String requestXML, boolean signed) {
-
-        Util.debug("Doing request check...");
 
         try {
             ExecServiceMethodRequest request = null;
@@ -167,6 +174,14 @@ public class SecurityManagerImpl implements SecurityManager {
 
             // right now, we are doing linear searches... but the Treaty class could use a
             // hashtable or something like it to make searching more efficient.
+
+            if (requester != null) {
+                Util.info("performing signed request check for service space " + requester +
+                            "with treaty id " + request.getTreatyID());
+            }
+            else {
+                Util.info("performing unsigned request check with treaty id " + request.getTreatyID());
+            }
 
             TreatyData treatyData = treatyDAO.getTreaty(request.getTreatyID());
             if (treatyData.getStatus() != TreatyData.STATUS_CURRENT)
@@ -198,7 +213,7 @@ public class SecurityManagerImpl implements SecurityManager {
                         }
                     }
                     /// removed: break;  // we already found the correct service, so search no more
-                    /// we may get several ServiceInfo tags for the same service
+                    /// because: we may get several ServiceInfo tags for the same service
                 }
             }
 
@@ -217,7 +232,7 @@ public class SecurityManagerImpl implements SecurityManager {
             XMLUtils.outputDOM(requestDoc,out);
             String returnXML = out.toString();
 
-            Util.debug("Done with request check.");
+            Util.info("request check done. Result: " + (error == null ? "passed" : "not passed: " + error));
 
             if (error == null)
                 return new String[] {STATUS_OK, returnXML};
@@ -225,6 +240,7 @@ public class SecurityManagerImpl implements SecurityManager {
                 return new String[] {STATUS_ERROR, error};
 
         } catch (Exception e) {
+            Util.info("request check not passed: " + e.getMessage());
             return new String[]{STATUS_ERROR, e.getMessage()};
         }
 
@@ -264,6 +280,8 @@ public class SecurityManagerImpl implements SecurityManager {
     // for testing
     public static void main(String[] args)
             throws Exception {
+
+        treatyLogger.info("testing");
 
         // read treaty file
         FileInputStream fin = new FileInputStream("mytreaty.xml.signed.xml");

@@ -67,7 +67,7 @@ public interface SecurityManager {
 
     /**
      * Adds a permission to the security matrix for a certain service space.
-     * @see ServiceInvokationPermission
+     * @see ServicePermission
      */
     public String addPermission(String servicePermissionXMLDoc)
             throws SecurityManagerException;

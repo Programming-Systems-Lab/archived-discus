@@ -11,6 +11,11 @@ import java.util.Collection;
  */
 public interface MethodPermission {
 
+    /**
+     * A unique identifier for this permission
+     */
+    public int getPermissionId();
+
     public String getMethodName();
 
     public Collection getParams();

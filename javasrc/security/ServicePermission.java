@@ -1,6 +1,6 @@
 package psl.discus.javasrc.security;
 
-import java.util.Collection;
+import java.util.Vector;
 
 /**
  * This interface is used to define a certain permission for a service space.
@@ -14,17 +14,22 @@ import java.util.Collection;
  * Date: Mar 7, 2002
  * Time: 6:19:20 PM
  */
-public interface ServiceInvokationPermission {
+public interface ServicePermission {
 
     /**
-     * The service space that this is giving permission to.
+     * The group of service spaces (could be just one service space) that this is giving permission to.
      */
-    public int getServiceSpaceId();
+    public int getGroupId();
 
     /**
      * The service that this is giving permission to access.
      */
     public String getServiceName();
+
+    /**
+     * All the allowed methods in this permission
+     */
+    public Vector getMethods();
 
     /**
      * Tries to find a method with the given name and parameter list.

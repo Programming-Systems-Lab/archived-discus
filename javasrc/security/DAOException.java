@@ -26,4 +26,8 @@ public class DAOException extends Exception {
     public Exception getNextException() {
         return e;
     }
+
+    public String toString() {
+        return (e != null ? e.toString() : getMessage());
+    }
 }

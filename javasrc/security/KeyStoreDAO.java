@@ -13,6 +13,8 @@ import javax.sql.DataSource;
  */
 public class KeyStoreDAO {
 
+    public static final String KEYSTORE_TYPE = "JKS";
+
     private DataSource ds;
 
     public KeyStoreDAO(DataSource ds) {

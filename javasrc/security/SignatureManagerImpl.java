@@ -1,23 +1,6 @@
 package psl.discus.javasrc.security;
 
-import java.io.*;
-import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.KeyStoreException;
-import java.security.cert.X509Certificate;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.sql.DataSource;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-
 import org.apache.xml.security.Init;
-import org.apache.xml.security.exceptions.XMLSecurityException;
 import org.apache.xml.security.keys.KeyInfo;
 import org.apache.xml.security.samples.utils.resolver.OfflineResolver;
 import org.apache.xml.security.signature.XMLSignature;
@@ -27,10 +10,16 @@ import org.apache.xml.security.utils.XMLUtils;
 import org.apache.xpath.XPathAPI;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.DOMException;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+
+import javax.naming.*;
+import javax.sql.DataSource;
+import javax.xml.parsers.*;
+import java.io.*;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.Properties;
 
 
 /**
@@ -40,9 +29,7 @@ import org.xml.sax.SAXException;
  */
 public class SignatureManagerImpl implements SignatureManager {
 
-    private static final String KEYSTORE_TYPE = "JKS";
-
-    /* The following are retrieved from the web.xml file
+    /* The following are retrieved from the SecurityManager.properties file
     private static final String KEYSTORE_PASS = "discus";
     private static final String PRIVATEKEY_ALIAS = "100";
     private static final String PRIVATEKEY_PASS = "foobar";
@@ -60,9 +47,9 @@ public class SignatureManagerImpl implements SignatureManager {
 
         Util.debug("Initializing SignatureManagerImpl");
 
+        String keyStorePass = null, privateKeyAlias = null, privateKeyPass = null;
         // lookup values using JNDI
-        String keyStorePass=null, privateKeyAlias=null, privateKeyPass=null;
-
+        /*
         try {
             Context initCtx = new InitialContext();
             Context envCtx = (Context) initCtx.lookup("java:comp/env");
@@ -73,7 +60,25 @@ public class SignatureManagerImpl implements SignatureManager {
             certAlias = (String) envCtx.lookup("CertAlias");
 
         } catch (NamingException e) {
-            throw new SignatureManagerException("Could not find datasource: " + e);
+            throw new SignatureManagerException("Could not find JNDI values: " + e);
+        }
+        */
+
+        try {
+            InputStream in = this.getClass().getClassLoader().getResourceAsStream("SecurityManager.properties");
+            if (in != null) {
+
+                Properties props = new Properties();
+                props.load(in);
+
+                keyStorePass = props.getProperty("keyStorePass");
+                privateKeyAlias = props.getProperty("privateKeyAlias");
+                privateKeyPass = props.getProperty("privateKeyPass");
+                certAlias = props.getProperty("certAlias");
+
+            }
+        } catch (Exception e) {
+            throw new SignatureManagerException("SignatureManagerImpl: could not load properties: " + e);
         }
 
         Util.print("Loading keystore from database...");
@@ -81,8 +86,8 @@ public class SignatureManagerImpl implements SignatureManager {
             // get keystore from the database
             try {
                 KeyStoreDAO dao = new KeyStoreDAO(ds);
-                keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
-                dao.loadKeyStore(0,keyStore,keyStorePass.toCharArray());
+                keyStore = KeyStore.getInstance(KeyStoreDAO.KEYSTORE_TYPE);
+                dao.loadKeyStore(0, keyStore, keyStorePass.toCharArray());
             } catch (Exception e) {
                 throw new SignatureManagerException(e);
             }
@@ -93,7 +98,7 @@ public class SignatureManagerImpl implements SignatureManager {
         if (privateKey == null) {
             // get privatekey from the keystore
             try {
-                privateKey = (PrivateKey) keyStore.getKey(privateKeyAlias,privateKeyPass.toCharArray());
+                privateKey = (PrivateKey) keyStore.getKey(privateKeyAlias, privateKeyPass.toCharArray());
                 if (privateKey == null)
                     throw new SignatureManagerException("Could not get PrivateKey");
             } catch (Exception e) {
@@ -116,11 +121,11 @@ public class SignatureManagerImpl implements SignatureManager {
     /**
      * (For web-service calls)
      * Signs the given XML document with this service space's private key.
-     * @returns an array of two Strings, where the first is a status code (0 is OK)
+     * @return an array of two Strings, where the first is a status code (0 is OK)
      * and the second is either the signed XML document or the error message.
      */
     public String[] signDocument(String xml)
-        throws SignatureManagerException {
+            throws SignatureManagerException {
 
         try {
             StringReader reader = new StringReader(xml);
@@ -128,12 +133,12 @@ public class SignatureManagerImpl implements SignatureManager {
 
             Document signedDoc = signDocument(doc);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            XMLUtils.outputDOM(signedDoc,out);
+            XMLUtils.outputDOM(signedDoc, out);
 
-            return new String[] { String.valueOf(STATUS_OK), out.toString() };
+            return new String[]{String.valueOf(STATUS_OK), out.toString()};
 
         } catch (Exception e) {
-            return new String[] { String.valueOf(STATUS_ERROR), e.getMessage() } ;
+            return new String[]{String.valueOf(STATUS_ERROR), e.getMessage()};
         }
 
     }
@@ -144,13 +149,13 @@ public class SignatureManagerImpl implements SignatureManager {
     public Document signDocument(Document givenDoc)
             throws SignatureManagerException {
 
-        Util.print("Signing document...");
         try {
+            Util.info("signing document...");
             // make a copy of the document, so we don't modify the one that was passed
             Document doc = (Document) givenDoc.cloneNode(true);
 
             XMLSignature sig = new XMLSignature(doc, "http://localhost/treaty",
-                                                XMLSignature.ALGO_ID_SIGNATURE_DSA);
+                    XMLSignature.ALGO_ID_SIGNATURE_DSA);
 
             doc.getFirstChild().appendChild(sig.getElement());
             sig.getSignedInfo()
@@ -172,14 +177,14 @@ public class SignatureManagerImpl implements SignatureManager {
                     throw new SignatureManagerException("Could not get signing certificate!");
 
                 sig.addKeyInfo(cert);
-
                 sig.sign(privateKey);
 
             }
 
-            Util.debug("done");
+            Util.info("signing done.");
             return doc;
         } catch (Exception e) {
+            Util.debug("Error in signing: " + e);
             throw new SignatureManagerException(e);
         }
     }
@@ -187,29 +192,29 @@ public class SignatureManagerImpl implements SignatureManager {
     /**
      * (For web-service calls)
      * Verifies a signed XML document and returns the document and the id of the signing service space
-     * @returns an array three Strings, where the first is a status code (0 is OK),
+     * @return an array three Strings, where the first is a status code (0 is OK),
      * the second element is the given xml document but without the signature, or the error message
      * and the third (if no error) is the signing service space id.
      */
     public String[] verifyDocument(String xml)
-        throws SignatureManagerException {
+            throws SignatureManagerException {
 
         try {
             StringReader reader = new StringReader(xml);
             Document doc = db.parse(new InputSource(reader));
 
             FileOutputStream fout = new FileOutputStream("testout.xml");
-            XMLUtils.outputDOM(doc,fout);
+            XMLUtils.outputDOM(doc, fout);
 
             SignatureManagerResponse vr = verifyDocument(doc);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            XMLUtils.outputDOM(vr.document,out);
+            XMLUtils.outputDOM(vr.document, out);
 
-            return new String[] { String.valueOf(STATUS_OK), out.toString(), vr.alias };
+            return new String[]{String.valueOf(STATUS_OK), out.toString(), vr.alias};
 
         } catch (Exception e) {
-            return new String[] { String.valueOf(STATUS_ERROR), e.getMessage() };
+            return new String[]{String.valueOf(STATUS_ERROR), e.getMessage()};
         }
 
 
@@ -221,12 +226,12 @@ public class SignatureManagerImpl implements SignatureManager {
     public SignatureManagerResponse verifyDocument(Document signedDoc)
             throws SignatureManagerException {
 
-        Util.print("Verifying document...");
+        Util.info("verifying document...");
 
         SignatureManagerResponse vr = new SignatureManagerResponse();
         try {
             Element nscontext = XMLUtils.createDSctx(signedDoc, "ds", Constants.SignatureSpecNS);
-            Element sigElement = (Element) XPathAPI.selectSingleNode(signedDoc,"//ds:Signature[1]", nscontext);
+            Element sigElement = (Element) XPathAPI.selectSingleNode(signedDoc, "//ds:Signature[1]", nscontext);
 
             if (sigElement == null)
                 throw new SignatureManagerException("No signature found in document.");
@@ -261,12 +266,12 @@ public class SignatureManagerImpl implements SignatureManager {
             // NOTE: this makes a copy of the whole document. Look at instead copying over everything but the signature
             Document doc = (Document) signedDoc.cloneNode(true);
             nscontext = XMLUtils.createDSctx(doc, "ds", Constants.SignatureSpecNS);
-            sigElement = (Element) XPathAPI.selectSingleNode(doc,"//ds:Signature[1]", nscontext);
+            sigElement = (Element) XPathAPI.selectSingleNode(doc, "//ds:Signature[1]", nscontext);
             doc.getFirstChild().removeChild(sigElement);
             //XMLUtils.outputDOM(doc,new FileOutputStream("out.xml"));
 
             vr.document = doc;
-            Util.debug("done");
+            Util.info("verification done.");
 
         } catch (Exception e) {
             throw new SignatureManagerException(e);
@@ -312,7 +317,7 @@ public class SignatureManagerImpl implements SignatureManager {
         Document d = db.parse(new File(filename + ".signed.xml"));
 
         SignatureManager sigManager = new SignatureManagerImpl(new FakeDataSource());
-        SignatureManagerResponse  vr = sigManager.verifyDocument(d);
+        SignatureManagerResponse vr = sigManager.verifyDocument(d);
 
         Util.debug(vr.alias);
     }
