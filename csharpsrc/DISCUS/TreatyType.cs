@@ -104,6 +104,19 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		
 		[System.Xml.Serialization.XmlElementAttribute("ServiceMethod")]
 		public ServiceMethodDataType[] m_ServiceMethod;
+
+		public bool AllServiceMethodsAuthorized()
+		{
+			if( m_ServiceMethod == null )
+				return false;
+
+			for( int i = 0; i < m_ServiceMethod.Length; i++ )
+			{
+				if( !m_ServiceMethod[i].Authorized )
+					return false;
+			}
+			return true;
+		}
     }
 	
 	[System.Xml.Serialization.XmlTypeAttribute(Namespace="http://localhost/Discus/Schema/Treaty.xsd")]

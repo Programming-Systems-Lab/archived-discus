@@ -52,6 +52,16 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			{ CONFIG = value; }
 		}
 
+		// Turn on tracing
+		private bool m_bTraceOn = false;
+		public bool TraceOn
+		{
+			get
+			{ return m_bTraceOn; }
+			set
+			{ m_bTraceOn = value; }
+		}
+
 		// Event log instance
 		private EventLog m_EvtLog;
 		// Proxy Generator
@@ -143,7 +153,13 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				
 				// Determine whether ProxyCache Directory exists
 				// If it does not exist then we try to create it
-				InitializeProxyCacheDir();
+				bool bStatus = InitializeProxyCacheDir();
+				if( m_bTraceOn )
+				{
+					if( bStatus )
+						m_EvtLog.WriteEntry( "ProxyCache Initialized" );
+					else m_EvtLog.WriteEntry( "ProxyCache NOT Initialized", EventLogEntryType.Error );
+				}
 			}
 			catch( System.Exception e ) // Catch exception
 			{
@@ -164,6 +180,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			
 			try
 			{
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "About to build execQ from Alpha-Protocol: " + strAlphaProtocol );
+				
 				// Stage 1 - Verify alpha-protocol is valid
 				// Create XML text reader
 				XmlTextReader xt = new XmlTextReader( strAlphaProtocol, XmlNodeType.Document, null );
@@ -256,7 +275,10 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			{
 				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );				
 			}
-					
+			
+			if( m_bTraceOn )
+				m_EvtLog.WriteEntry( "Built execQ: " + execQ.Count + " actions to perform" );
+				
 			return execQ; // return Execution Queue
 		}// End BuildAlphaProtocolExecutionQ
 
@@ -272,6 +294,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			// If Stack is empty, nothing to do so exit
 			if( stkProviders.Count == 0 )
 				return null;
+			
+			if( m_bTraceOn )
+				m_EvtLog.WriteEntry( "About to build treaty" );
 			
 			// Treaty to be returned
 			TreatyType treaty = null;
@@ -315,8 +340,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				}
 				// Debugging to verify serialization to Xml
 				strCheck = treaty.ToXml();
-				int x = 0;
-				x++;
+				
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Built treaty: " + treaty.ToXml() );
 			}
 			catch( Exception e )
 			{
@@ -325,12 +351,59 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			return treaty; // return the Treaty we create from the stack
 		}// End BuildTreaty
 		
+		/* Function analyzes all Treaties created and returns 
+		 * true if for each treaty the requested methods have
+		 * been authorized, i.e. permission has been granted
+		 * to use all the methods.
+		 * Inputs: mapping - the mapping between external GKs
+		 *					 and the treaties created
+		 * Return values: true if for all treaties all methods
+		 *				  autorized, otherwise returns false 
+		 */
+		private bool CanExecuteAllSteps( Hashtable mapping )
+		{
+			if( mapping == null || mapping.Count == 0 )
+				return false;
+
+			bool bRetVal = false;
+
+			if( m_bTraceOn )
+				m_EvtLog.WriteEntry( "Checking whether we can execute all requested service methods", EventLogEntryType.Information );
+			
+			try
+			{
+				// Get a Dictionary Enumerator
+				IDictionaryEnumerator it = mapping.GetEnumerator();
+
+				// Go thru each entry in the hashtable
+				while( it.MoveNext() )
+				{
+					// Get the current treaty
+					TreatyType currTreaty = it.Value as TreatyType;
+					// Check whether all methods in the treaty authorized
+					for( int i = 0; i < currTreaty.m_ServiceInfo.Length; i++ )
+					{
+						if( !currTreaty.m_ServiceInfo[i].AllServiceMethodsAuthorized() )
+							return false;
+					}
+				}
+				bRetVal = true;
+			}
+			catch( Exception e )
+			{
+				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );				
+			}
+			return bRetVal;
+		}
+
 		/* Procedure dissolves a Treaty with a given TreatyID
 		 * Input: nTreatyID - the treaty to be dissolved
 		 */
 		public void DissolveTreaty( int nTreatyID )
 		{
-		
+			if( m_bTraceOn )
+				m_EvtLog.WriteEntry( "Dissolving Treaty " + nTreatyID, EventLogEntryType.Information );
+			
 		}// End DissolveTreaty
 
 		/* Function uses the SecurityManagerService to check whether
@@ -356,6 +429,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 
 			try
 			{
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Doing request check on: " + strXmlExecRequest );
+			
 				// Interact with SecurityManagerService via reflection
 				InternalRegistry ireg = new InternalRegistry();
 				string strLocation = ireg.GetServiceLocation( SECURITY_MANAGER );
@@ -388,6 +464,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			string strRetVal = "";
 			try
 			{
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Received treaty request, passing to SecurityManager to verify: " + strXmlTreatyReq );
+			
 				// Create array of params to pass to VerifyTreaty
 				// of SecurityManagerService
 				object[] objParams = new object[2];
@@ -405,6 +484,12 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					// treaty returned by the SecurityManagerService
 					if( temp[SECURITY_MANAGER_RETURNED_TREATY_INDEX] != null )
 						strRetVal = (string) temp[SECURITY_MANAGER_RETURNED_TREATY_INDEX];
+
+					if( strRetVal.Length > 0 )
+					{
+						if( m_bTraceOn )
+							m_EvtLog.WriteEntry( "SecurityManager verification returned: " + strRetVal );
+					}
 				}
 			}
 			catch( Exception e )
@@ -425,6 +510,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			if( strAlphaProtocol.Length == 0 )
 				return null;
 
+			
 			// 4 stage execution			
 			// 1) Build the execution queue (steps to perform)
 			// 2) Create nec treaties with other GKs - Resource Acquire stage
@@ -434,6 +520,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			try
 			{
 				// Stage 1 - Build Execution queue (steps to execute)
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Executing Alpha Protocol Stage 1 - Building ExecutionQ" );
+			
 				Queue execQ = BuildAlphaProtocolExecutionQ( strAlphaProtocol );
 				if( execQ == null || execQ.Count == 0 )
 					throw new Exception( "Error obtaining sequence of actions to perform" );
@@ -454,16 +543,30 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				// in one go.
 				Array.Sort( arrReqs );
 				
+				
 				// Stage 2 - Create the necessary treaties and return a hashtable
 				// of treatyIDs to be used with each GK.
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Executing Alpha Protocol Stage 2 - Creating Treaties" );
+			
 				Hashtable mapping = FormTreaties( arrReqs );
 				if( mapping == null || mapping.Count == 0 )
-					throw new Exception( "Resource Acquire Failed" );
+					throw new Exception( "Resource Acquire Failed, Error Creating Treaties" );
 
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Executing Alpha Protocol Stage 3 - Analyzing Treaty Responses" );
 				// Stage 3 - Analyze mapping to make sure all requested methods authorized
 				// if not then we report the failure and exit
+				if( !CanExecuteAllSteps( mapping ) )
+				{
+					// Write Treaties to event log for analysis later
+					throw new Exception( "Resource Acquire Failed, All Requests NOT Authorized" );
+				}
 
 				// Stage 4 - Execution stage
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Executing Alpha Protocol Stage 4 - Execution" );
+				
 				IEnumerator it = execQ.GetEnumerator();
 				InternalRegistry ireg = new InternalRegistry();
 				int nIndex = 0;	
@@ -483,7 +586,11 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					if( objRes != null )
 					{
 						// save results returned
-						arrRetVal[nIndex] = (string) objRes;
+						string strTemp = (string) objRes;
+						string strVerify = VerifyDocument( strTemp );
+						if( strVerify.Length > 0 )
+							arrRetVal[nIndex] = strVerify;
+						else arrRetVal[nIndex] = strTemp;
 					}
 					nIndex++;
 				}// End while it.MoveNext()
@@ -492,6 +599,10 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			{
 				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
+			
+			if( m_bTraceOn )
+				m_EvtLog.WriteEntry( "Finished Executing Alpha Protocol" );
+				
 			return arrRetVal;
 		}//End ExecuteAlphaProtocol
 		
@@ -506,6 +617,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			object objInvokeResult = null;
 			try
 			{
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Executing method " + strGKMethod + " against GK " + strGKName  );
+							
 				// Check that we have been given a GK name and a method name to execute
 				if( strGKName.Length == 0 || strGKMethod.Length == 0 )
 					throw new System.Exception( "Invalid Arguments Passed to ExecuteGateKeeper" );
@@ -530,6 +644,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				string strAssembly = "";
 				if( strGKLocation.ToLower().StartsWith( "http://" ) )
 				{
+					if( m_bTraceOn )
+						m_EvtLog.WriteEntry( "Generating Proxy to " + strGKName + " located at " + strGKLocation + " AccessPoint: " + strGKAccessPoint );
+			
 					strAssembly = GenerateProxy( strGKName, strGKLocation, strGKAccessPoint );
 					// If no assembly generated, report error and exit
 					if( strAssembly.Length == 0 )
@@ -608,6 +725,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			object objInvokeResult = null;
 			try
 			{
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Executing " + strServiceMethod + " against service " + strServiceName );
+			
 				if( strServiceName.Length == 0 || strServiceMethod.Length == 0 )
 					throw new System.Exception( "Invalid Arguments Passed to Execute" );
 				
@@ -634,6 +754,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				string strAssembly = "";
 				if( strServiceLocation.ToLower().StartsWith( "http://" ) )
 				{
+					if( m_bTraceOn )
+						m_EvtLog.WriteEntry( "Generating Proxy to " + strServiceName + " located at " + strServiceLocation + " AccessPoint: " + strServiceAccessPoint );		
+			
 					strAssembly = GenerateProxy( strServiceName, strServiceLocation, strServiceAccessPoint );
 					// If no assembly generated, report error and exit
 					if( strAssembly.Length == 0 )
@@ -715,6 +838,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 
 			try
 			{
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Received ExecServiceMethodRequest : " + strXmlExecRequest );
+				
 				// 6 stages for execution
 				// 1) Do Security check
 				// 2) Deserialize Execution request
@@ -727,13 +853,22 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				// Contact SecurityManageService
 				// Pass request, get back string []
 				// Status code and actual XML request
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Stage 1 - Do Security Check" );
+				
 				string[] arrSecurityManagerResponse = DoRequestCheck( strXmlExecRequest, false );
 				if( arrSecurityManagerResponse == null || arrSecurityManagerResponse[SECURITY_MANAGER_STATUS_FIELD].CompareTo( SECURITY_MANAGER_ERROR_CODE ) == 0 )
 					throw new System.Exception( "Security Exception: Request Not Verified: " + strXmlExecRequest + "Reason: " + arrSecurityManagerResponse[1] );
 				
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Passed Security Check" );
+				
 				try
 				{
 					// Stage 2 - Deserialize Execution request
+					if( m_bTraceOn )
+						m_EvtLog.WriteEntry( "Stage 2 - Deserialize Execution Request" );
+				
 					execReq = new ExecServiceMethodRequestType();
 					XmlSerializer ser = new XmlSerializer( execReq.GetType() );
 					XmlReader xt = new XmlTextReader( strXmlExecRequest, XmlNodeType.Document, null );
@@ -747,6 +882,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				}
 
 				// Stage 3 - Resolve Web Service Proxy Location
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Stage 3 - Resolve Web Service Proxy Location" );
+				
 				// Do Runtime ProxyGeneration if necessary				
 				// If service location is a link to a WSDL file
 				// then we must generate a proxy to the webservice,
@@ -834,6 +972,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				Object[] param = null;
 
 				// Stage 4 - runtime Deserialization of parameters
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Stage 4 - Derialize Parameters (if any)" );
+				
 				if( bProxyMethodHasParameters )
 				{
 					// Parameters passed not equal to
@@ -863,6 +1004,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				}// End if bProxyMethodHasParameters
 				
 				// Stage 5 - Proxy Method Invocation
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Stage 5 - Invoke Proxy Method" );
+				
 				Object objInvokeResult = null;
 				if( bProxyMethodHasParameters )
 					objInvokeResult = ProxyType.InvokeMember( execReq.MethodName,
@@ -878,8 +1022,12 @@ namespace PSL.DISCUS.Impl.GateKeeper
 						 null );
 
 				// Stage 6 - Serialize and return results
+				
 				if( objInvokeResult != null )
 				{
+					if( m_bTraceOn )
+						m_EvtLog.WriteEntry( "Stage 6 - Serialize, Sign and Return Parameters" );
+				
 					// Otherwise serialize results to XML
 					// Get returned type
 					Type returnType = objInvokeResult.GetType();
@@ -916,6 +1064,11 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			{
 				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
 			}
+			
+			if( m_bTraceOn )
+				m_EvtLog.WriteEntry( "Finished Executing Service Method Request" );
+			
+			
 			return strRetVal;
 		}//End ExecuteServiceMethod
 
@@ -938,6 +1091,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			Hashtable mapping = null;
 			try
 			{
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Forming Treaties for " + arrReqs.Length + " requests" );
+				
 				mapping = new Hashtable();
 				IEnumerator it = arrReqs.GetEnumerator();
 				Stack stkProviders = new Stack();
@@ -1017,9 +1173,12 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		private string GenerateProxy( string strName, string strLocation, string strAccessPoint )
 		{
 			string strRetVal = "";
-
+				
 			try
 			{
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Generating Proxy" );
+				
 				// Create a dynamic request
 				DynamicRequest req = new DynamicRequest();	
 				// Resolve service name
@@ -1081,6 +1240,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			
 			try
 			{
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Initizlize Proxy Cache Dir" );
+				
 				// Determine if directory name of the proxy cache
 				// read from the system config file is NOT Fully 
 				// Quallified i.e <drive letter>:\<path>
@@ -1134,7 +1296,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		 */
 		public void RevokeTreaty( int nTreatyID )
 		{
-		
+			if( m_bTraceOn )
+				m_EvtLog.WriteEntry( "Revoking Treaty " + nTreatyID );
+				
 		}//End RevokeTreaty
 
 		/* Function uses the SecurityManagerService to
@@ -1147,6 +1311,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			string strRetVal = "";
 			try
 			{
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Signing document " + strXmlDoc );
+				
 				string[] arrSecurityManagerResponse = null;
 				// Interact with SecurityManagerService via reflection
 				InternalRegistry ireg = new InternalRegistry();
@@ -1163,6 +1330,10 @@ namespace PSL.DISCUS.Impl.GateKeeper
 					// SecurityManagerService returns a string array
 					arrSecurityManagerResponse = objExecResult as string[];
 					strRetVal = arrSecurityManagerResponse[SECURITY_MANAGER_RETURNED_SIGNATURE_INDEX];
+					if( strRetVal.Length > 0 && m_bTraceOn )
+					{
+						m_EvtLog.WriteEntry( "Signed doc = " + strRetVal );
+					}
 				}
 			}
 			catch( System.Exception e )
@@ -1182,6 +1353,9 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			string strRetVal = "";
 			try
 			{
+				if( m_bTraceOn )
+					m_EvtLog.WriteEntry( "Verifying Document " + strXmlDoc );
+				
 				string[] arrSecurityManagerResponse = null;
 				// Interact with SecurityManagerService via reflection
 				InternalRegistry ireg = new InternalRegistry();
@@ -1197,7 +1371,12 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				{
 					// SecurityManagerService returns a string array
 					arrSecurityManagerResponse = objExecResult as string[];
-						strRetVal = arrSecurityManagerResponse[SECURITY_MANAGER_RETURNED_VERIFICATION_INDEX];
+					strRetVal = arrSecurityManagerResponse[SECURITY_MANAGER_RETURNED_VERIFICATION_INDEX];
+					
+					if( strRetVal.Length > 0 && m_bTraceOn )
+					{
+						m_EvtLog.WriteEntry( "Verified doc = " + strRetVal );
+					}
 				}
 			}
 			catch( System.Exception e )
