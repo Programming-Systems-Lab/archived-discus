@@ -1,3 +1,5 @@
+package psl.discus.javasrc.p2p;
+
 import java.io.*;
 
 import net.jxta.discovery.DiscoveryService;
@@ -15,6 +17,15 @@ import net.jxta.protocol.ModuleSpecAdvertisement;
 import net.jxta.protocol.PipeAdvertisement;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.xml.security.utils.XMLUtils;
+import org.xml.sax.InputSource;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
+
+import javax.xml.parsers.*;
+import javax.sql.DataSource;
+
+import psl.discus.javasrc.security.*;
 
 /**
  *
@@ -43,22 +54,38 @@ public class Server implements PipeMsgListener {
     public static final String MODULE_ADV_FILE = "module.adv";
     public static final String MODULE_SPEC_ADV_FILE = "modulespec.adv";
     public static final String PIPE_ADV_FILE = "pipe.adv";
-    public static final String DATA_TAG = "Data";
-    public static final String INPUT_PIPE_TAG = "InputPipe";
+    public static final String DATA_TAG = "data";
+    public static final String QUERY_TAG = "query";
+    //public static final String INPUT_PIPE_TAG = "InputPipe";
     public static final MimeMediaType xmlMimeMediaType = new MimeMediaType("text/xml");
+    private DocumentBuilder db;
+    private SignatureManagerImpl signatureManager;
+    public static final String PIPE_TAG = "jxta:PipeAdvertisement";
 
-    static {
-        logger.setLevel(Level.DEBUG);
-    }
 
     public static void main(String args[]) {
-        Server myapp = new Server();
+        Server myapp = new Server(new FakeDataSource());
         logger.debug("Starting Service Peer ....");
         myapp.startJxta();
 
     }
 
-    public Server() {
+    public Server(DataSource ds) {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        try {
+            db = dbf.newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            throw new RuntimeException("Could not get DocumentBuilder: " + e);
+        }
+
+        try {
+            logger.debug("Instantiating SignatureManager...");
+            signatureManager = new SignatureManagerImpl(ds);
+        }
+        catch (SignatureManagerException e) {
+            throw new RuntimeException("Could not initialize SignatureManager: " + e);
+        }
     }
 
     public void startJxta() {
@@ -285,29 +312,72 @@ public class Server implements PipeMsgListener {
 
         // Get message
         String newMessage = msg.getString(DATA_TAG);
-        MessageElement inputPipeElement = msg.getElement(INPUT_PIPE_TAG);
-        if (newMessage == null)
+
+        if (newMessage == null) {
             logger.debug("null msg received");
-        else
-            logger.info("Received message: " + newMessage);
-
-        if (inputPipeElement != null) {
-
-            try {
-                PipeAdvertisement clientPipeAd = (PipeAdvertisement)
-                                    AdvertisementFactory.newAdvertisement(
-                                            xmlMimeMediaType, inputPipeElement.getStream());
-                OutputPipe clientPipe = pipeService.createOutputPipe(clientPipeAd, WAIT_TIMEOUT);
-
-                Message outmsg = pipeService.createMessage();
-                outmsg.setString(DATA_TAG,"Hello there old chap!");
-
-                clientPipe.send(outmsg);
-                logger.debug("sent message");
-
-            } catch (IOException e) {
-                logger.error("Could not create client pipe: " + e);
-            }
+            return;
         }
+
+        logger.debug("Received message: " + newMessage);
+
+        // verify message, then extract query and input pipe
+        org.w3c.dom.Document doc = null;
+        try {
+            doc = db.parse(new InputSource(new StringReader(newMessage)));
+        }
+        catch (Exception e) {
+            logger.warn("Could not parse message: " + e);
+            return;
+        }
+
+        SignatureManagerResponse response = null;
+        try {
+            response = signatureManager.verifyDocument(doc);
+        }
+        catch (SignatureManagerException e) {
+            logger.warn("Could not verify signature: " + e);
+            // for now we continue anyway
+        }
+
+        if (response != null) {
+            doc = response.document;
+        }
+
+        // extract inputpipe element
+        NodeList list = doc.getElementsByTagName(PIPE_TAG);
+        if (list == null || list.getLength() == 0) {
+            logger.warn("Did not find pipe element in document");
+            return;
+        }
+
+        // Unfortunately JXTA makes it very hard to create PipeAdvertisements from existing XML...
+        // the only way is to give it the actual XML for the pipe, which means we need to extract it
+        // and feed it in a very inefficient way
+
+        Node pipeAdNode = list.item(0);
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            out.write(new String("<?xml version=\"1.0\"?><!DOCTYPE jxta:PipeAdvertisement>").getBytes());
+            XMLUtils.outputDOM(pipeAdNode, out);
+
+            logger.debug("creating pipeadvertisement from " + out.toString());
+
+            PipeAdvertisement clientPipeAd = (PipeAdvertisement)
+                    AdvertisementFactory.newAdvertisement(
+                            xmlMimeMediaType, new ByteArrayInputStream(out.toByteArray()));
+
+            OutputPipe clientPipe = pipeService.createOutputPipe(clientPipeAd, WAIT_TIMEOUT);
+
+            Message outmsg = pipeService.createMessage();
+            outmsg.setString(DATA_TAG,"Hello there old chap!");
+
+            clientPipe.send(outmsg);
+            logger.debug("sent message");
+
+        } catch (Exception e) {
+            logger.error("Could not create client pipe");
+            e.printStackTrace();
+        }
+
     }
 }

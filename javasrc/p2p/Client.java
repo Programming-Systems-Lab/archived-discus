@@ -1,3 +1,4 @@
+package psl.discus.javasrc.p2p;
 
 import java.io.*;
 import java.util.Enumeration;
@@ -7,6 +8,7 @@ import net.jxta.discovery.DiscoveryEvent;
 import net.jxta.discovery.DiscoveryListener;
 import net.jxta.discovery.DiscoveryService;
 import net.jxta.document.*;
+import net.jxta.document.Document;
 import net.jxta.endpoint.Message;
 import net.jxta.endpoint.MessageElement;
 import net.jxta.exception.PeerGroupException;
@@ -15,8 +17,16 @@ import net.jxta.peergroup.PeerGroupFactory;
 import net.jxta.pipe.*;
 import net.jxta.protocol.*;
 import net.jxta.id.IDFactory;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.log4j.*;
+import org.apache.xml.security.utils.XMLUtils;
+import org.w3c.dom.*;
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+
+import javax.xml.parsers.*;
+import javax.sql.DataSource;
+
+import psl.discus.javasrc.security.*;
 
 /**
  * Initial implementation of the JXTA client for finding p2p UDDI services
@@ -51,12 +61,12 @@ public class Client implements PipeMsgListener {
     private static final String CMD_QUIT = "quit";
     private static final String PIPE_ADV_FILE = "pipe.adv";
 
-    static {
-        logger.setLevel(Level.DEBUG);
-    }
+    private DocumentBuilder db;
+    private SignatureManager signatureManager;
+    private Element inputPipeXMLAd;
 
     public static void main(String args[]) {
-        Client myapp = new Client();
+        Client myapp = new Client(new FakeDataSource());
         logger.debug("Starting Client peer ....");
         myapp.startJxta();
         myapp.createInputPipe();
@@ -80,9 +90,24 @@ public class Client implements PipeMsgListener {
 
     }
 
-    public Client() {
+    public Client(DataSource ds) {
 
         knownPipeAds = new Hashtable();
+
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        try {
+            db = dbf.newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            throw new RuntimeException("Could not get DocumentBuilder: " + e);
+        }
+
+        try {
+            signatureManager = new SignatureManagerImpl(ds);
+        }
+        catch (SignatureManagerException e) {
+            throw new RuntimeException("Could not initialize SignatureManager: " + e);
+        }
 
     }
 
@@ -167,11 +192,27 @@ public class Client implements PipeMsgListener {
             logger.error("could not create input pipe!: " + e);
         }
 
+        // create XML representation for sending
+        org.w3c.dom.Document doc = db.newDocument();
+        inputPipeXMLAd = doc.createElement(Server.PIPE_TAG);
+        inputPipeXMLAd.setAttribute("xmlns:jxta","http://jxta.org");
+        Element id = doc.createElement("Id");
+        id.appendChild(doc.createTextNode(inputPipeAdv.getID().toString()));
+        inputPipeXMLAd.appendChild(id);
+
+        Element type = doc.createElement("Type");
+        type.appendChild(doc.createTextNode(inputPipeAdv.getType()));
+        inputPipeXMLAd.appendChild(type);
+
+        Element name = doc.createElement("Name");
+        name.appendChild(doc.createTextNode(inputPipeAdv.getName()));
+        inputPipeXMLAd.appendChild(name);
+
     }
 
     private void sendMessageToAll(String message) {
 
-        final int BIND_TIMEOUT = 10000;
+        final int BIND_TIMEOUT = 15000;
 
         for (Enumeration pipeAds = knownPipeAds.elements(); pipeAds.hasMoreElements();) {
             try {
@@ -185,6 +226,7 @@ public class Client implements PipeMsgListener {
                     logger.debug("Trying to bind to pipe...");
                     try {
                         myPipe = pipeService.createOutputPipe(pipeAdv, BIND_TIMEOUT);
+                        logger.debug("bound to pipe");
                         break;
                     } catch (java.io.IOException e) {
                         // will try again;
@@ -197,18 +239,54 @@ public class Client implements PipeMsgListener {
 
                 // create the pipe message
                 Message msg = pipeService.createMessage();
-                msg.setString(Server.DATA_TAG, message);
 
+                //msg.setString(Server.DATA_TAG, message);
+                //StringBuffer xml = new StringBuffer(); //.append("<?xml version=\"1.0\" ?>");
 
-                Document pipeDoc = inputPipeAdv.getDocument(xmlMimeMediaType);
-                MessageElement element = msg.newMessageElement(Server.INPUT_PIPE_TAG,xmlMimeMediaType,pipeDoc.getStream());
+                /*net.jxta.document.Document pipeDoc = inputPipeAdv.getDocument(xmlMimeMediaType);
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                pipeDoc.sendToStream(out);
+                xml.append(out.toString());
+
+                StringReader reader = new StringReader(xml.toString());
+                org.w3c.dom.Document pipeXMLDoc = db.parse(new InputSource(reader));
+                XMLUtils.outputDOM(pipeXMLDoc, System.out);
+
+                org.w3c.dom.Document doc = db.newDocument();
+                org.w3c.dom.Element main = doc.createElement("main");
+                Node newNode = doc.importNode(pipeXMLDoc.getFirstChild(), true);
+                main.appendChild(newNode);
+                doc.appendChild(main);
+                */
+                org.w3c.dom.Document doc = db.newDocument();
+                Element main = doc.createElement(Server.DATA_TAG);
+
+                Element query = doc.createElement(Server.QUERY_TAG);
+                query.appendChild(doc.createTextNode("this is the query"));
+                main.appendChild(query);
+
+                Node ad = doc.importNode(inputPipeXMLAd, true);
+                main.appendChild(ad);
+
+                doc.appendChild(main);
+
+                //XMLUtils.outputDOM(doc, System.out);
+                //System.out.flush();
+
+                //logger.debug("signing...");
+                doc = signatureManager.signDocument(doc);
+
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                XMLUtils.outputDOM(doc, out);
+                //MessageElement element = msg.newMessageElement(Server.INPUT_PIPE_TAG,xmlMimeMediaType,pipeDoc.getStream());
+                MessageElement element = msg.newMessageElement(Server.DATA_TAG,xmlMimeMediaType,out.toByteArray());
                 msg.addElement(element);
 
                 // send the message to the service pipe
                 myPipe.send(msg);
-                logger.debug("message \"" + msg.toString() + "\" sent to the Server");
+                logger.debug("message sent to the Server");
 
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.error("Problem sending message: " + e);
                 continue;
             }
@@ -260,7 +338,7 @@ public class Client implements PipeMsgListener {
 
         /**
          * by implementing DiscoveryListener we must define this method
-         * to deal to discovery responses
+         * to deal with discovery responses
          */
         public void discoveryEvent(DiscoveryEvent ev) {
             DiscoveryResponseMsg res = ev.getResponse();
@@ -289,7 +367,7 @@ public class Client implements PipeMsgListener {
             while (enum.hasMoreElements()) {
                 try {
                     String str = (String) enum.nextElement();
-                    logger.debug("raw msad: " + str);
+                    //logger.debug("raw msad: " + str);
                     // instantiate an advertisement object from each element
                     ModuleSpecAdvertisement moduleSpecAd = (ModuleSpecAdvertisement)
                             AdvertisementFactory.newAdvertisement
