@@ -101,15 +101,6 @@ namespace PSL.DISCUS.DAML
 		}
 	}
 
-
-	public enum enuIOPEType
-	{
-		Input,
-		Output,
-		Precondition,
-		Effect
-	};
-
 	public enum enuIOPESearchBy
 	{
 		PARAM_DESC,

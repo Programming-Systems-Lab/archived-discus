@@ -291,14 +291,14 @@ namespace DISCUSUnittest
 				DAMLProcessModel process = new DAMLProcessModel();
 				process.LoadXml( strDAML );
 				
-				string[] arrRes = null;
+				//string[] arrRes = null;
 				//arrRes = process.SimpleProcesses;
 				//arrRes = process.CompositeProcesses;
 				//arrRes = process.AtomicProcesses;
 				//arrRes = process.AllProcesses;
-				arrRes = process.GetInputsOfNamedProcess( "LocateBook" );
+				//arrRes = process.GetInputsOfNamedProcess( "LocateBook" );
 				
-				
+				DAMLProcess res = process.GetProcessData( "LocateBook", enuProcessType.AtomicProcess );
 				
 				
 				

@@ -2,6 +2,69 @@ using System;
 
 namespace PSL.DISCUS.DAML
 {
+	public enum enuIOPEType
+	{
+		Input, // ServiceProfile entity
+		Output, // ServiceProfile entity
+		Precondition, // ServiceProfile entity
+		Effect, // ServiceProfile entity
+		ConditionalOutput, // ProcessModel entity
+		CoCondition, // ProcessModel entity
+		CoOutput, // ProcessModel entity
+		Parameter // ProcessModel entity
+	};
+
+	public class RDFProperty
+	{
+		private string m_strName = "";
+		private string m_strSubPropertyOf = "";
+		private string m_strDomain = "";
+		private string m_strRange = "";
+		private string m_strSameValueAs = "";
+
+		public RDFProperty()
+		{}
+
+		public string Name
+		{
+			get
+			{ return m_strName; }
+			set
+			{ m_strName = value; }
+		}
+		public string SubPropertyOf
+		{
+			get
+			{ return m_strSubPropertyOf; }
+			set
+			{ m_strSubPropertyOf = value; }
+		}
+
+		public string Domain
+		{
+			get
+			{ return m_strDomain; }
+			set
+			{ m_strDomain = value; }
+		}
+
+		public string Range
+		{
+			get
+			{ return m_strRange; }
+			set
+			{ m_strRange = value; }
+		}
+
+		public string SameValueAs
+		{
+			get
+			{ return m_strSameValueAs; }
+			set
+			{ m_strSameValueAs = value; }
+		}
+	}
+
 	public abstract class DAMLConstants
 	{
 		//*********************************************************************//
@@ -26,6 +89,7 @@ namespace PSL.DISCUS.DAML
 		public const string DAML_ONTOLOGY = DAML_NS + ":Ontology";
 		public const string DAML_VERSIONINFO = DAML_NS + ":versionInfo";
 		public const string DAML_IMPORTS = DAML_NS + ":imports";
+		public const string DAML_SAMEVALUESAS = DAML_NS + ":sameValuesAs";
 		// RDF Constants (attributes)
 		public const string RDF_RESOURCE = RDF_NS + ":resource";
 		public const string RDF_COMMENT = RDF_NS + ":comment";
@@ -75,6 +139,11 @@ namespace PSL.DISCUS.DAML
 		public const string OUTPUT = "output";
 		public const string PRECONDITION = "precondition";
 		public const string EFFECT = "effect";
+		// Additional IOPE Constants
+		public const string CONDITIONAL_OUTPUT = "conditionalOutput";
+		public const string CO_CONDITION = "coCondition";
+		public const string CO_OUTPUT = "coOutput";
+		public const string PARAMETER = "parameter";
 
 		//*********************************************************************//
 
@@ -84,7 +153,7 @@ namespace PSL.DISCUS.DAML
 		
 		public const string DAML_CLASS = DAML_NS + ":Class";
 		public const string DAML_SIMPLE_PROCESS = "SimpleProcess";
-		public const string DAML_COMPLEX_PROCESS = "CompositeProcess";
+		public const string DAML_COMPOSITE_PROCESS = "CompositeProcess";
 		public const string DAML_ATOMIC_PROCESS = "AtomicProcess";
 
 		public DAMLConstants()
