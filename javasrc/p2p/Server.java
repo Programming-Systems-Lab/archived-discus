@@ -21,8 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.xml.security.utils.XMLUtils;
 import org.xml.sax.InputSource;
 import org.apache.xml.serialize.*;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
+import org.w3c.dom.*;
 import org.w3c.dom.Element;
 
 import javax.xml.parsers.*;
@@ -48,37 +47,30 @@ import psl.discus.javasrc.uddi.*;
  * connect to the service. The server application creates an input
  * pipe and waits to receive messages.
  */
-public class Server implements PipeMsgListener {
+public class Server implements PipeMsgListener, Tags {
 
     static PeerGroup group = null;
     private DiscoveryService discoveryService;
     private PipeService pipeService;
 
     private static final Logger logger = Logger.getLogger(Server.class);
-    public static final String SERVICE_NAME = "discusUddi";
+
     public static final String MODULE_ADV_FILE = "module.adv";
     public static final String MODULE_SPEC_ADV_FILE = "modulespec.adv";
     public static final String PIPE_ADV_FILE = "pipe.adv";
-    public static final String DATA_TAG = "data";
-    public static final String QUERY_TAG = "query";
-    //public static final String INPUT_PIPE_TAG = "InputPipe";
+
     public static final MimeMediaType xmlMimeMediaType = new MimeMediaType("text/xml");
+
     private DocumentBuilder db;
     private SignatureManager signatureManager;
     private MessageDispatcher messageDispatcher;
     private XMLSerializer xmlSerializer;
 
-    public static final String PIPE_TAG = "jxta:PipeAdvertisement";
-    public static final String MODULE_SPEC_ID_TAG = "ModuleSpecId";
-    public static final String PIPE_ID_TAG = "PipeId";
-    public static final String PARAM_TAG = "Parm";
-    public static final String ENVELOPE_TAG = "Envelope";
-
 
     public static void main(String args[]) {
-        Server myapp = new Server(new FakeDataSource());
-        logger.debug("Starting Service Peer ....");
-        myapp.startJxta();
+        Server server = new Server(new FakeDataSource());
+        logger.debug("Starting Server....");
+        server.startJxta();
 
     }
 
@@ -103,7 +95,7 @@ public class Server implements PipeMsgListener {
 
         try {
             logger.debug("Instantiating MessageDispatcher...");
-            messageDispatcher = new MessageDispatcher(signatureManager);
+            messageDispatcher = new MessageDispatcher(ds, signatureManager);
         } catch (MessageDispatcherException e) {
             throw new RuntimeException("Could not initialize MessageDispatcher: " + e);
         }
@@ -368,8 +360,10 @@ public class Server implements PipeMsgListener {
         Message msg;
         try {
             msg = event.getMessage();
-            if (msg == null)
+            if (msg == null) {
+                logger.error("received null message");
                 return;
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return;
@@ -379,16 +373,16 @@ public class Server implements PipeMsgListener {
         String newMessage = msg.getString(DATA_TAG);
 
         if (newMessage == null) {
-            logger.debug("null msg received");
+            logger.debug("data tag in message was empty or missing");
             return;
         }
 
         logger.debug("Received message: " + newMessage);
 
         // verify message, then extract query and input pipe
-        org.w3c.dom.Document doc = null;
+        org.w3c.dom.Document msgDoc = null;
         try {
-            doc = db.parse(new InputSource(new StringReader(newMessage)));
+            msgDoc = db.parse(new InputSource(new StringReader(newMessage)));
         }
         catch (Exception e) {
             logger.warn("Could not parse message: " + e);
@@ -397,7 +391,8 @@ public class Server implements PipeMsgListener {
 
         SignatureManagerResponse response = null;
         try {
-            response = signatureManager.verifyDocument(doc);
+            response = signatureManager.verifyDocument(msgDoc);
+            logger.info("verified message, from service space " + response.getSigner().getName());
         }
         catch (SignatureManagerException e) {
             logger.warn("Could not verify signature: " + e);
@@ -407,37 +402,50 @@ public class Server implements PipeMsgListener {
         }
 
         if (response != null) {
-            doc = response.getDocument();
+            msgDoc = response.getDocument();
         }
 
-        String uddiResponse = null;
+        // extract message number - we have to send the response back with this same number
+        String messageNumber = null;
         {
-            // extract SOAP Envelope
-            logger.debug("extracting SOAP envelope");
-            NodeList list = doc.getElementsByTagName(ENVELOPE_TAG);
+            NodeList list = msgDoc.getElementsByTagName(MSGNUM_TAG);
             if (list == null || list.getLength() == 0) {
-                logger.error("did not find envelope element in document");
+                logger.error("did not find message number in document");
                 return;
             }
 
             Node envelopeNode = list.item(0);
-            org.w3c.dom.Document envelopeDoc = db.newDocument();
-            Node importedNode = envelopeDoc.importNode(envelopeNode,true);
-            envelopeDoc.appendChild(importedNode);
-
-
-            try {
-                uddiResponse = messageDispatcher.dispatchMessage(envelopeDoc, response.getSigner());
-            } catch (MessageDispatcherException e) {
-                logger.error("could not dispatch message to UDDI registry: " + e);
-                return;
-            }
+            Text msgNumText = (Text) envelopeNode.getFirstChild();
+            messageNumber = msgNumText.getNodeValue();
+            logger.debug("msg num=" + messageNumber);
         }
 
+
+        // prepare the document that is going to hold the response
+        // we need this here because when we process the response (below),
+        // we need to pass the element where the responses should go
+        org.w3c.dom.Document responseDoc = db.newDocument();
+        Element responseElement = responseDoc.createElement(RESPONSE_TAG);
+
+        // extract query element - this is what we'll process to send the response
+        // (for example, the UDDI query would be here)
+        {
+            NodeList list = msgDoc.getElementsByTagName(QUERY_TAG);
+            if (list == null || list.getLength() == 0) {
+                logger.error("did not find query element in document");
+                return;
+            }
+
+            processQuery(list.item(0), responseElement, response.getSigner());
+        }
+
+
+
+        OutputPipe clientPipe = null;
         {
             // extract inputpipe element
             logger.debug("extracting pipe element");
-            NodeList list = doc.getElementsByTagName(PIPE_TAG);
+            NodeList list = msgDoc.getElementsByTagName(PIPE_TAG);
             if (list == null || list.getLength() == 0) {
                 logger.error("did not find pipe element in document");
                 return;
@@ -459,19 +467,95 @@ public class Server implements PipeMsgListener {
                         AdvertisementFactory.newAdvertisement(
                                 xmlMimeMediaType, new ByteArrayInputStream(out.toByteArray()));
 
-                OutputPipe clientPipe = pipeService.createOutputPipe(clientPipeAd, WAIT_TIMEOUT);
-
-                Message outmsg = pipeService.createMessage();
-                outmsg.setString(DATA_TAG,uddiResponse);
-
-                clientPipe.send(outmsg);
-                logger.debug("sent message");
+                clientPipe = pipeService.createOutputPipe(clientPipeAd, WAIT_TIMEOUT);
 
             } catch (Exception e) {
                 logger.error("Could not create client pipe");
-                e.printStackTrace();
+                return;
             }
         }
+
+        // finally, send the response to the client
+        Message outmsg = pipeService.createMessage();
+
+        Element dataElement = responseDoc.createElement(Server.DATA_TAG);
+
+        Element msgNumElement = responseDoc.createElement(Server.MSGNUM_TAG);
+        Text msgNumText = responseDoc.createTextNode(String.valueOf(messageNumber));
+        msgNumElement.appendChild(msgNumText);
+
+        dataElement.appendChild(msgNumElement);
+        dataElement.appendChild(responseElement);
+
+        responseDoc.appendChild(dataElement);
+
+        // sign everything
+        try {
+            responseDoc = signatureManager.signDocument(responseDoc);
+        } catch (SignatureManagerException e) {
+            logger.error("could not sign message: " + e);
+            return;
+        }
+
+        // import into JXTA message
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        XMLUtils.outputDOM(responseDoc, out);
+
+        logger.debug("sending msg: \n" + out.toString());
+
+        MessageElement element = msg.newMessageElement(Server.DATA_TAG, xmlMimeMediaType, out.toByteArray());
+        outmsg.addElement(element);
+
+        try {
+            clientPipe.send(outmsg);
+            logger.debug("sent message");
+        } catch (IOException e) {
+            logger.error("could not send message: " + e);
+            return;
+        }
+
+    }
+
+    /**
+     * Processes the query sent. For now we only take into account the first element,
+     * but this could be extended to process any queries in the main query element.
+     * The response(s) are added to the given response element.
+     *
+     * Currently we only process SOAP queries, so this method is a little overdoing it.
+     * But it would be easy to add processing for other queries that might come in the same message.
+     *
+     */
+    private void processQuery(Node node, Element responseElement, ServiceSpace signer) {
+
+        NodeList nodes = node.getChildNodes();
+
+        for (int i=0;i<nodes.getLength();i++)
+        {
+            Node currentNode = nodes.item(i);
+            if (currentNode.getNodeName().equals(SOAP_ENVELOPE_TAG)) {
+
+                // we found a SOAP query -- send it to the UDDI registry
+                /*org.w3c.dom.Document envelopeDoc = db.newDocument();
+                Node importedNode = envelopeDoc.importNode(envelopeNode,true);
+                envelopeDoc.appendChild(importedNode);
+*/
+                Element response = null;
+                try {
+                    response = messageDispatcher.dispatchMessage((Element)currentNode, signer);
+                } catch (MessageDispatcherException e) {
+                    logger.error("could not dispatch message to UDDI registry: " + e);
+                    continue;
+                }
+
+                // we need to import the element because we are putting it into a different DOM document
+                Node responseNode = responseElement.getOwnerDocument().importNode(response,true);
+                responseElement.appendChild(responseNode);
+
+            }
+            // here we would check if there other queries that we know
+        }
+
+
     }
 
 }
