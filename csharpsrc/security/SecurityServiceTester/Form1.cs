@@ -25,12 +25,9 @@ namespace SecurityServiceTester
 		private System.Windows.Forms.Panel panel2;
 		private System.Windows.Forms.Splitter splitter1;
 		private System.Windows.Forms.TextBox inputText;
-		private System.Windows.Forms.TextBox textURL;
 		private System.Windows.Forms.Button buttonChangeUrl;
 		private System.Windows.Forms.Button btnRequestCheck;
 		private System.Windows.Forms.Button btnUnsignedRequest;
-		private System.Windows.Forms.Button btnCopyUp;
-		private System.Windows.Forms.Button btnClear;
 		private System.Windows.Forms.Panel panel3;
 		private System.Windows.Forms.Panel panel4;
 		private System.Windows.Forms.Label label1;
@@ -38,6 +35,10 @@ namespace SecurityServiceTester
 		private System.Windows.Forms.TextBox textStatus;
 		private System.Windows.Forms.TextBox textAlias;
 		private System.Windows.Forms.Label label2;
+		private System.Windows.Forms.Button btnCopyUp;
+		private System.Windows.Forms.Button btnClear;
+		private System.Windows.Forms.Button btnRevokeTreaty;
+		private System.Windows.Forms.ComboBox comboURL;
 
 		private SecurityManagerService svc;
 
@@ -52,7 +53,7 @@ namespace SecurityServiceTester
 			// TODO: Add any constructor code after InitializeComponent call
 			//
 			svc = new SecurityManagerService();
-			textURL.Text = svc.Url;
+			comboURL.Text = svc.Url;
 			buttonChangeUrl.Enabled = false;
 		}
 
@@ -79,26 +80,27 @@ namespace SecurityServiceTester
 		private void InitializeComponent()
 		{
 			this.panel1 = new System.Windows.Forms.Panel();
-			this.btnCopyUp = new System.Windows.Forms.Button();
 			this.buttonChangeUrl = new System.Windows.Forms.Button();
-			this.textURL = new System.Windows.Forms.TextBox();
 			this.button3 = new System.Windows.Forms.Button();
 			this.button2 = new System.Windows.Forms.Button();
 			this.button1 = new System.Windows.Forms.Button();
 			this.buttonSubmit = new System.Windows.Forms.Button();
 			this.btnRequestCheck = new System.Windows.Forms.Button();
 			this.btnUnsignedRequest = new System.Windows.Forms.Button();
-			this.btnClear = new System.Windows.Forms.Button();
+			this.btnRevokeTreaty = new System.Windows.Forms.Button();
 			this.panel2 = new System.Windows.Forms.Panel();
 			this.panel3 = new System.Windows.Forms.Panel();
 			this.outputText = new System.Windows.Forms.TextBox();
 			this.panel4 = new System.Windows.Forms.Panel();
+			this.btnCopyUp = new System.Windows.Forms.Button();
+			this.btnClear = new System.Windows.Forms.Button();
 			this.textStatus = new System.Windows.Forms.TextBox();
 			this.label1 = new System.Windows.Forms.Label();
 			this.textAlias = new System.Windows.Forms.TextBox();
 			this.label2 = new System.Windows.Forms.Label();
 			this.splitter1 = new System.Windows.Forms.Splitter();
 			this.inputText = new System.Windows.Forms.TextBox();
+			this.comboURL = new System.Windows.Forms.ComboBox();
 			this.panel1.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.panel3.SuspendLayout();
@@ -108,59 +110,39 @@ namespace SecurityServiceTester
 			// panel1
 			// 
 			this.panel1.Controls.AddRange(new System.Windows.Forms.Control[] {
-																				 this.btnCopyUp,
+																				 this.comboURL,
 																				 this.buttonChangeUrl,
-																				 this.textURL,
 																				 this.button3,
 																				 this.button2,
 																				 this.button1,
 																				 this.buttonSubmit,
 																				 this.btnRequestCheck,
 																				 this.btnUnsignedRequest,
-																				 this.btnClear});
+																				 this.btnRevokeTreaty});
 			this.panel1.Dock = System.Windows.Forms.DockStyle.Bottom;
 			this.panel1.Location = new System.Drawing.Point(0, 341);
 			this.panel1.Name = "panel1";
 			this.panel1.Size = new System.Drawing.Size(672, 120);
 			this.panel1.TabIndex = 6;
 			// 
-			// btnCopyUp
-			// 
-			this.btnCopyUp.Location = new System.Drawing.Point(8, 8);
-			this.btnCopyUp.Name = "btnCopyUp";
-			this.btnCopyUp.Size = new System.Drawing.Size(96, 23);
-			this.btnCopyUp.TabIndex = 11;
-			this.btnCopyUp.Text = "Copy Up";
-			this.btnCopyUp.Click += new System.EventHandler(this.btnCopyUp_Click);
-			// 
 			// buttonChangeUrl
 			// 
 			this.buttonChangeUrl.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left);
 			this.buttonChangeUrl.Enabled = false;
 			this.buttonChangeUrl.ForeColor = System.Drawing.Color.Blue;
-			this.buttonChangeUrl.Location = new System.Drawing.Point(344, 88);
+			this.buttonChangeUrl.Location = new System.Drawing.Point(448, 88);
 			this.buttonChangeUrl.Name = "buttonChangeUrl";
-			this.buttonChangeUrl.Size = new System.Drawing.Size(96, 24);
+			this.buttonChangeUrl.Size = new System.Drawing.Size(88, 24);
 			this.buttonChangeUrl.TabIndex = 10;
 			this.buttonChangeUrl.Text = "Change URL";
 			this.buttonChangeUrl.Click += new System.EventHandler(this.buttonChangeUrl_Click);
 			// 
-			// textURL
-			// 
-			this.textURL.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left);
-			this.textURL.Location = new System.Drawing.Point(8, 88);
-			this.textURL.Name = "textURL";
-			this.textURL.Size = new System.Drawing.Size(320, 20);
-			this.textURL.TabIndex = 9;
-			this.textURL.Text = "";
-			this.textURL.TextChanged += new System.EventHandler(this.textURL_TextChanged);
-			// 
 			// button3
 			// 
 			this.button3.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left);
-			this.button3.Location = new System.Drawing.Point(464, 40);
+			this.button3.Location = new System.Drawing.Point(344, 8);
 			this.button3.Name = "button3";
-			this.button3.Size = new System.Drawing.Size(96, 40);
+			this.button3.Size = new System.Drawing.Size(96, 32);
 			this.button3.TabIndex = 8;
 			this.button3.Text = "Sign doc";
 			this.button3.Click += new System.EventHandler(this.button3_Click);
@@ -168,9 +150,9 @@ namespace SecurityServiceTester
 			// button2
 			// 
 			this.button2.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left);
-			this.button2.Location = new System.Drawing.Point(568, 40);
+			this.button2.Location = new System.Drawing.Point(344, 48);
 			this.button2.Name = "button2";
-			this.button2.Size = new System.Drawing.Size(96, 40);
+			this.button2.Size = new System.Drawing.Size(96, 32);
 			this.button2.TabIndex = 7;
 			this.button2.Text = "Verify doc";
 			this.button2.Click += new System.EventHandler(this.verifyDoc);
@@ -178,9 +160,9 @@ namespace SecurityServiceTester
 			// button1
 			// 
 			this.button1.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left);
-			this.button1.Location = new System.Drawing.Point(120, 40);
+			this.button1.Location = new System.Drawing.Point(8, 48);
 			this.button1.Name = "button1";
-			this.button1.Size = new System.Drawing.Size(96, 40);
+			this.button1.Size = new System.Drawing.Size(96, 32);
 			this.button1.TabIndex = 6;
 			this.button1.Text = "Verify signed treaty";
 			this.button1.Click += new System.EventHandler(this.button1_Click);
@@ -188,9 +170,9 @@ namespace SecurityServiceTester
 			// buttonSubmit
 			// 
 			this.buttonSubmit.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left);
-			this.buttonSubmit.Location = new System.Drawing.Point(8, 40);
+			this.buttonSubmit.Location = new System.Drawing.Point(8, 8);
 			this.buttonSubmit.Name = "buttonSubmit";
-			this.buttonSubmit.Size = new System.Drawing.Size(96, 40);
+			this.buttonSubmit.Size = new System.Drawing.Size(96, 32);
 			this.buttonSubmit.TabIndex = 5;
 			this.buttonSubmit.Text = "Verify unsigned treaty";
 			this.buttonSubmit.Click += new System.EventHandler(this.buttonSubmit_Click);
@@ -198,9 +180,9 @@ namespace SecurityServiceTester
 			// btnRequestCheck
 			// 
 			this.btnRequestCheck.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left);
-			this.btnRequestCheck.Location = new System.Drawing.Point(232, 40);
+			this.btnRequestCheck.Location = new System.Drawing.Point(120, 8);
 			this.btnRequestCheck.Name = "btnRequestCheck";
-			this.btnRequestCheck.Size = new System.Drawing.Size(96, 40);
+			this.btnRequestCheck.Size = new System.Drawing.Size(96, 32);
 			this.btnRequestCheck.TabIndex = 7;
 			this.btnRequestCheck.Text = "Signed Request Check";
 			this.btnRequestCheck.Click += new System.EventHandler(this.btnRequestCheck_Click);
@@ -208,21 +190,21 @@ namespace SecurityServiceTester
 			// btnUnsignedRequest
 			// 
 			this.btnUnsignedRequest.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left);
-			this.btnUnsignedRequest.Location = new System.Drawing.Point(344, 40);
+			this.btnUnsignedRequest.Location = new System.Drawing.Point(120, 48);
 			this.btnUnsignedRequest.Name = "btnUnsignedRequest";
-			this.btnUnsignedRequest.Size = new System.Drawing.Size(96, 40);
+			this.btnUnsignedRequest.Size = new System.Drawing.Size(96, 32);
 			this.btnUnsignedRequest.TabIndex = 7;
 			this.btnUnsignedRequest.Text = "Unsigned Request Check";
 			this.btnUnsignedRequest.Click += new System.EventHandler(this.btnUnsignedRequest_Click);
 			// 
-			// btnClear
+			// btnRevokeTreaty
 			// 
-			this.btnClear.Location = new System.Drawing.Point(120, 8);
-			this.btnClear.Name = "btnClear";
-			this.btnClear.Size = new System.Drawing.Size(96, 23);
-			this.btnClear.TabIndex = 11;
-			this.btnClear.Text = "Clear All";
-			this.btnClear.Click += new System.EventHandler(this.btnClear_Click);
+			this.btnRevokeTreaty.Anchor = (System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left);
+			this.btnRevokeTreaty.Location = new System.Drawing.Point(232, 8);
+			this.btnRevokeTreaty.Name = "btnRevokeTreaty";
+			this.btnRevokeTreaty.Size = new System.Drawing.Size(96, 32);
+			this.btnRevokeTreaty.TabIndex = 8;
+			this.btnRevokeTreaty.Text = "Revoke Treaty";
 			// 
 			// panel2
 			// 
@@ -263,6 +245,8 @@ namespace SecurityServiceTester
 			// 
 			this.panel4.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
 			this.panel4.Controls.AddRange(new System.Windows.Forms.Control[] {
+																				 this.btnCopyUp,
+																				 this.btnClear,
 																				 this.textStatus,
 																				 this.label1,
 																				 this.textAlias,
@@ -271,6 +255,24 @@ namespace SecurityServiceTester
 			this.panel4.Name = "panel4";
 			this.panel4.Size = new System.Drawing.Size(672, 32);
 			this.panel4.TabIndex = 11;
+			// 
+			// btnCopyUp
+			// 
+			this.btnCopyUp.Location = new System.Drawing.Point(456, 3);
+			this.btnCopyUp.Name = "btnCopyUp";
+			this.btnCopyUp.Size = new System.Drawing.Size(96, 23);
+			this.btnCopyUp.TabIndex = 13;
+			this.btnCopyUp.Text = "Copy Up";
+			this.btnCopyUp.Click += new System.EventHandler(this.btnCopyUp_Click);
+			// 
+			// btnClear
+			// 
+			this.btnClear.Location = new System.Drawing.Point(568, 3);
+			this.btnClear.Name = "btnClear";
+			this.btnClear.Size = new System.Drawing.Size(96, 23);
+			this.btnClear.TabIndex = 12;
+			this.btnClear.Text = "Clear All";
+			this.btnClear.Click += new System.EventHandler(this.btnClear_Click);
 			// 
 			// textStatus
 			// 
@@ -327,6 +329,17 @@ namespace SecurityServiceTester
 			this.inputText.TabIndex = 7;
 			this.inputText.Text = "";
 			// 
+			// comboURL
+			// 
+			this.comboURL.Items.AddRange(new object[] {
+														  "http://church.psl.cs.columbia.edu:8080/security/jaxrpc/SecurityManagerService",
+														  "http://cairo.clic.cs.columbia.edu:8080/security/jaxrpc/SecurityManagerService"});
+			this.comboURL.Location = new System.Drawing.Point(8, 88);
+			this.comboURL.Name = "comboURL";
+			this.comboURL.Size = new System.Drawing.Size(432, 21);
+			this.comboURL.TabIndex = 11;
+			this.comboURL.TextChanged += new System.EventHandler(this.comboURL_TextChanged);
+			// 
 			// Form1
 			// 
 			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
@@ -337,6 +350,7 @@ namespace SecurityServiceTester
 			this.MaximizeBox = false;
 			this.Name = "Form1";
 			this.Text = "SecurityService Tester";
+			this.Load += new System.EventHandler(this.Form1_Load);
 			this.panel1.ResumeLayout(false);
 			this.panel2.ResumeLayout(false);
 			this.panel3.ResumeLayout(false);
@@ -421,11 +435,11 @@ namespace SecurityServiceTester
 		{
 			try 
 			{
-				svc.Url = textURL.Text;
+				svc.Url = comboURL.Text;
 			} 
 			catch (Exception) 
 			{
-				MessageBox.Show(this,"Invalid URL!","Error",MessageBoxButtons.OK,MessageBoxIcon.Exclamation);
+				MessageBox.Show(this,"Invalid URL! Please try again.","Error",MessageBoxButtons.OK,MessageBoxIcon.Exclamation);
 				return;
 			}
 
@@ -495,9 +509,15 @@ namespace SecurityServiceTester
 
 		}
 
-		private void textURL_TextChanged(object sender, System.EventArgs e)
+		private void comboURL_TextChanged(object sender, System.EventArgs e)
 		{
 			buttonChangeUrl.Enabled = true;
+			
+		}
+
+		private void Form1_Load(object sender, System.EventArgs e)
+		{
+		
 		}
 
 		

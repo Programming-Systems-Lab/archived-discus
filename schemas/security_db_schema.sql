@@ -1,12 +1,28 @@
 
-CREATE TABLE ServiceInvokationPermission (
-    clientServiceSpaceId int,
+CREATE SEQUENCE groups_seq;
+CREATE TABLE Groups (
+    groupid             integer DEFAULT nextval('groups_seq'),
+    groupname           varchar(32) NOT NULL,
+    PRIMARY KEY(groupid)
+);
+
+CREATE TABLE ServicePermissions (
+    groupid             integer NOT NULL,
     serviceName         varchar(32) NOT NULL,
     methodName          varchar(32) NOT NULL,
     params              varchar NOT NULL,
     numInvokations      integer NOT NULL,
-    methodImplementation varchar(64) NOT NULL
+    methodImplementation varchar(64) NOT NULL,
+    FOREIGN KEY(groupid) REFERENCES Groups
 );
+
+CREATE TABLE ServiceSpaceGroups (
+    groupid             integer NOT NULL,
+    servicespaceid      integer NOT NULL,
+    PRIMARY KEY(groupid,servicespaceid),
+    FOREIGN KEY(groupid) REFERENCES Groups
+);
+
 
 CREATE TABLE Treaties (
     treatyid    integer NOT NULL,

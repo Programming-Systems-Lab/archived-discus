@@ -56,6 +56,27 @@ public class SecurityManagerService : System.Web.Services.Protocols.SoapHttpClie
     /// <remarks/>
     [System.Web.Services.Protocols.SoapRpcMethodAttribute("", RequestNamespace="http://localhost/wsdl", ResponseNamespace="http://localhost/wsdl")]
     [return: System.Xml.Serialization.SoapElementAttribute("result")]
+    public string[] revokeTreaty(int int_1) {
+        object[] results = this.Invoke("revokeTreaty", new object[] {
+                    int_1});
+        return ((string[])(results[0]));
+    }
+    
+    /// <remarks/>
+    public System.IAsyncResult BeginrevokeTreaty(int int_1, System.AsyncCallback callback, object asyncState) {
+        return this.BeginInvoke("revokeTreaty", new object[] {
+                    int_1}, callback, asyncState);
+    }
+    
+    /// <remarks/>
+    public string[] EndrevokeTreaty(System.IAsyncResult asyncResult) {
+        object[] results = this.EndInvoke(asyncResult);
+        return ((string[])(results[0]));
+    }
+    
+    /// <remarks/>
+    [System.Web.Services.Protocols.SoapRpcMethodAttribute("", RequestNamespace="http://localhost/wsdl", ResponseNamespace="http://localhost/wsdl")]
+    [return: System.Xml.Serialization.SoapElementAttribute("result")]
     public string[] signDocument(string String_1) {
         object[] results = this.Invoke("signDocument", new object[] {
                     String_1});
