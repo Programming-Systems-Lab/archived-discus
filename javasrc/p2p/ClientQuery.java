@@ -41,6 +41,8 @@ public class ClientQuery {
         this.name = name;
     }
 
-
+    public String toString() {
+        return "\"" + name + "\"";
+    }
 
 }

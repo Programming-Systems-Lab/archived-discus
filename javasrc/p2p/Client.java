@@ -128,8 +128,10 @@ public class Client implements PipeMsgListener, Tags {
     public ServiceSpaceEndpoint[] subscribeToNotifications(ClientEventListener listener) {
         notificationSubscribers.add(listener);
 
+        ServiceSpaceEndpoint[] serviceSpaceEndpoints =
+                (ServiceSpaceEndpoint[]) knownPipeAds.values().toArray(new ServiceSpaceEndpoint[0]);
 
-        return (ServiceSpaceEndpoint[]) knownPipeAds.values().toArray(new ServiceSpaceEndpoint[0]);
+        return serviceSpaceEndpoints;
     }
 
     private void startJxta() {
@@ -253,6 +255,11 @@ public class Client implements PipeMsgListener, Tags {
      * @param minTrustLevel
      */
     public void sendQueryToAll(ClientQuery query, int minTrustLevel) {
+
+        if (knownPipeAds.size() == 0) {
+            logger.info("there are no known service space endpoints!");
+            return;
+        }
 
         logger.info("sending query to all known service spaces...");
 

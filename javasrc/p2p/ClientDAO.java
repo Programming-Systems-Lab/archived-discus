@@ -160,7 +160,7 @@ public class ClientDAO {
         }
 
         public String toString() {
-            return "[id=" + serviceSpace.getServiceSpaceId() +
+            return "Service Space id " + serviceSpace.getServiceSpaceId() +
                 ", trust=" + serviceSpace.getTrustLevel();
         }
     }
