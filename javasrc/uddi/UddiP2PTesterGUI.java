@@ -8,8 +8,10 @@ package psl.discus.javasrc.uddi;
 
 import psl.discus.javasrc.security.ServiceSpace;
 import psl.discus.javasrc.p2p.*;
+import psl.discus.javasrc.shared.TextPaneAppender;
 
 import javax.swing.*;
+import javax.swing.text.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import java.io.*;
@@ -18,8 +20,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 import org.w3c.dom.*;
+import org.w3c.dom.Element;
 import org.apache.axis.utils.XMLUtils;
-import org.apache.log4j.Logger;
+import org.apache.log4j.*;
 
 /**
  * A GUI for the UddiP2PTester class
@@ -30,10 +33,18 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame implements ClientEventL
     private UddiP2PTester tester;
     private Logger logger;
 
+
     public UddiP2PTesterGUI() {
         initComponents();
 
-        System.setOut(new TextAreaPrintStream());
+        //System.setOut(new TextAreaPrintStream());
+        TextPaneAppender appender = new TextPaneAppender(textPane);
+        appender.setLayout(new PatternLayout("%C{1}: %m%n"));
+        Logger mainLogger = Logger.getLogger("psl.discus");
+        mainLogger.removeAllAppenders();
+        mainLogger.addAppender(appender);
+
+
         logger = Logger.getLogger(UddiP2PTesterGUI.class);
 
         this.tester = new UddiP2PTester();
@@ -92,7 +103,6 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame implements ClientEventL
         queryType = new javax.swing.ButtonGroup();
         jPanel1 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
-        logText = new javax.swing.JTextArea();
         jPanel2 = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
@@ -106,6 +116,32 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame implements ClientEventL
         jPanel6 = new javax.swing.JPanel();
         sendQueryButton = new javax.swing.JButton();
 
+        textPane = new JTextPane();
+        // initialize text pane with styles
+        Style def = StyleContext.getDefaultStyleContext().
+                                        getStyle(StyleContext.DEFAULT_STYLE);
+
+        Style regular = textPane.addStyle("debug", def);
+        StyleConstants.setFontFamily(def, "Courier New");
+        StyleConstants.setFontSize(def, 12);
+
+        {
+            Style s = textPane.addStyle("info", regular);
+            StyleConstants.setBold(s, true);
+            StyleConstants.setForeground(s, Color.blue.darker());
+        }
+
+        {
+            Style s = textPane.addStyle("warn", regular);
+            StyleConstants.setItalic(s, true);
+            StyleConstants.setForeground(s, Color.red);
+        }
+
+
+
+
+
+
 
         setTitle("UddiP2PTester");
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -117,9 +153,7 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame implements ClientEventL
         jPanel1.setLayout(new java.awt.BorderLayout());
 
         jScrollPane1.setPreferredSize(new java.awt.Dimension(300,200));
-        //logText.setPreferredSize(new java.awt.Dimension(10, 10));
-        jScrollPane1.setViewportView(logText);
-        logText.setFont(new Font("Courier New",Font.PLAIN,12));
+        jScrollPane1.setViewportView(textPane);
 
         jPanel1.add(jScrollPane1, java.awt.BorderLayout.CENTER);
 
@@ -185,10 +219,6 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame implements ClientEventL
 
     }
 
-    private void log(String s) {
-        logText.append(s + "\n");
-    }
-
     /** Exit the Application */
     private void exitForm(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_exitForm
         System.exit(0);
@@ -209,7 +239,7 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame implements ClientEventL
     private javax.swing.ButtonGroup queryType;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTextArea logText;
+
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JLabel jLabel2;
@@ -222,39 +252,10 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame implements ClientEventL
     private javax.swing.JRadioButton getDetailsRadio;
     private javax.swing.JPanel jPanel6;
     private javax.swing.JButton sendQueryButton;
+    private JTextPane textPane;
     // End of variables declaration//GEN-END:variables
 
-    // this class is used to redirect the log output to the TextArea box
-    final class TextAreaPrintStream extends PrintStream {
 
-        JTextArea textArea = logText;
-
-        public TextAreaPrintStream() {
-            super(System.out);
-            this.textArea = textArea;
-        }
-
-        public void println(String x) {
-            //super.println(x);
-            textArea.append(x);
-            textArea.repaint();
-        }
-
-        public void print(String s) {
-            //super.print(s);
-            textArea.append(s);
-            textArea.repaint();
-        }
-
-
-        public void write(byte buf[], int off, int len) {
-            //super.write(buf, off, len);
-            textArea.append(new String(buf, off, len));
-            textArea.repaint();
-        }
-
-
-    }
 
     /**
      * Used to send queries asynchronously
@@ -274,7 +275,7 @@ public class UddiP2PTesterGUI extends javax.swing.JFrame implements ClientEventL
             } else if (queryType == GETDETAILS_QUERY) {
                 ServiceSpaceEndpoint endpoint = (ServiceSpaceEndpoint) serviceSpaceList.getSelectedValue();
                 if (endpoint == null) {
-                    log("no endpoint selected");
+                    logger.warn("no endpoint selected");
                     return;
                 }
                 tester.sendGetServiceDetailsQuery(endpoint, UddiP2PTesterGUI.this);
