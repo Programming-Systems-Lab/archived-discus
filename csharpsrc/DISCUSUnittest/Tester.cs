@@ -1,20 +1,12 @@
 using System;
 using System.IO;
-//using System.Xml;
-//using System.Xml.Schema;
-//using System.Xml.XPath;
-//using System.Xml.Serialization;
-//using Microsoft.Data.Odbc;
 using PSL.DISCUS.Impl.DataAccess;
 using PSL.DISCUS.Impl.GateKeeper;
-//using PSL.DISCUS.Impl.DynamicProxy;
-//using PSL.DISCUS.Impl.DynamicProxy.Util;
-//using System.Reflection;
 using System.Collections;
-using PSL.DISCUS.Impl.Logging;
+
 using System.Net;
 using System.Net.Sockets;
-
+using PSL.DISCUS.DAML;
 
 namespace DISCUSUnittest
 {	
@@ -24,11 +16,47 @@ namespace DISCUSUnittest
 	class Tester
 	{
 		/* Register services an known gatekeepers */
-		public static void SetupServiceSpace()
+		/* NOTE : The service name MUST match the actual classname [ref: WSDL doc]*/
+		
+		/*public static void SetupServiceSpace()
 		{
 			InternalRegistry ireg = new InternalRegistry();
 			int nServiceID = -1;
 			bool bStatus = false;
+
+			// TODO : weatherConditions --> for BALT-DEMO-2002
+			nServiceID = ireg.RegisterService( "WeatherRetriever", "" , "http://www.vbws.com/services/weatherretriever.asmx?WSDL", "http://www.vbws.com/services/weatherretriever.asmx" );
+			if( nServiceID != -1 )
+			{
+				// register methods before you start using them
+				bStatus = ireg.RegisterServiceMethod( "WeatherRetriever", "GetTemperature" );
+				bStatus = ireg.RegisterServiceMethod( "WeatherRetriever", "GetWeather" );
+			}
+
+			// TODO: Traffic conditions in California
+			nServiceID = ireg.RegisterService( "CATrafficService", "" , "http://www.xmethods.net/sd/2001/CATrafficService.wsdl", "http://services.xmethods.net:80/soap/servlet/rpcrouter" );
+			if( nServiceID != -1 )
+			{
+				// register methods before you start using them
+				bStatus = ireg.RegisterServiceMethod( "CATrafficService", "getTraffic" );
+			}
+
+			// TODO: IP2Location Translator
+			nServiceID = ireg.RegisterService("GeoPinPoint", "" , "http://ws.serviceobjects.net/gpp/GeoPinPoint.asmx?WSDL ", "http://ws.serviceobjects.net/gpp/GeoPinPoint.asmx" );
+			if( nServiceID != -1 )
+			{
+				// register methods before you start using them
+				bStatus = ireg.RegisterServiceMethod( "GeoPinPoint", "GetLocation" );
+			}
+
+			// TODO: ZipCode Resolver
+			nServiceID = ireg.RegisterService("ZipCodeResolver", "" , "http://webservices.eraserver.net/zipcoderesolver/zipcoderesolver.asmx?WSDL", "http://webservices.eraserver.net/zipcoderesolver/zipcoderesolver.asmx" );
+			if( nServiceID != -1 )
+			{
+				// register methods before you start using them
+				bStatus = ireg.RegisterServiceMethod( "ZipCodeResolver", "FullZipCode" );
+			}
+
 			// Google Search
 			nServiceID = ireg.RegisterService( "GoogleSearchService", "", "http://api.google.com/GoogleSearch.wsdl", "http://api.google.com/search/beta2" );
 			if( nServiceID != -1 )
@@ -94,6 +122,8 @@ namespace DISCUSUnittest
 		public static void ResetServiceLocations()
 		{
 			InternalRegistry ireg = new InternalRegistry();
+			// TODO: weatherConditions
+			ireg.UpdateServiceLocation( "WeatherRetriever", "http://www.vbws.com/services/weatherretriever.asmx?WSDL" );
 			// Google Search
 			ireg.UpdateServiceLocation( "GoogleSearchService", "http://api.google.com/GoogleSearch.wsdl" );
 			// GeoCash
@@ -118,6 +148,8 @@ namespace DISCUSUnittest
 			GateKeeper g = new GateKeeper();
 			
 			// Generate Proxies for all the web services we want to interact with
+			// TODO: WeatherConditions
+			g.GenerateProxy( "WeatherRetriever", "http://www.vbws.com/services/weatherretriever.asmx?WSDL", "http://www.vbws.com/services/weatherretriever.asmx" );
 			// Google Search
 			g.GenerateProxy( "GoogleSearchService", "http://api.google.com/GoogleSearch.wsdl", "http://api.google.com/search/beta2" );
 			// GeoCash
@@ -140,6 +172,7 @@ namespace DISCUSUnittest
 		{
 			// GateKeeper instance
 			GateKeeper g = new GateKeeper();
+			//localhost.PSLGatekeeper g = new localhost.PSLGatekeeper();
 			//
 			//DynamicPxy.PSLGatekeeper1 g = new DynamicPxy.PSLGatekeeper1();
 			object objRes = null;
@@ -147,16 +180,56 @@ namespace DISCUSUnittest
 			//ireg.UpdateServiceLocation( "SecurityManagerService", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl" );
 
 
+			// SetupServiceSpace();
 			ExecServiceMethodRequestType e = new ExecServiceMethodRequestType();
-			// BNQuoteBinding
-			e.TreatyID = -1820085390;//-115276743;
-			e.ServiceName = "BNQuoteService";
-			e.MethodName = "getPrice";
+			
+			// TODO: WeatherConditions testing webservice
+			/* e.TreatyID = -1820085390;//-115276743;
+			e.ServiceName = "WeatherRetriever";
+			// e.MethodName = "GetTemperature";
+			e.MethodName = "GetWeather";
 			e.m_ParamValue.Clear();
-			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>1861005458</string>" );
+			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>10027</string>" );
+			*/ 
+
+			// TODO: Traffic Conditions in Chicago testing webservice
+			/* e.TreatyID = -1820085390;//-115276743;
+			e.ServiceName = "CATrafficService";
+			e.MethodName = "getTraffic";
+			e.m_ParamValue.Clear();
+			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>209</string>" );
+			
+			objRes = g.ExecuteServiceMethod( e.ToXml() );			
+			Console.Write(objRes.ToString());
+
+			// TODO: Query for 2 different Highways
+			e.m_ParamValue.Clear();
+			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>5</string>" );
 
 			objRes = g.ExecuteServiceMethod( e.ToXml() );			
+			Console.Write(objRes.ToString());
+			
+			
+			e.TreatyID = -1820085390;//-115276743;
+			e.ServiceName = "GeoPinPoint";
+			e.MethodName = "GetLocation";
+			e.m_ParamValue.Clear();
+			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>128.59.23.57</string>" );
+			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>0</string>" ); // license key
+			
 
+			e.TreatyID = -1820085390;//-115276743;
+			e.ServiceName = "ZipCodeResolver";
+			e.MethodName = "FullZipCode";
+			e.m_ParamValue.Clear();
+			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>0</string>" ); // license key
+			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>500 West 120th Street</string>" );
+			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>New York</string>" );
+			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>NY</string>" );
+
+			objRes = g.ExecuteServiceMethod( e.ToXml() );			
+			Console.Write(objRes.ToString());
+			
 			//objRes = g.EnlistServicesByName( "<?xml version=\"1.0\"?><Treaty xmlns=\"http://localhost/Discus/Schema/Treaty.xsd\"><TreatyID>1000</TreatyID><ClientServiceSpace>myservicespace</ClientServiceSpace><ProviderServiceSpace>providerss</ProviderServiceSpace><ServiceInfo><ServiceName>service</ServiceName><ServiceMethod><MethodName>method</MethodName><Parameter>foo</Parameter><Parameter>bar</Parameter><NumInvokations>1</NumInvokations><Authorized>true</Authorized></ServiceMethod></ServiceInfo></Treaty>" );
 			
 			// Sql script for service invocation permission table
@@ -164,18 +237,6 @@ namespace DISCUSUnittest
 			// insert into serviceinvokationpermission values(100,'XMethodsQuery','getAllServiceSummaries','',100000,'getAllServiceSummaries');
 			// insert into serviceinvokationpermission values(100,'XMethodsQuery','getServiceNamesByPublisher','PubName',100000,'getServiceNamesByPublisher');
 			// insert into serviceinvokationpermission values(100,'GeoCash','GetATMLocations','Zipcode',100000,'GetATMLocations');
-			/*
-			// XMethodsQuery
-			e.ServiceName = "XMethodsQuery";
-			e.MethodName = "getAllServiceSummaries";
-			e.m_ParamValue.Clear();
-			objRes = g.ExecuteServiceMethod( e.ToXml() );
-			
-			e.MethodName = "getServiceNamesByPublisher";
-			e.m_ParamValue.Clear();
-			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>Interdata</string>" );
-			objRes = g.ExecuteServiceMethod( e.ToXml() );
-			*/
 			// GeoCash
 			//e.ServiceName = "GeoCash";
 			//e.MethodName = "GetATMLocations";
@@ -184,15 +245,6 @@ namespace DISCUSUnittest
 			//objRes = g.ExecuteServiceMethod( e.ToXml() );
 
 			// Google
-			
-			// SecurityManagerService
-			/*e.ServiceName = "SecurityManagerService";
-			e.MethodName = "signDocument";
-			e.m_Parameter.Clear();
-			e.m_Parameter.Add( "<?xml version=\"1.0\" encoding=\"utf-8\"?><ExecServiceMethodRequest><TreatyID>4</TreatyID><ServiceName>GeoCash</ServiceName><MethodName>GetATMLocations</MethodName><Parameter>Simple Document</Parameter></ExecServiceMethodRequest>" );
-			objRes = g.ExecuteServiceMethod( e.ToXml() );*/
-
-
 		}
 
 		
@@ -214,7 +266,7 @@ namespace DISCUSUnittest
 			output.Flush();
 			output.Close();
 		}
-		
+		*/
 		/// <summary>
 		/// The main entry point for the application.
 		/// </summary>
@@ -223,12 +275,21 @@ namespace DISCUSUnittest
 		{
 			try
 			{
+				GateKeeper g = new GateKeeper();
+				//DynamicPxy.GeoCash g = new DynamicPxy.GeoCash();
+				//object objRes = g.GetATMLocations( "10025", "0" );
+
 				//SetupServiceSpace();
 				//ResetServiceLocations();
-				//TestServiceMethods();
-				//GenerateAllProxies();
-	
+				// TestServiceMethods();
+                //GenerateAllProxies();
 
+				//localhost.PSLGatekeeper g = new localhost.PSLGatekeeper();
+				//g.ExecuteAlphaProtocol("<?xml version=\"1.0\" encoding=\"utf-8\" ?><definitions name=\"DemoAlpha\" targetNamespace=\"http://psl.cs.columbia.edu\" xmlns:xlang=\"http://schemas.microsoft.com/bixtalk/xlang\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"> <!-- Simple demo using simple xlang constructs --> <xlang:behavior><xlang:body><xlang:sequence><xlang:action activation=\"true\" gatekeeper=\"PSLGatekeeperRemote\" servicename=\"WeatherRetriever\" operation=\"GetTemperature\"><parameter name = \"zipCode\">><![CDATA[<?xml version=\"1.0\"?><string>10027</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeperRemote\" servicename=\"CATrafficService\" operation=\"getTraffic\"><parameter name = \"HighWayNum\"><![CDATA[<?xml version=\"1.0\"?><string>209</string>]]></parameter></xlang:action></xlang:sequence></xlang:body></xlang:behavior></definitions>");
+
+				//edu.columbia.cs.psl.madison.PSLGatekeeper g = new edu.columbia.cs.psl.madison.PSLGatekeeper();
+				//object o = g.ExecuteAlphaProtocol("<?xml version=\"1.0\" encoding=\"utf-8\" ?><definitions name=\"DemoAlpha\" targetNamespace=\"http://psl.cs.columbia.edu\" xmlns:xlang=\"http://schemas.microsoft.com/bixtalk/xlang\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"> <!-- Simple demo using simple xlang constructs --><xlang:behavior><xlang:body><xlang:sequence><xlang:action activation=\"true\" gatekeeper=\"PSLGatekeeper\" servicename=\"WeatherRetriever\" operation=\"GetTemperature\"><parameter name = \"zipCode\"><![CDATA[<?xml version=\"1.0\"?><string>10027</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeper\" servicename=\"CATrafficService\" operation=\"getTraffic\"><parameter name = \"HighWayNum\"><![CDATA[<?xml version=\"1.0\"?><string>209</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeper\" servicename=\"WeatherRetriever\" operation=\"GetTemperature\"><parameter name = \"zipCode\"><![CDATA[<?xml version=\"1.0\"?><string>92152</string>]]></parameter></xlang:action></xlang:sequence></xlang:body></xlang:behavior></definitions>");
+	
 				//GateKeeper g = new GateKeeper();
 				// g.TraceOn = true;
 
@@ -244,6 +305,22 @@ namespace DISCUSUnittest
 
 				//SendHttpPostData( "testing" );
 				//SendHttpPostData( "testing" );
+				
+				FileStream fs = new FileStream( "CongoProfile.txt", FileMode.Open );
+				StreamReader s = new StreamReader( fs );
+				string strDAML = s.ReadToEnd();
+
+				DAMLServiceProfile profile = new DAMLServiceProfile();
+				// Load DAML from web/file too big to hardcode in source file
+				// exceeds 2K compiler limit
+								
+				profile.LoadProfile( strDAML );
+				string[] arrRes = profile.OntologyImports;
+				string strRes = profile.GeographicRadius;
+				IOType[] arrInputs = profile.InputParameters;
+				IOType[] arrOutputs = profile.OutputParameters;
+				EPType[] arrPreconds = profile.Preconditions;
+				EPType[] arrEffects = profile.Effects;
 				
 				int x = 0;
 				x++;

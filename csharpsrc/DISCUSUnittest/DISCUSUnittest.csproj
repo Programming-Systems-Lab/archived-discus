@@ -73,11 +73,6 @@
                     HintPath = "..\..\..\..\WINNT\Microsoft.NET\Framework\v1.0.3705\System.XML.dll"
                 />
                 <Reference
-                    Name = "DISCUS"
-                    AssemblyName = "DISCUS"
-                    HintPath = "..\..\bin\DISCUS.dll"
-                />
-                <Reference
                     Name = "System.Runtime.Serialization.Formatters.Soap"
                     AssemblyName = "System.Runtime.Serialization.Formatters.Soap"
                     HintPath = "..\..\..\..\WINNT\Microsoft.NET\Framework\v1.0.3705\System.Runtime.Serialization.Formatters.Soap.dll"
@@ -97,6 +92,11 @@
                     AssemblyName = "System.Web.Services"
                     HintPath = "..\..\..\..\WINNT\Microsoft.NET\Framework\v1.0.3705\System.Web.Services.dll"
                 />
+                <Reference
+                    Name = "DISCUS"
+                    AssemblyName = "DISCUS"
+                    HintPath = "..\..\bin\DISCUS.dll"
+                />
             </References>
         </Build>
         <Files>
@@ -111,6 +111,21 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "BNQuoteService.cs"
+                    SubType = "code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "CupScores.cs"
+                    SubType = "code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "DAMLServiceProfile.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "ExecServiceMethodRequest.xsd"
                     BuildAction = "Content"
                 />
@@ -120,8 +135,38 @@
                     BuildAction = "None"
                 />
                 <File
+                    RelPath = "finnwords.cs"
+                    SubType = "code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "GeoCash.cs"
+                    SubType = "code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "GoogleSearchService.cs"
+                    SubType = "code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "JokeServer.cs"
+                    SubType = "code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "SecurityManagerService.cs"
+                    SubType = "code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "Tester.cs"
                     SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "XMethodsQuery.cs"
+                    SubType = "code"
                     BuildAction = "Compile"
                 />
             </Include>
