@@ -16,8 +16,10 @@ import java.io.*;
 import javax.sql.DataSource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import psl.discus.javasrc.schemas.treaty.Treaty;
 import psl.discus.javasrc.schemas.treaty.ServiceInfo;
 import psl.discus.javasrc.schemas.treaty.ServiceMethod;
@@ -32,42 +34,60 @@ public class SecurityManagerImpl implements SecurityManager {
     public static final int STATUS_ERROR = -1;
 
     DataSource ds;
-    //DocumentBuilder documentBuilder;
+    SignatureManager signatureManager;
     TreatyDAO treatyDAO;
+    DocumentBuilder db;
 
     Random random;  // used to create random ids for treaties
 
-    public SecurityManagerImpl(DataSource ds) {
+    public SecurityManagerImpl(DataSource ds, SignatureManager signatureManager)
+        throws SecurityManagerException {
 
         this.ds = ds;
+        this.signatureManager = signatureManager;
 
-        /*try {
-            documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not instantiate documentbuilder :(. " + e.getMessage());
-        }
-        */
         random = new Random(System.currentTimeMillis());
         treatyDAO = new TreatyDAO(ds);
+
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        try {
+            db = dbf.newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            throw new SecurityManagerException(e);
+        }
+
     }
 
-    public String verifyTreaty(String signedTreatyXMLDoc)
+    public String verifyTreaty(String treatyXML, boolean isSigned)
             throws SecurityManagerException {
 
         try {
 
-            if (signedTreatyXMLDoc == null)
+            if (treatyXML == null)
                 throw new SecurityManagerException("signedTreaty parameter is null");
 
-            // TODO: if necessary decrypt, and verify treaty document.
+            // TODO: if necessary decrypt
+
+            // verify treaty document.
             // from the verification we get the service space id
-            String treatyDoc = signedTreatyXMLDoc;
+            Treaty treaty = null;
+            if (isSigned) {
+                StringReader reader = new StringReader(treatyXML);
+                Document signedTreatyDoc = db.parse(new InputSource(reader));
+                SignatureManager.VerificationResponse vr = signatureManager.verifyDocument(signedTreatyDoc);
 
-            // first we need to make a Treaty instance object from the treaty document...
-            StringReader reader = new StringReader(treatyDoc);
-            Treaty treaty = Treaty.unmarshal(reader);
-            reader.close();
+                treaty = Treaty.unmarshal(vr.document);
+                Util.debug("(warning: this is a signed treaty, but using service space id from treaty and not cert)");
+            }
+            else {
+                StringReader reader = new StringReader(treatyXML);
+                treaty = Treaty.unmarshal(reader);
+                reader.close();
+            }
 
+            // TODO TODO TODO! For signed treaties, get the service space id based on the alias of
+            // the certificate, NOT just from the treaty!
             int requesterId = Util.parseInt(treaty.getClientServiceSpace());
 
             // now, for each service in the treaty, we get the authorized methods, and set
@@ -104,7 +124,7 @@ public class SecurityManagerImpl implements SecurityManager {
             treaty.marshal(writer);
             writer.close();
 
-            SecurityManagerResponse response = new SecurityManagerResponse();
+            /*SecurityManagerResponse response = new SecurityManagerResponse();
             response.setStatus(STATUS_OK);
             response.setContent(writer.toString());
 
@@ -113,12 +133,22 @@ public class SecurityManagerImpl implements SecurityManager {
             writer.close();
 
             return writer.toString();
+            */
+            // CHANGED: the SecurityManagerResponse doesn't seem to have a way to include CDATA text... so
+            // I'm doing it manually for now (yuck)
+            StringBuffer buf = new StringBuffer();
+            buf.append("<" + "SecurityManagerResponse" + ">" + "\n")
+                .append("<" + "status" + ">" + String.valueOf(STATUS_OK) + "</" + "status" + ">" + "\n")
+                .append("<" + "content" + ">" + "<![CDATA["  + writer.toString() + "]]>" + "</" + "content" + ">" + "\n")
+                .append("</" + "SecurityManagerResponse" + ">" + "\n");
+
+            return buf.toString();
 
         } catch (Exception e) {
             SecurityManagerResponse response = new SecurityManagerResponse();
             response.setStatus(STATUS_ERROR);
             response.setMessage(e.toString());
-            e.printStackTrace();
+
             StringWriter writer = new StringWriter();
             try {
                 response.marshal(writer);
@@ -162,17 +192,17 @@ public class SecurityManagerImpl implements SecurityManager {
         throws Exception {
 
         // read treaty file
-        FileInputStream fin = new FileInputStream("mytreaty.xml");
+        FileInputStream fin = new FileInputStream("mytreaty.xml.signed.xml");
         BufferedReader reader = new BufferedReader(new InputStreamReader(fin));
 
         String line = null;
         StringBuffer buf = new StringBuffer();
         while ((line=reader.readLine()) != null) {
-            buf.append(line);
+            buf.append(line).append("\r\n");
         }
 
-        SecurityManager manager = new SecurityManagerImpl(new FakeDataSource());
-        String result = manager.verifyTreaty(buf.toString());
+        SecurityManagerImpl manager = new SecurityManagerImpl(new FakeDataSource(),new SignatureManager());
+        String result = manager.verifyTreaty(buf.toString(),true);
 
         Util.debug(result);
 

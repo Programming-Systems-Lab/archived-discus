@@ -3,8 +3,10 @@
 
   <taskdef name="reload" classname="org.apache.catalina.ant.ReloadTask" />
   <taskdef name="install" classname="org.apache.catalina.ant.InstallTask" />
+  <taskdef name="deploy" classname="org.apache.catalina.ant.DeployTask" />
   <taskdef name="remove" classname="org.apache.catalina.ant.RemoveTask" />
   <taskdef name="list" classname="org.apache.catalina.ant.ListTask" />
+
 
   <target name="prepare"
      description="Creates the build and dist directories" >
@@ -69,6 +71,10 @@
         path="/${context-path}"
         war="file:${dist}/${war-file}"
       /><!--war="file:${build-path}"-->
+  </target>
+
+  <target name="reinstall" depends="remove, install">
+
   </target>
 
   <target name="list"

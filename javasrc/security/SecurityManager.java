@@ -31,7 +31,7 @@ public interface SecurityManager {
      *
      * @returns an XML Document conforming to the treaty schema
      */
-    public String verifyTreaty(String signedTreatyXMLDoc)
+    public String verifyTreaty(String signedTreatyXMLDoc, boolean signed)
             throws SecurityManagerException;
 
     /**
