@@ -1,0 +1,117 @@
+<!-- targets.xml: Referenced by the build.xml files, this file
+     contains targets common to all of the jaxrpc examples.  -->
+
+  <taskdef name="reload" classname="org.apache.catalina.ant.ReloadTask" />
+  <taskdef name="install" classname="org.apache.catalina.ant.InstallTask" />
+  <taskdef name="remove" classname="org.apache.catalina.ant.RemoveTask" />
+  <taskdef name="list" classname="org.apache.catalina.ant.ListTask" />
+
+  <target name="prepare"
+     description="Creates the build and dist directories" >
+     <echo message="Creating the required directories...." />
+     <mkdir dir="${build}/server" />
+     <mkdir dir="${dist}" />
+  </target>
+
+  <target name="compile-server" depends="prepare"
+      description="Compiles the server-side source code">
+      <echo message="Compiling the server-side source code...."/>
+      <javac
+         srcdir="${src}"
+         destdir="${build}/server"
+         includes="*.java"
+         excludes="*Client.java"
+         classpath="${classpath}"
+      />
+  </target>
+
+  <target name="xrpcc-server" depends="compile-server"
+      description="Runs the xrpcc tool for the server.  UNIX users: Before running this target you must edit script-suffix in ../common/build.properties.">
+      <echo message="Running xrpcc for the server:"/>
+      <exec executable="${xrpcc}">
+         <arg line="-classpath ${build}/server" />
+         <arg line="-server" />
+         <arg line="-d ${build}/server" />
+         <arg line="config.xml" />
+      </exec>
+  </target>
+
+
+  <target name="package"
+      description="Packages the WAR file">
+      <echo message="Packaging the WAR...."/>
+      <delete file="${dist}/${war-file}" />
+      <jar jarfile="${dist}/${war-file}" >
+        <fileset dir="${build}" includes="WEB-INF/**" />
+      </jar>
+  </target>
+
+  <target name="setup-web-inf"
+     description="Copies files to build/WEB-INF">
+     <echo message="Setting up ${build}/WEB-INF...."/>
+     <delete dir="${build}/WEB-INF" />
+     <mkdir dir="${build}/WEB-INF/classes/psl" />
+     <copy todir="${build}/WEB-INF/classes/psl">
+         <fileset dir="${build}/server/psl" />
+     </copy>
+     <copy file="web.xml" todir="${build}/WEB-INF" />
+     <copy file="${build}/server/${web-inf-config}" todir="${build}/WEB-INF" />
+  </target>
+
+  <target name="install" depends="setup-web-inf"
+     description="Installs a Web application">
+     <echo message="Installing the application...."/>
+     <install
+        url="${url}"
+        username="${username}"
+        password="${password}"
+        path="/${context-path}"
+        war="file:${build-path}"
+      />
+  </target>
+
+  <target name="list"
+     description="Lists a Web application">
+     <echo message="Listing the application...."/>
+     <list
+        url="${url}"
+        username="${username}"
+        password="${password}"
+      />
+  </target>
+
+  <target name="remove"
+     description="Removes a Web application">
+     <echo message="Removing the application...."/>
+     <remove
+        url="${url}"
+        username="${username}"
+        password="${password}"
+        path="/${context-path}"
+      />
+  </target>
+
+
+  <target name="reload" depends="setup-web-inf"
+     description="Reloads a Web application">
+     <echo message="Reloading the application...."/>
+     <reload
+        url="${url}"
+        username="${username}"
+        password="${password}"
+        path="/${context-path}"
+      />
+  </target>
+
+
+  <target name="build" depends="xrpcc-server"
+     description="Executes the targets needed to build this example.">
+  </target>
+
+  <target name="clean"
+     description="Removes the build and dist directories">
+    <delete dir="${build}" />
+    <delete dir="dist" />
+  </target>
+
+

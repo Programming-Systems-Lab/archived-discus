@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration
+   xmlns="http://java.sun.com/jax-rpc-ri/xrpcc-config">
+   <rmi name="SecurityServices"
+      targetNamespace="http://localhost/wsdl"
+      typeNamespace="http://localhost/types">
+
+      <service name="SecurityManagerService" packageName="psl.discus.javasrc.services">
+         <interface name="psl.discus.javasrc.services.SecurityManagerService"
+         servantName="psl.discus.javasrc.services.SecurityManagerServiceImpl"/>
+      </service>
+
+   </rmi>
+</configuration>

@@ -1,0 +1,11 @@
+<!DOCTYPE project [
+  <!ENTITY commonTargets SYSTEM "targets.xml">
+]>
+
+<project name="SecurityServices" default="build" basedir=".">
+
+  <property file="build.properties"/>
+
+  &commonTargets; <!-- The ant targets are in ../common/targets.xml -->
+
+</project>
