@@ -49,7 +49,9 @@ namespace PSL.DISCUS.Impl.DynamicProxy
 				// Set Protocol
 				sdImport.ProtocolName = req.protocol;
 				// Add service description
-				sdImport.AddServiceDescription( svcDesc, null, null);
+				if( req.baseURL.Length > 0 )
+					sdImport.AddServiceDescription( svcDesc, null, req.baseURL );
+				else sdImport.AddServiceDescription( svcDesc, null, null );
 				// Set namespace for generated proxy
 				CodeNamespace cnSpace = new CodeNamespace( req.dynNamespace );
 				// Create new code compiled unit

@@ -20,6 +20,8 @@ namespace PSL.DISCUS.Impl.DataAccess
 		public static string RS_SERVICE_NAME		= "RS_SERVICENAME";
 		public static string RS_SERVICENAMESPACE	= "RS_SERVICENAMESPACE";
 		public static string RS_SERVICE_LOCATION	= "RS_SERVICE_LOCATION";
+		//public static string RS_SERVICE_WSDL		= "RS_SERVICE_WSDL";
+		public static string RS_SERVICE_ACCESSPOINT	= "RS_SERVICE_ACCESSPOINT";
 
 		// Service Methods Table
 		public static string SM_METHODNAME			= "SM_METHODNAME";

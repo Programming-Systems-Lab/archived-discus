@@ -186,6 +186,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			object objResult = null;
 			// Get service location
 			string strServiceLocation = servInfo.GetServiceLocation( strServiceName );
+			string strServiceAccessPoint = servInfo.GetServiceAccessPoint( strServiceName );
 			// Get Service namespace
 			string strServiceNamespace = servInfo.GetServiceNamespace( strServiceName );
             if( strServiceLocation.Length == 0 )
@@ -215,6 +216,15 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				req.filenameSource = req.serviceName;
 				// Location of wsdl file to use for proxy generation
 				req.wsdlFile = strServiceLocation;
+				// Service Access Point
+				req.baseURL = strServiceAccessPoint;
+				if( req.baseURL.Length == 0 )
+				{
+					// Issue warning, Proxy will ONLY function as expected if
+					// WSDL file contains the service access point
+					string strMsg = "Service did not provide a Base URL (Service Access Point), generated proxy may not function as expected";
+					m_EvtLog.WriteEntry( strMsg, EventLogEntryType.Warning );
+				}
 				// Where to store generated proxy
 				req.proxyPath = m_strPxyCacheDir;
 				// Pass Dynamic request to proxy generator
@@ -255,8 +265,28 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				Assembly a = Assembly.LoadFrom( strAssembly );
 				// Get the correct type (typename must be fully qualified with namespace)
 				Type tDyn = a.GetType( strServiceName );
+				
 				// Create an instance of the type
 				Object obj = Activator.CreateInstance( tDyn );
+				try
+				{
+					PropertyInfo Url = tDyn.GetProperty( "Url" );
+					// Check whether object has a property
+					// called Url, valid for generated
+					// proxies, if it does check its value
+					// if value is empty fill in proxy access point
+					if( Url != null )
+					{
+						string strUrl = (string) Url.GetValue( obj, null );
+						if( strUrl.Length == 0 )
+							Url.SetValue( obj, strServiceAccessPoint, null );
+					}
+				}
+				catch( System.Exception e )
+				{
+					string strE = e.Message;
+				}
+				
 				// Invoke method
 				objResult = tDyn.InvokeMember( strServiceMethod, 
 											   BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Static,

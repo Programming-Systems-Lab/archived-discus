@@ -14,6 +14,7 @@ namespace PSL.DISCUS.Impl.DynamicProxy
 		private string m_strFilenameSource; // Code file to generate
 		private string m_strProtocol; // Protocol to use (SOAP, HTTP Get or HTTP Post )
 		private string m_strProxyPath; // Path where proxy generated
+		private string m_strBaseURL;
 
 		// Request protocols, Default = SOAPProtocol
 		public static string SOAPProtocol = "SOAP";
@@ -27,6 +28,7 @@ namespace PSL.DISCUS.Impl.DynamicProxy
 			m_strDynNamespace = "DynamicPxy"; // Default namespace
 			m_strFilenameSource = "";
 			m_strProtocol = DynamicRequest.SOAPProtocol; // Default request protocol
+			m_strBaseURL = "";
 		}
 
 		
@@ -35,6 +37,12 @@ namespace PSL.DISCUS.Impl.DynamicProxy
 		{
 			get { return m_strWSDLFile; }
 			set { m_strWSDLFile = value; }
+		}
+
+		public string baseURL
+		{
+			get { return m_strBaseURL; }
+			set { m_strBaseURL = value; }
 		}
 
 		public string serviceName

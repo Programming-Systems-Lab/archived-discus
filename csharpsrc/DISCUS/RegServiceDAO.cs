@@ -132,9 +132,9 @@ namespace PSL.DISCUS.Impl.DataAccess
 		 *			if ID == -1 then an error occurred during registration
 		 *			and service not registered
 		 */ 
-		public int RegisterService( string strServiceName, string strServiceNamespace, string strServiceLoc )
+		public int RegisterService( string strServiceName, string strServiceNamespace, string strServiceLocation, string strServiceAccessPoint )
 		{
-			if( strServiceName.Length == 0 || strServiceLoc.Length == 0 )
+			if( strServiceName.Length == 0 || strServiceLocation.Length == 0 )
 				return 0;
 			
 			int nServiceID = -1;
@@ -145,6 +145,9 @@ namespace PSL.DISCUS.Impl.DataAccess
 			if( strServiceNamespace.Length > 0 )
 				strSQL += DBC.RS_SERVICENAMESPACE + ",";
 			
+			if( strServiceAccessPoint.Length > 0 )
+				strSQL += DBC.RS_SERVICE_ACCESSPOINT + ",";
+
 			strSQL += DBC.RS_SERVICE_LOCATION + ")";
 			
 			strSQL += " VALUES(" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'" + ","; 
@@ -152,7 +155,11 @@ namespace PSL.DISCUS.Impl.DataAccess
 			if( strServiceNamespace.Length > 0 )
 				strSQL += "'" + DBUtil.MakeStringSafe( strServiceNamespace ) + "'" + ",";
 			
-			strSQL += "'" + DBUtil.MakeStringSafe(strServiceLoc) + "'" + ")";
+			if( strServiceAccessPoint.Length > 0 )
+				strSQL += "'" + DBUtil.MakeStringSafe(strServiceAccessPoint) + "'" + ",";
+
+			strSQL += "'" + DBUtil.MakeStringSafe(strServiceLocation) + "'" + ")";
+
 
 			if( ExecuteCommandText( strSQL ) )
 				nServiceID = GetServiceID( strServiceName );
@@ -180,20 +187,20 @@ namespace PSL.DISCUS.Impl.DataAccess
 			return bRetVal;
 		}
 		
-		/*	Function updates a service location. 
+		/*	Function updates a service access point (BASE URL). 
 		 *	Input: strServiceName - name of service to update
 		 *		   strServiceLoc  - location of service
 		 *	Return: true if service location sucessfully updated
 		 *			false otherwise
 		 */
-		public bool UpdateServiceLocation( string strServiceName, string strServiceLoc )
+		public bool UpdateServiceAccessPoint( string strServiceName, string strServiceAccessPoint )
 		{
 			bool bRetVal = false;
-			if( strServiceName.Length == 0 || strServiceLoc.Length == 0 )
+			if( strServiceName.Length == 0 || strServiceAccessPoint.Length == 0 )
 				return false;
 			
 			string strSQL = "UPDATE " + DBC.REGISTERED_SERVICES_TABLE;
-			strSQL += " SET " + DBC.RS_SERVICE_LOCATION + "=" + "'" + DBUtil.MakeStringSafe(strServiceLoc) + "'";
+			strSQL += " SET " + DBC.RS_SERVICE_ACCESSPOINT + "=" + "'" + DBUtil.MakeStringSafe(strServiceAccessPoint) + "'";
 			strSQL += " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'";
 
 			bRetVal = ExecuteCommandText( strSQL );
@@ -210,11 +217,26 @@ namespace PSL.DISCUS.Impl.DataAccess
 		public bool UpdateServiceNamespace( string strServiceName, string strServiceNamespace )
 		{
 			bool bRetVal = false;
-			if( strServiceName.Length == 0 )
+			if( strServiceName.Length == 0 || strServiceNamespace.Length == 0 )
 				return false;
 			
 			string strSQL = "UPDATE " + DBC.REGISTERED_SERVICES_TABLE;
 			strSQL += " SET " + DBC.RS_SERVICENAMESPACE + "=" + "'" + DBUtil.MakeStringSafe(strServiceNamespace) + "'";
+			strSQL += " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'";
+
+			bRetVal = ExecuteCommandText( strSQL );
+			
+			return bRetVal;
+		}
+
+		public bool UpdateServiceLocation( string strServiceName, string strServiceLocation )
+		{
+			bool bRetVal = false;
+			if( strServiceName.Length == 0 || strServiceLocation.Length == 0 )
+				return false;
+			
+			string strSQL = "UPDATE " + DBC.REGISTERED_SERVICES_TABLE;
+			strSQL += " SET " + DBC.RS_SERVICE_LOCATION + "=" + "'" + DBUtil.MakeStringSafe(strServiceLocation) + "'";
 			strSQL += " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'";
 
 			bRetVal = ExecuteCommandText( strSQL );
@@ -349,19 +371,19 @@ namespace PSL.DISCUS.Impl.DataAccess
 			return nServiceID;
 		}// End GetServiceID
 
-		/*	Function gets the location of a service 
+		/*	Function gets the AccessPoint (BASE URL) of a service 
 		 *  Input: strServiceName - name of service
-		 *  Return: service location if it exists, "" otherwise
+		 *  Return: service access point if it exists, "" otherwise
 		 */
-		public string GetServiceLocation( string strServiceName )
+		public string GetServiceAccessPoint( string strServiceName )
 		{
-			string strServiceLoc = "";
+			string strServiceAccessPoint = "";
 			
 			OdbcDataReader dr = null;
 
 			try
 			{
-				string strSQL = "SELECT " + DBC.RS_SERVICE_LOCATION;
+				string strSQL = "SELECT " + DBC.RS_SERVICE_ACCESSPOINT;
 				strSQL += " FROM " + DBC.REGISTERED_SERVICES_TABLE;
 				strSQL += " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'";
 			
@@ -370,7 +392,7 @@ namespace PSL.DISCUS.Impl.DataAccess
 				{
 					dr.Read(); // move reader past BOF to first record
 					if( !dr.IsDBNull( 0 ) )
-						strServiceLoc = dr.GetString( 0 );
+						strServiceAccessPoint = dr.GetString( 0 );
 					if( !dr.IsClosed )
 						dr.Close();
 				}
@@ -389,8 +411,8 @@ namespace PSL.DISCUS.Impl.DataAccess
 				}
 			}
 			
-			return strServiceLoc;
-		}// End GetServiceLocation
+			return strServiceAccessPoint;
+		}// End GetServiceAccessPoint
 
 		
 		/*	Function gets the namespace of a service 
@@ -436,7 +458,49 @@ namespace PSL.DISCUS.Impl.DataAccess
 			return strServiceNamespace;
 		}// End GetServiceNamespace
 
-		
+		/*	Function gets the location of a service (can be local path or url to WSDL)
+		 *  Input: strServiceName - name of service
+		 *  Return: service location if it exists, "" otherwise
+		 */
+		public string GetServiceLocation( string strServiceName )
+		{
+			string strServiceLocation = "";
+			
+			OdbcDataReader dr = null;
+
+			try
+			{
+				string strSQL = "SELECT " + DBC.RS_SERVICE_LOCATION;
+				strSQL += " FROM " + DBC.REGISTERED_SERVICES_TABLE;
+				strSQL += " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'";
+			
+				dr = ExecuteReader( strSQL );
+				if( dr != null )
+				{
+					dr.Read(); // move reader past BOF to first record
+					if( !dr.IsDBNull( 0 ) )
+						strServiceLocation = dr.GetString( 0 );
+					if( !dr.IsClosed )
+						dr.Close();
+				}
+			}
+			catch( System.Exception e )
+			{
+				// Report error
+				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
+			}
+			finally // cleanup after exception handled
+			{
+				if( dr != null )
+				{
+					if( !dr.IsClosed )
+						dr.Close();
+				}
+			}
+			
+			return strServiceLocation;
+		}// End GetServiceLocation
+
 		/*	Function determines whether a service has a specific
 		 *	method registered.
 		 *	Input: strServiceName - name of service
