@@ -8,6 +8,8 @@ import psl.discus.javasrc.security.SecurityManager;
 import psl.discus.javasrc.security.SecurityManagerImpl;
 import psl.discus.javasrc.security.SecurityManagerException;
 
+import psl.discus.javasrc.shared.FakeDataSource;
+
 import java.rmi.RemoteException;
 
 /**
@@ -20,7 +22,7 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
     public SecurityManagerServiceImpl() {
 
         // get DataSource
-        DataSource ds = null;
+        DataSource ds = new FakeDataSource();
 
         // create SecurityManager instance
         securityManager = new SecurityManagerImpl(ds);
@@ -32,6 +34,8 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
         throws RemoteException {
 
         try {
+            if (signedTreatyXMLDoc == null)
+                throw new RemoteException("SecurityManagerServiceImpl: treatyXML parameter is null");
             return securityManager.verifyTreaty(signedTreatyXMLDoc);
         } catch (SecurityManagerException e) {
             throw new RemoteException("Error", e);

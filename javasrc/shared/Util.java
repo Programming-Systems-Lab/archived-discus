@@ -9,4 +9,11 @@ public final class Util {
         System.out.println(o);
     }
 
+    public static int parseInt(Object o) {
+        try {
+            return Integer.parseInt(String.valueOf(o));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
 }

@@ -56,16 +56,19 @@ public class SecurityManagerImpl implements SecurityManager {
 
         try {
 
+            if (signedTreatyXMLDoc == null)
+                throw new SecurityManagerException("signedTreaty parameter is null");
+
             // TODO: if necessary decrypt, and verify treaty document.
             // from the verification we get the service space id
             String treatyDoc = signedTreatyXMLDoc;
-            int requesterId = 100;
-
 
             // first we need to make a Treaty instance object from the treaty document...
             StringReader reader = new StringReader(treatyDoc);
             Treaty treaty = Treaty.unmarshal(reader);
             reader.close();
+
+            int requesterId = Util.parseInt(treaty.getClientServiceSpace());
 
             // now, for each service in the treaty, we get the authorized methods, and set
             // the authorized flag for each method accordingly
@@ -75,8 +78,8 @@ public class SecurityManagerImpl implements SecurityManager {
                 ServiceInfo serviceInfo = (ServiceInfo) e.nextElement();
                 ServiceInvokationPermission permission = dao.getPermissions(requesterId, serviceInfo.getServiceName());
 
-                for (Enumeration methods = serviceInfo.enumerateServiceMethod(); e.hasMoreElements();) {
-                    ServiceMethod method = (ServiceMethod) e.nextElement();
+                for (Enumeration methods = serviceInfo.enumerateServiceMethod(); methods.hasMoreElements();) {
+                    ServiceMethod method = (ServiceMethod) methods.nextElement();
                     MethodPermission mp = permission.getMethod(method.getMethodName());
                     if (mp == null) {
                         // method was not found in the permissions, set authorized to false
@@ -115,7 +118,7 @@ public class SecurityManagerImpl implements SecurityManager {
             SecurityManagerResponse response = new SecurityManagerResponse();
             response.setStatus(STATUS_ERROR);
             response.setMessage(e.toString());
-
+            e.printStackTrace();
             StringWriter writer = new StringWriter();
             try {
                 response.marshal(writer);
@@ -159,7 +162,7 @@ public class SecurityManagerImpl implements SecurityManager {
         throws Exception {
 
         // read treaty file
-        /*FileInputStream fin = new FileInputStream("mytreaty.xml");
+        FileInputStream fin = new FileInputStream("mytreaty.xml");
         BufferedReader reader = new BufferedReader(new InputStreamReader(fin));
 
         String line = null;
@@ -167,9 +170,9 @@ public class SecurityManagerImpl implements SecurityManager {
         while ((line=reader.readLine()) != null) {
             buf.append(line);
         }
-        */
+
         SecurityManager manager = new SecurityManagerImpl(new FakeDataSource());
-        String result = manager.verifyTreaty("foobar" /*buf.toString()*/);
+        String result = manager.verifyTreaty(buf.toString());
 
         Util.debug(result);
 
