@@ -19,17 +19,6 @@ import org.w3c.dom.Document;
 public interface SecurityManager {
 
     /*-----------------------------------------------------------------------------------------------*/
-    /* Methods for encrypting, decrypting, signing and verifying messages */
-    public void signMessage(Document msg, ServiceSpace recipient, PrivateKey signer);
-    public void encryptMessage(Document msg, ServiceSpace recipient, PrivateKey signer);
-    public void encryptAndSignMessage(Document msg, ServiceSpace recipient, PrivateKey signer);
-
-    public void verifyMessage(Document msg, ServiceSpace sender);
-    public void decryptMessage(Document msg, ServiceSpace sender);
-    public void verifyAndDecryptMessage(Document msg, ServiceSpace sender);
-
-
-    /*-----------------------------------------------------------------------------------------------*/
     /* Methods to perform security checks */
 
     /**
@@ -42,39 +31,54 @@ public interface SecurityManager {
      *
      * @returns an XML Document conforming to the treaty schema
      */
-    public Document verifyTreaty(ServiceSpace requester, Document treaty)
-        throws SecurityManagerException;
+    public String verifyTreaty(String signedTreatyXMLDoc)
+            throws SecurityManagerException;
 
     /**
      * Checks if a requesting service space has permission to invoke a certain method
      * with certain arguments on a specified service, according to the treaty that the
-     * service space created initialliy
+     * service space created initially.
      */
-    public void doRequestCheck(ServiceSpace requester, String treatyId,
-                               String service, String method, Collection args)
-        throws SecurityManagerException;
+    public String doRequestCheck(String signedRequestXMLDoc)
+            throws SecurityManagerException;
 
     /**
      * Checks if the contents of the response to a request is allowed -- in particular, if all the
-     * arguments in the response are allowed for the requesting service space and the treaty
+     * arguments in the response are allowed for the requesting service space and the treaty.
      */
-    public void doResponseCheck(ServiceSpace requester, String treatyId,
-                                String service, String method, Collection args)
-        throws SecurityManagerException;
+    public String doResponseCheck(String signedResponseXMLDoc)
+            throws SecurityManagerException;
 
     /*-----------------------------------------------------------------------------------------------*/
     /* Methods to modify the security matrix for this service space */
 
-    public void addServiceSpace(ServiceSpace ss, int trustLevel);
-    public void removeServiceSpace(ServiceSpace ss);
-    public ServiceSpace getServiceSpaceByPublicKey(PublicKey pk);
-    public ServiceSpace getServiceSpaceByName(String name);
+    public String addServiceSpace(String serviceSpaceXMLDoc)
+            throws SecurityManagerException;
+
+    public String removeServiceSpace(int serviceSpaceId)
+            throws SecurityManagerException;
 
     /**
      * Adds a permission to the security matrix for a certain service space.
      * @see ServiceInvokationPermission
      */
-    public void addPermission(ServiceSpace ss, ServiceInvokationPermission p);
-    public void removePermission(ServiceSpace ss, ServiceInvokationPermission p);
+    public String addPermission(String servicePermissionXMLDoc)
+            throws SecurityManagerException;
+
+    public String removePermission(String servicePermissionXMLDoc)
+            throws SecurityManagerException;
+
+    /*-----------------------------------------------------------------------------------------------*/
+    /* Methods for encrypting, decrypting, signing and verifying messages */
+    /* REMOVED: this methods probably won't be publicly accessible
+
+    public String signMessage(String msg, int recipientServiceSpace);
+    public String encryptMessage(String msg, int recipientServiceSpace);
+    public String encryptAndSignMessage(String msg, int recipientServiceSpace);
+
+    public String verifyMessage(String msg, int senderServiceSpace);
+    public String decryptMessage(String msg, int senderServiceSpace);
+    public String verifyAndDecryptMessage(String msg, int senderServiceSpace);
+    */
 
 }

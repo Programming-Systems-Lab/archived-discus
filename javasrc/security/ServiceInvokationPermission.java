@@ -32,4 +32,5 @@ public interface ServiceInvokationPermission {
      * @see MethodPermission
      */
     public MethodPermission getMethod(String methodName);
+
 }

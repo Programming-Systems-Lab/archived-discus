@@ -15,4 +15,6 @@ public interface MethodPermission {
 
     public Collection getParams();
 
+    public int getNumberInvokations();
+
 }
