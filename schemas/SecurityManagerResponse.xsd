@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema targetNamespace="http://localhost/Discus/Schema/SecurityManagerResponse.xsd"
+            elementFormDefault="qualified"
+            xmlns="http://localhost/Discus/Schema/SecurityManagerResponse.xsd"
+            xmlns:mstns="http://localhost/Discus/Schema/SecurityManagerResponse.xsd"
+            xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:element name="SecurityManagerResponse" type="SecurityManagerResponseType" />
+	<!-- Schema of a DISCUS SecurityManagerResponse: contains a SecurityManagerResponse ID and a list of ServiceData entries -->
+	<xs:complexType name="SecurityManagerResponseType">
+		<xs:sequence>
+			<xs:element name="status" type="xs:int" minOccurs="1" maxOccurs="1" default="0" nillable="false" />
+            <xs:element name="message" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="content" type="xs:string" minOccurs="0" maxOccurs="1" />
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>
