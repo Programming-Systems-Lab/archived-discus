@@ -1,6 +1,7 @@
 package psl.discus.javasrc.p2p;
 
 import net.jxta.protocol.PipeAdvertisement;
+import psl.discus.javasrc.security.ServiceSpace;
 
 /**
  * A ServiceSpace endpoint makes available a JXTA PipeAdvertisement for a particular
@@ -10,9 +11,8 @@ import net.jxta.protocol.PipeAdvertisement;
  */
 public interface ServiceSpaceEndpoint {
 
-    public int getServiceSpaceId();
-    public PipeAdvertisement getPipeAdvertisement();
+    public ServiceSpace getServiceSpace();
 
-    // could also have, for example, getTrustLevel()
+    public PipeAdvertisement getPipeAdvertisement();
 
 }
