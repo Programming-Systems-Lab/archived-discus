@@ -117,6 +117,11 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "DemoAlpha.xml"
+                    Link = "..\..\bin\DemoAlpha.xml"
+                    BuildAction = "Content"
+                />
+                <File
                     RelPath = "DiscusConf.xml"
                     Link = "..\..\bin\DiscusConf.xml"
                     BuildAction = "Content"
@@ -147,7 +152,17 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "IExecuteWorkflow.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "IGateKeeper.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "InternalRegistry.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

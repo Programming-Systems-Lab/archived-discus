@@ -182,17 +182,17 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			// locally, the local proxy location may replace the web ref.
 			
 			// Check registered service information
-			RegServiceDAO servInfo = new RegServiceDAO();
+			InternalRegistry ireg = new InternalRegistry();
 			object objResult = null;
 			// Get service location
-			string strServiceLocation = servInfo.GetServiceLocation( strServiceName );
-			string strServiceAccessPoint = servInfo.GetServiceAccessPoint( strServiceName );
+			string strServiceLocation = ireg.GetServiceLocation( strServiceName );
+			string strServiceAccessPoint = ireg.GetServiceAccessPoint( strServiceName );
 			// Get Service namespace
-			string strServiceNamespace = servInfo.GetServiceNamespace( strServiceName );
+			string strServiceNamespace = ireg.GetServiceNamespace( strServiceName );
             if( strServiceLocation.Length == 0 )
 				return null;
 			// Verify that service supports method
-			if( !servInfo.MethodExists( strServiceName, strServiceMethod ) )
+			if( !ireg.MethodExists( strServiceName, strServiceMethod ) )
 				return null;
 			
 			// If service location is a link to a WSDL file
@@ -241,8 +241,8 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				
 				// Update database location of service, point to
 				// dynamic proxy, change namespace the dynamic proxy namespace
-				servInfo.UpdateServiceLocation( strServiceName, strAssembly );
-				servInfo.UpdateServiceNamespace( strServiceName, req.dynNamespace );
+				ireg.UpdateServiceLocation( strServiceName, strAssembly );
+				ireg.UpdateServiceNamespace( strServiceName, req.dynNamespace );
 				// Set Service name to Fully qualified 
 				// name i.e <Namespace>.<servicename>
 				// necessary for reflection
@@ -306,5 +306,11 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			// return result
 			return objResult;
 		}// End ExecuteServiceMethod
+
+		public int ExecuteAlphaProtocol( string strXMLProtocol )
+		{
+			 return 0;
+		}
+
 	}// End GateKeeper
 }
