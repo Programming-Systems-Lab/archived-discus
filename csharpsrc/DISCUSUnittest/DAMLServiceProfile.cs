@@ -102,6 +102,22 @@ namespace PSL.DISCUS.DAML
 	}
 
 
+	public enum enuIOPEType
+	{
+		Input,
+		Output,
+		Precondition,
+		Effect
+	};
+
+	public enum enuIOPESearchBy
+	{
+		PARAM_DESC,
+		PARAM_NAME,
+		COND_DESC,
+		COND_NAME
+	};
+
 	/// <summary>
 	/// Summary description for DAMLServiceProfile.
 	/// </summary>
@@ -161,17 +177,16 @@ namespace PSL.DISCUS.DAML
 		// Member variables
 		private XmlDocument m_doc;
 		private EventLog m_EvtLog;
-		private Hashtable m_nsMapping;
+		//private Hashtable m_nsMapping;
+		private XmlNamespaceManager m_mgr;
 
 		public DAMLServiceProfile()
 		{
 			m_EvtLog = new EventLog( "Application" );
 			m_EvtLog.Source = "DAMLServiceProfile";
-			m_nsMapping = new Hashtable();
+			//m_nsMapping = new Hashtable();
 			m_doc = new XmlDocument();
-
-			
-
+			m_mgr = null;
 		}
 
 		public bool LoadProfile( string strProfileXml )
@@ -185,18 +200,26 @@ namespace PSL.DISCUS.DAML
 				XmlNode root = m_doc.DocumentElement;
 				// Get attributes of root element
 				XmlAttributeCollection attColl = root.Attributes;
-				// Extract only those attributes representing namespaces
-				// i.e foreach attribute store xmlns:xxx
-				m_nsMapping.Clear();
-				
+				// TODO: Should use PopScope instead??
+				if( m_mgr != null )
+				{
+					m_mgr.PopScope();
+					m_mgr = null;
+				}
+
+				m_mgr = new XmlNamespaceManager( m_doc.NameTable );
+				m_mgr.PushScope();
+
 				for( int i = 0; i < attColl.Count; i++ )
 				{
-					// Extract all namespaces we can find in document root					
+					// Extract all namespaces we can find in document root
+					// and add to namespace manager
 					if( attColl[i].Prefix == XMLNS )
-						m_nsMapping.Add( attColl[i].LocalName, attColl[i].InnerText );
-					// Add default namespace (if any)
+						m_mgr.AddNamespace( attColl[i].LocalName, attColl[i].InnerText );
+					 
+					// Add default namespace (if any) and add to namespace manager
 					if( attColl[i].Prefix == "" )
-						m_nsMapping.Add( DEFAULT_NS, attColl[i].InnerText );
+						m_mgr.AddNamespace( DEFAULT_NS, attColl[i].InnerText );
 				}
 				
 				bStatus = true;
@@ -208,7 +231,6 @@ namespace PSL.DISCUS.DAML
 
 			return bStatus;
 		}
-
 
 		// Properties
 		public string[] OntologyImports
@@ -337,30 +359,65 @@ namespace PSL.DISCUS.DAML
 			{ return GetEffects(); }
 		}
 		
+		
+		// Methods
+
+		public string IOPERefersTo( enuIOPEType iopeType, enuIOPESearchBy iopeFilter, string strFilter )
+		{
+			string strRetVal = "";
+			
+			// Create Expression Builder instance
+			IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( iopeType );
+			// Build XPath Expression
+			string strXPathExpr = DAMLServiceProfile.SERVICE_PROFILE + IBuilder.BuildExpression( iopeFilter, strFilter );
+			XmlNode root = m_doc.DocumentElement;
+			XmlNode node = root.SelectSingleNode( strXPathExpr, m_mgr );
+			
+			if( node == null  )
+				return "";
+
+			// If we searched by ParameterName then we need to go one level up to the
+			// parent (ParameterDescription) node before processing
+			if( iopeFilter == enuIOPESearchBy.PARAM_NAME )
+				node = node.ParentNode;
+
+			XmlNode referNode = node.SelectSingleNode( DAMLServiceProfile.PROFILE_REFERS_TO, m_mgr );
+			if( referNode == null )
+				return "";
+
+			XmlAttributeCollection attColl = referNode.Attributes;
+
+			foreach( XmlAttribute att in attColl )
+			{
+				if( att.Name == DAMLServiceProfile.RDF_RESOURCE )
+				{
+					strRetVal = att.Value;
+					break;
+				}
+			}
+			
+			return strRetVal;
+		}
+
 		private EPType[] GetEffects()
 		{
 			ArrayList lstEffects = new ArrayList();
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
-				// Add Default namespace
-				mgr.AddNamespace( DEFAULT_NS, (string) m_nsMapping[DEFAULT_NS] );
-				// Add Profile namespace
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-
 				XmlNode root = m_doc.DocumentElement;
 				
-				XmlNodeList nodeList = root.SelectNodes( DAMLServiceProfile.SERVICE_PROFILE + "/" +  DEFAULT_NS + ":" + DAMLServiceProfile.EFFECT , mgr );
+				// Create Expression Builder instance
+				IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Effect );
+				// Build XPath Expression
+				string strXPathExpr = DAMLServiceProfile.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_DESC );
+							
+				XmlNodeList nodeList = root.SelectNodes( strXPathExpr, m_mgr );
 
-				foreach( XmlNode node in nodeList )
+				foreach( XmlNode descNode in nodeList )
 				{
 					EPType effect = new EPType();
 					
-					XmlNode descNode = node.SelectSingleNode( DAMLServiceProfile.PROFILE_CONDITION_DESC, mgr );
-									
 					XmlAttributeCollection attColl = descNode.Attributes;
 					
 					foreach( XmlAttribute att in attColl )
@@ -372,10 +429,10 @@ namespace PSL.DISCUS.DAML
 						}
 					}
 					
-					XmlNode nameNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_CONDITION_NAME, mgr );
+					XmlNode nameNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_CONDITION_NAME, m_mgr );
 					effect.ConditionName = nameNode.InnerText;
 					
-					XmlNode stmntNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_STATEMENT, mgr );
+					XmlNode stmntNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_STATEMENT, m_mgr );
 					attColl = stmntNode.Attributes;
 
 					foreach( XmlAttribute att in attColl )
@@ -387,7 +444,7 @@ namespace PSL.DISCUS.DAML
 						}
 					}
 					
-					XmlNode referNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_REFERS_TO, mgr );
+					XmlNode referNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_REFERS_TO, m_mgr );
 					attColl = referNode.Attributes;
 
 					foreach( XmlAttribute att in attColl )
@@ -418,24 +475,19 @@ namespace PSL.DISCUS.DAML
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
-				// Add Default namespace
-				mgr.AddNamespace( DEFAULT_NS, (string) m_nsMapping[DEFAULT_NS] );
-				// Add Profile namespace
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-
 				XmlNode root = m_doc.DocumentElement;
 				
-				XmlNodeList nodeList = root.SelectNodes( DAMLServiceProfile.SERVICE_PROFILE + "/" +  DEFAULT_NS + ":" + DAMLServiceProfile.PRECONDITION , mgr );
+				// Create Expression Builder instance
+				IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Precondition );
+				// Build XPath Expression
+				string strXPathExpr = DAMLServiceProfile.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.COND_DESC );
+							
+				XmlNodeList nodeList = root.SelectNodes( strXPathExpr, m_mgr );
 
-				foreach( XmlNode node in nodeList )
+				foreach( XmlNode descNode in nodeList )
 				{
 					EPType precond = new EPType();
 					
-					XmlNode descNode = node.SelectSingleNode( DAMLServiceProfile.PROFILE_CONDITION_DESC, mgr );
-									
 					XmlAttributeCollection attColl = descNode.Attributes;
 					
 					// Get ParamDesc
@@ -448,10 +500,10 @@ namespace PSL.DISCUS.DAML
 						}
 					}
 					
-					XmlNode nameNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_CONDITION_NAME, mgr );
+					XmlNode nameNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_CONDITION_NAME, m_mgr );
 					precond.ConditionName = nameNode.InnerText;
 					
-					XmlNode stmntNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_STATEMENT, mgr );
+					XmlNode stmntNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_STATEMENT, m_mgr );
 					attColl = stmntNode.Attributes;
 
 					foreach( XmlAttribute att in attColl )
@@ -463,7 +515,7 @@ namespace PSL.DISCUS.DAML
 						}
 					}
 					
-					XmlNode referNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_REFERS_TO, mgr );
+					XmlNode referNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_REFERS_TO, m_mgr );
 					attColl = referNode.Attributes;
 
 					foreach( XmlAttribute att in attColl )
@@ -494,24 +546,18 @@ namespace PSL.DISCUS.DAML
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
-				// Add Default namespace
-				mgr.AddNamespace( DEFAULT_NS, (string) m_nsMapping[DEFAULT_NS] );
-				// Add Profile namespace
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-
 				XmlNode root = m_doc.DocumentElement;
 				
-				// Get outputs
-				XmlNodeList nodeList = root.SelectNodes( DAMLServiceProfile.SERVICE_PROFILE + "/" +  DEFAULT_NS + ":" + DAMLServiceProfile.OUTPUT , mgr );
+				// Create Expression Builder instance
+				IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Output );
+				// Build XPath Expression
+				string strXPathExpr = DAMLServiceProfile.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_DESC );
+							
+				XmlNodeList nodeList = root.SelectNodes( strXPathExpr, m_mgr );
 
-				foreach( XmlNode node in nodeList )
+				foreach( XmlNode descNode in nodeList )
 				{
 					IOType output = new IOType();
-					// Get ParameterDescription child node
-					XmlNode descNode = node.SelectSingleNode( DAMLServiceProfile.PROFILE_PARAM_DESC, mgr );
 									
 					XmlAttributeCollection attColl = descNode.Attributes;
 					
@@ -525,11 +571,11 @@ namespace PSL.DISCUS.DAML
 						}
 					}
 					// Get Param name
-					XmlNode nameNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_PARAM_NAME, mgr );
+					XmlNode nameNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_PARAM_NAME, m_mgr );
 					output.ParameterName = nameNode.InnerText;
 					
 					// Get Param RestrictedTo
-					XmlNode restrictNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_RESTRICTED_TO, mgr );
+					XmlNode restrictNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_RESTRICTED_TO, m_mgr );
 					attColl = restrictNode.Attributes;
 
 					foreach( XmlAttribute att in attColl )
@@ -542,7 +588,7 @@ namespace PSL.DISCUS.DAML
 					}
 					
 					// Get Param RefersTo
-					XmlNode referNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_REFERS_TO, mgr );
+					XmlNode referNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_REFERS_TO, m_mgr );
 					attColl = referNode.Attributes;
 
 					foreach( XmlAttribute att in attColl )
@@ -573,24 +619,18 @@ namespace PSL.DISCUS.DAML
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
-				// Add Default namespace
-				mgr.AddNamespace( DEFAULT_NS, (string) m_nsMapping[DEFAULT_NS] );
-				// Add Profile namespace
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-
 				XmlNode root = m_doc.DocumentElement;
 				
-				// Get inputs
-				XmlNodeList nodeList = root.SelectNodes( DAMLServiceProfile.SERVICE_PROFILE + "/" +  DEFAULT_NS + ":" + DAMLServiceProfile.INPUT , mgr );
+				// Create Expression Builder instance
+				IIOPEXPathExprBuilder IBuilder = IOPEXPathExprBuilderFactory.CreateInstance( enuIOPEType.Input );
+				// Build XPath Expression
+				string strXPathExpr = DAMLServiceProfile.SERVICE_PROFILE + IBuilder.BuildExpression( enuIOPESearchBy.PARAM_DESC );
+							
+				XmlNodeList nodeList = root.SelectNodes( strXPathExpr, m_mgr );
 
-				foreach( XmlNode node in nodeList )
+				foreach( XmlNode descNode in nodeList )
 				{
 					IOType input = new IOType();
-					// Get ParameterDescription child node
-					XmlNode descNode = node.SelectSingleNode( DAMLServiceProfile.PROFILE_PARAM_DESC, mgr );
 									
 					XmlAttributeCollection attColl = descNode.Attributes;
 					
@@ -604,11 +644,11 @@ namespace PSL.DISCUS.DAML
 						}
 					}
 					// Get Param name
-					XmlNode nameNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_PARAM_NAME, mgr );
+					XmlNode nameNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_PARAM_NAME, m_mgr );
 					input.ParameterName = nameNode.InnerText;
 					
 					// Get Param RestrictedTo
-					XmlNode restrictNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_RESTRICTED_TO, mgr );
+					XmlNode restrictNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_RESTRICTED_TO, m_mgr );
 					attColl = restrictNode.Attributes;
 
 					foreach( XmlAttribute att in attColl )
@@ -621,7 +661,7 @@ namespace PSL.DISCUS.DAML
 					}
 					
 					// Get Param RefersTo
-					XmlNode referNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_REFERS_TO, mgr );
+					XmlNode referNode = descNode.SelectSingleNode( DAMLServiceProfile.PROFILE_REFERS_TO, m_mgr );
 					attColl = referNode.Attributes;
 
 					foreach( XmlAttribute att in attColl )
@@ -652,14 +692,8 @@ namespace PSL.DISCUS.DAML
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get ServiceName
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_HAS_PROCESS, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_HAS_PROCESS, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -689,14 +723,8 @@ namespace PSL.DISCUS.DAML
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get ServiceName
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_QUALITY_RATING, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_QUALITY_RATING, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -726,14 +754,8 @@ namespace PSL.DISCUS.DAML
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get ServiceName
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_GEOG_RADIUS, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_GEOG_RADIUS, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -763,13 +785,8 @@ namespace PSL.DISCUS.DAML
 			
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER + "/" + DAMLServiceProfile.PROFILE_WEB_URL, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER + "/" + DAMLServiceProfile.PROFILE_WEB_URL, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -790,14 +807,8 @@ namespace PSL.DISCUS.DAML
 			
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get RequestedBy
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER + "/" + DAMLServiceProfile.PROFILE_PHYSICAL_ADDRESS, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER + "/" + DAMLServiceProfile.PROFILE_PHYSICAL_ADDRESS, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -818,14 +829,8 @@ namespace PSL.DISCUS.DAML
 			
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get RequestedBy
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER + "/" + DAMLServiceProfile.PROFILE_EMAIL, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER + "/" + DAMLServiceProfile.PROFILE_EMAIL, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -846,14 +851,8 @@ namespace PSL.DISCUS.DAML
 			
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get RequestedBy
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER + "/" + DAMLServiceProfile.PROFILE_FAX, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER + "/" + DAMLServiceProfile.PROFILE_FAX, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -874,14 +873,8 @@ namespace PSL.DISCUS.DAML
 			
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get RequestedBy
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER + "/" + DAMLServiceProfile.PROFILE_PHONE, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER + "/" + DAMLServiceProfile.PROFILE_PHONE, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -896,21 +889,14 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 	
-
 		private string GetProfileName()
 		{
 			string strRetVal = "";
 			
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get RequestedBy
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER + "/" + DAMLServiceProfile.PROFILE_NAME, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER + "/" + DAMLServiceProfile.PROFILE_NAME, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -931,14 +917,8 @@ namespace PSL.DISCUS.DAML
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get RequestedBy
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_PROVIDED_BY + "/" + DAMLServiceProfile.PROFILE_SERVICE_PROVIDER, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -968,14 +948,8 @@ namespace PSL.DISCUS.DAML
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get RequestedBy
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_REQUESTED_BY, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_REQUESTED_BY, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -996,14 +970,8 @@ namespace PSL.DISCUS.DAML
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get Intended Purpose
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_INTENDED_PURPOSE, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_INTENDED_PURPOSE, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -1024,14 +992,8 @@ namespace PSL.DISCUS.DAML
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get Text Description
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_TEXT_DESC, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_TEXT_DESC, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -1052,12 +1014,8 @@ namespace PSL.DISCUS.DAML
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get PresentedBy
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.SERVICE_PRESENTED_BY, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.SERVICE_PRESENTED_BY, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -1087,12 +1045,8 @@ namespace PSL.DISCUS.DAML
 			
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Do XPath query using namespace manager, get ServiceProfile node											
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE, m_mgr );
 
 				if( node == null )
 					return "";
@@ -1122,14 +1076,8 @@ namespace PSL.DISCUS.DAML
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add PROFILE namespace to our namespace manager
-				mgr.AddNamespace( PROFILE_NS, (string) m_nsMapping[PROFILE_NS] );
-				// Add SERVICE namespace to our namespace manager
-				mgr.AddNamespace( SERVICE_NS, (string) m_nsMapping[SERVICE_NS] );
 				XmlNode root = m_doc.DocumentElement;
-				// Get ServiceName
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_SERVICE_NAME, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.SERVICE_PROFILE + "/" + DAMLServiceProfile.PROFILE_SERVICE_NAME, m_mgr );
 				
 				if( node == null )
 					return "";
@@ -1144,24 +1092,19 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 
-
 		private string[] GetOntologyImports()
 		{
 			ArrayList arrImports = new ArrayList();
 
 			try
 			{
-				XmlNamespaceManager mgr = new XmlNamespaceManager( m_doc.NameTable );
-				// Add DAML namespace to our namespace manager
-				mgr.AddNamespace( DAML_NS, (string) m_nsMapping[DAML_NS] );	
 				XmlNode root = m_doc.DocumentElement;
-				// Do XPath query using namespace manager											
-				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.DAML_ONTOLOGY, mgr );
+				XmlNode node = root.SelectSingleNode( DAMLServiceProfile.DAML_ONTOLOGY, m_mgr );
 				
 				if( node == null )
 					return null;
 
-				XmlNodeList lstImports = node.SelectNodes( DAMLServiceProfile.DAML_IMPORTS, mgr );
+				XmlNodeList lstImports = node.SelectNodes( DAMLServiceProfile.DAML_IMPORTS, m_mgr );
 
 				if( lstImports.Count == 0 )
 					return null;

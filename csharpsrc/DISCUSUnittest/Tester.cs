@@ -275,7 +275,7 @@ namespace DISCUSUnittest
 		{
 			try
 			{
-				GateKeeper g = new GateKeeper();
+				//GateKeeper g = new GateKeeper();
 				//DynamicPxy.GeoCash g = new DynamicPxy.GeoCash();
 				//object objRes = g.GetATMLocations( "10025", "0" );
 
@@ -315,12 +315,40 @@ namespace DISCUSUnittest
 				// exceeds 2K compiler limit
 								
 				profile.LoadProfile( strDAML );
-				string[] arrRes = profile.OntologyImports;
-				string strRes = profile.GeographicRadius;
-				IOType[] arrInputs = profile.InputParameters;
-				IOType[] arrOutputs = profile.OutputParameters;
-				EPType[] arrPreconds = profile.Preconditions;
-				EPType[] arrEffects = profile.Effects;
+				//string[] arrRes = profile.OntologyImports;
+				//string strRes = profile.GeographicRadius;
+				//IOType[] arrInputs = profile.InputParameters;
+				//IOType[] arrOutputs = profile.OutputParameters;
+				//EPType[] arrPreconds = profile.Preconditions;
+				//EPType[] arrEffects = profile.Effects;
+
+				// Valid combinations
+				string strRes = "";
+				
+				strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_NAME, "packagingSelection" );
+				strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_DESC, "PackagingSelection" );
+				
+				/*
+				strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_DESC, "xyz" );
+				strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_NAME, "xyz" );
+				strRes = profile.IOPERefersTo( enuIOPEType.Output, enuIOPESearchBy.PARAM_DESC, "xyz" );
+				strRes = profile.IOPERefersTo( enuIOPEType.Output, enuIOPESearchBy.PARAM_NAME, "xyz" );
+				strRes = profile.IOPERefersTo( enuIOPEType.Precondition, enuIOPESearchBy.COND_DESC, "xyz" );
+				strRes = profile.IOPERefersTo( enuIOPEType.Precondition, enuIOPESearchBy.COND_DESC, "xyz" );
+				strRes = profile.IOPERefersTo( enuIOPEType.Effect, enuIOPESearchBy.COND_NAME, "xyz" );
+				strRes = profile.IOPERefersTo( enuIOPEType.Effect, enuIOPESearchBy.COND_NAME, "xyz" );
+				*/
+				// Invalid combinations - should cause an exception to be thrown
+				//strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.COND_DESC, "xyz" );
+				//strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.COND_NAME, "xyz" );
+				//strRes = profile.IOPERefersTo( enuIOPEType.Output, enuIOPESearchBy.COND_DESC, "xyz" );
+				//strRes = profile.IOPERefersTo( enuIOPEType.Output, enuIOPESearchBy.COND_NAME, "xyz" );
+				//strRes = profile.IOPERefersTo( enuIOPEType.Precondition, enuIOPESearchBy.PARAM_DESC, "xyz" );
+				//strRes = profile.IOPERefersTo( enuIOPEType.Precondition, enuIOPESearchBy.PARAM_NAME, "xyz" );
+				//strRes = profile.IOPERefersTo( enuIOPEType.Effect, enuIOPESearchBy.PARAM_DESC, "xyz" );
+				//strRes = profile.IOPERefersTo( enuIOPEType.Effect, enuIOPESearchBy.PARAM_NAME, "xyz" );
+
+
 				
 				int x = 0;
 				x++;

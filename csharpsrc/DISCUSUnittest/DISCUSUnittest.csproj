@@ -111,16 +111,6 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "BNQuoteService.cs"
-                    SubType = "code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "CupScores.cs"
-                    SubType = "code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "DAMLServiceProfile.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -135,28 +125,13 @@
                     BuildAction = "None"
                 />
                 <File
-                    RelPath = "finnwords.cs"
-                    SubType = "code"
+                    RelPath = "IIOPEXPathExprBuilder.cs"
+                    SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "GeoCash.cs"
-                    SubType = "code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "GoogleSearchService.cs"
-                    SubType = "code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "JokeServer.cs"
-                    SubType = "code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SecurityManagerService.cs"
-                    SubType = "code"
+                    RelPath = "IOPEXPathExprBuilderFactory.cs"
+                    SubType = "Code"
                     BuildAction = "Compile"
                 />
                 <File
@@ -165,8 +140,8 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "XMethodsQuery.cs"
-                    SubType = "code"
+                    RelPath = "XPathExprBuilders.cs"
+                    SubType = "Code"
                     BuildAction = "Compile"
                 />
             </Include>
