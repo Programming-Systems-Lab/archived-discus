@@ -1,6 +1,8 @@
 package psl.discus.javasrc.p2p;
 
 import psl.discus.javasrc.shared.*;
+import psl.discus.javasrc.security.ServiceSpace;
+import psl.discus.javasrc.security.ServiceSpaceDAO;
 
 import javax.sql.DataSource;
 
@@ -28,7 +30,7 @@ public class ClientDAO {
         this.ds = ds;
     }
 
-    public ServiceSpaceEndpoint addPipeAdvertisement(int serviceSpaceId, PipeAdvertisement pipeAd)
+    public ServiceSpaceEndpoint addPipeAdvertisement(ServiceSpace serviceSpace, PipeAdvertisement pipeAd)
         throws DAOException {
 
         Connection con = null;
@@ -42,12 +44,12 @@ public class ClientDAO {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             pipeAd.getDocument(xmlMimeMediaType).sendToStream(out);
 
-            stmt.setInt(1,serviceSpaceId);
+            stmt.setInt(1,serviceSpace.getServiceSpaceId());
             stmt.setString(2,out.toString());
 
             stmt.executeUpdate();
 
-            return new ServiceSpaceEndpointImpl(serviceSpaceId, pipeAd);
+            return new ServiceSpaceEndpointImpl(serviceSpace, pipeAd);
 
         } catch (Exception e) {
             throw new DAOException("Could not store pipe advertisement: " + e.getMessage());
@@ -96,12 +98,15 @@ public class ClientDAO {
 
         try {
             con = ds.getConnection();
-            String sql = "SELECT * FROM ServiceSpaceEndpoints";
+            String sql = "SELECT sse.pipeAd, ss.* FROM ServiceSpaceEndpoints sse, ServiceSpaces ss " +
+                         "WHERE sse.serviceSpaceId = ss.serviceSpaceId";
             stmt = con.prepareStatement(sql);
 
             rs = stmt.executeQuery();
             while (rs.next()) {
-                int serviceSpaceId = rs.getInt("serviceSpaceId");
+                int serviceSpaceId = rs.getInt("ss.serviceSpaceId");
+                String serviceSpaceName = rs.getString("serviceSpaceName");
+                int trustLevel = rs.getInt("trustLevel");
                 String pipeAdString = rs.getString("pipeAd");
                 PipeAdvertisement pipeAd = null;
 
@@ -116,7 +121,9 @@ public class ClientDAO {
                     continue;
                 }
 
-                ads.add(new ServiceSpaceEndpointImpl(serviceSpaceId,pipeAd));
+                ServiceSpace serviceSpace =
+                        new ServiceSpaceDAO.ServiceSpaceImpl(serviceSpaceId,serviceSpaceName,trustLevel);
+                ads.add(new ServiceSpaceEndpointImpl(serviceSpace,pipeAd));
 
             }
 
@@ -136,16 +143,16 @@ public class ClientDAO {
 
     private class ServiceSpaceEndpointImpl implements ServiceSpaceEndpoint {
 
-        private int serviceSpaceId;
+        private ServiceSpace serviceSpace;
         private PipeAdvertisement pipeAd;
 
-        public ServiceSpaceEndpointImpl(int serviceSpaceId, PipeAdvertisement pipeAd) {
-            this.serviceSpaceId = serviceSpaceId;
+        public ServiceSpaceEndpointImpl(ServiceSpace serviceSpace, PipeAdvertisement pipeAd) {
+            this.serviceSpace = serviceSpace;
             this.pipeAd = pipeAd;
         }
 
-        public int getServiceSpaceId() {
-            return serviceSpaceId;
+        public ServiceSpace getServiceSpace() {
+            return serviceSpace;
         }
 
         public PipeAdvertisement getPipeAdvertisement() {
