@@ -18,6 +18,6 @@ public interface Tags {
     public static final String PIPE_ID_TAG = "PipeId";
     public static final String PARAM_TAG = "Parm";
 
-    public static final String SOAP_ENVELOPE_TAG = "SOAP-ENV:Envelope";
-    public static final String SOAP_BODY_TAG = "SOAP-ENV:Body";
+    public static final String SOAP_ENVELOPE_TAG = "soapenv:Envelope";
+    public static final String SOAP_BODY_TAG = "soapenv:Body";
 }
