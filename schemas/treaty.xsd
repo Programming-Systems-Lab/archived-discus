@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema targetNamespace="http://localhost/Discus/Schema/Treaty.xsd" elementFormDefault="qualified" xmlns="http://localhost/Discus/Schema/Treaty.xsd" xmlns:mstns="http://localhost/Discus/Schema/Treaty.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="Treaty" type="TreatyType" />
+	<!-- Schema of a DISCUS Treaty: contains a Treaty ID and a list of ServiceData entries -->
+	<xs:complexType name="TreatyType">
+		<xs:sequence>
+			<xs:element name="TreatyID" type="xs:int" minOccurs="1" maxOccurs="1" default="0" nillable="false" />
+			<xs:element name="ClientServiceSpace" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false"/>
+			<xs:element name="ProviderServiceSpace" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false"/>
+			<xs:element name="ServiceInfo" type="mstns:ServiceDataType" minOccurs="1" maxOccurs="unbounded" nillable="false" />
+		</xs:sequence>
+	</xs:complexType>
+	<!-- Schema of a ServiceData type: contains a Service name and a list of ServiceMethodData entries -->
+	<xs:complexType name="ServiceDataType">
+		<xs:sequence>
+			<xs:element name="ServiceName" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false" />
+			<xs:element name="ServiceMethod" type="mstns:ServiceMethodDataType" minOccurs="1" maxOccurs="unbounded" nillable="false" />
+		</xs:sequence>
+	</xs:complexType>
+	<!-- Schema of a ServiceMethodData type: contains a method name and a list of named parameters-->
+	<xs:complexType name="ServiceMethodDataType">
+		<xs:sequence>
+			<xs:element name="MethodName" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false" />
+			<xs:element name="Parameter" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="NumInvokations" type="xs:int" minOccurs="1" maxOccurs="1" nillable="false" default="1"/>
+			<xs:element name="Authorized" type="xs:boolean" minOccurs="1" maxOccurs="1" nillable="false" default="false"/>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>
