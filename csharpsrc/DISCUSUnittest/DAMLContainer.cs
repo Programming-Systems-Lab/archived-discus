@@ -20,6 +20,13 @@ namespace PSL.DISCUS.DAML
 		public DAMLContainer()
 		{}
 
+
+		// Need virtual methods to load from:
+		// file/unc path
+		// url/uri
+		// stream
+		// xml string - already implemented
+
 		public virtual bool LoadXml( string strXml )
 		{
 			bool bStatus = false;

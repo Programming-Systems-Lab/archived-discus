@@ -75,18 +75,8 @@ namespace PSL.DISCUS.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				string strBaseUri = "";
+				string strBaseUri = GetNamespaceBaseUri( DAMLConstants.PROCESS_NS );
 				string strUri = "";
-
-				foreach( string prefix in m_mgr )
-				{
-					if( prefix == DAMLConstants.PROCESS_NS )
-					{
-						strBaseUri = m_mgr.LookupNamespace( prefix );
-						break;
-					}
-				}
-
 				strUri = strBaseUri;
 				
 				switch( processType )
@@ -104,7 +94,8 @@ namespace PSL.DISCUS.DAML
 				
 				XmlNode processNode = root.SelectSingleNode( strXPath, m_mgr ).ParentNode;
 
-				// No such process exists so just exit
+				// No such process exists so just exit - should throw exception since
+				// returned DAMLProcess is useless
 				if( processNode == null )
 					return retVal;
 				
@@ -285,20 +276,27 @@ namespace PSL.DISCUS.DAML
 			else return Int32.Parse( cardinalityNode.Value );
 		}
 		
-		private enuProcessSubTaskType GetProcessSubTaskType( string strProcessName )
+		private string GetNamespaceBaseUri( string strNamespacePrefix )
 		{
-			XmlNode root = m_doc.DocumentElement;
 			string strBaseUri = "";
-				
+
 			foreach( string prefix in m_mgr )
 			{
-				if( prefix == DAMLConstants.PROCESS_NS )
+				if( prefix == strNamespacePrefix )
 				{
 					strBaseUri = m_mgr.LookupNamespace( prefix );
 					break;
 				}
 			}
 
+			return strBaseUri;
+		}
+
+		private enuProcessSubTaskType GetProcessSubTaskType( string strProcessName )
+		{
+			XmlNode root = m_doc.DocumentElement;
+			string strBaseUri = GetNamespaceBaseUri( DAMLConstants.PROCESS_NS );
+			
 			string strXPath = DAMLConstants.DAML_CLASS + "[@" + DAMLConstants.RDF_ID + "='" + strProcessName + "']" + "/" + DAMLConstants.RDFS_SUBCLASSOF + "[@" + DAMLConstants.RDF_RESOURCE + "='" + strBaseUri + DAMLConstants.DAML_COMPOSITE_PROCESS + "']" + "/" + "following-sibling::" + DAMLConstants.RDFS_SUBCLASSOF;
 			XmlNode SubClassOfNode = root.SelectSingleNode( strXPath, m_mgr );
 				
@@ -317,24 +315,15 @@ namespace PSL.DISCUS.DAML
 			else return enuProcessSubTaskType.Sequence;
 		}
 		
-		public DAMLProcess[] GetSubProcesses( string strProcessName )
+		private DAMLProcess[] GetSubProcesses( string strProcessName )
 		{
 			ArrayList lstSubProcesses = new ArrayList();
 
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				string strBaseUri = "";
+				string strBaseUri = GetNamespaceBaseUri( DAMLConstants.PROCESS_NS );
 				
-				foreach( string prefix in m_mgr )
-				{
-					if( prefix == DAMLConstants.PROCESS_NS )
-					{
-						strBaseUri = m_mgr.LookupNamespace( prefix );
-						break;
-					}
-				}
-
 				string strXPath = DAMLConstants.DAML_CLASS + "[@" + DAMLConstants.RDF_ID + "='" + strProcessName + "']" + "/" + DAMLConstants.RDFS_SUBCLASSOF + "[@" + DAMLConstants.RDF_RESOURCE + "='" + strBaseUri + DAMLConstants.DAML_COMPOSITE_PROCESS + "']" + "/" + "following-sibling::" + DAMLConstants.RDFS_SUBCLASSOF;
 				XmlNode SubClassOfNode = root.SelectSingleNode( strXPath, m_mgr );
 				
@@ -367,17 +356,7 @@ namespace PSL.DISCUS.DAML
 		private enuProcessType GetProcessType( string strProcessName )
 		{
 			// process may be atomic, simple or complex
-			string strBaseUri = "";
-				
-			foreach( string prefix in m_mgr )
-			{
-				if( prefix == DAMLConstants.PROCESS_NS )
-				{
-					strBaseUri = m_mgr.LookupNamespace( prefix );
-					break;
-				}
-			}
-			
+			string strBaseUri = GetNamespaceBaseUri( DAMLConstants.PROCESS_NS );
 			XmlNode root = m_doc.DocumentElement;
 
 			string strXPathAtomicProcess = DAMLConstants.DAML_CLASS + "[@" + DAMLConstants.RDF_ID + "='" + strProcessName + "']" + "/" + DAMLConstants.RDFS_SUBCLASSOF + "[@" + DAMLConstants.RDF_RESOURCE + "='" + strBaseUri + DAMLConstants.DAML_ATOMIC_PROCESS + "']";
@@ -406,17 +385,7 @@ namespace PSL.DISCUS.DAML
 			try
 			{
 				XmlNode root = m_doc.DocumentElement;
-				string strProcessURI = "";
-
-				foreach( string prefix in m_mgr )
-				{
-					if( prefix == DAMLConstants.PROCESS_NS )
-					{
-						strProcessURI = m_mgr.LookupNamespace( prefix );
-						break;
-					}
-				}
-				
+				string strProcessURI = GetNamespaceBaseUri( DAMLConstants.PROCESS_NS );
 				string strProcessType = "";
 
 				switch( processType )

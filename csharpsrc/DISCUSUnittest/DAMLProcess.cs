@@ -347,10 +347,16 @@ namespace PSL.DISCUS.DAML
 		{
 			get
 			{
-				bool bLVal = ( HasInputs && HasOutputs ) && ( HasPreconditions && HasEffects );
-				bool bRVal = ( HasConditionalOutputs && HasCoConditions ) && ( HasCoOutputs && HasParameters );
-				return ( bLVal && bRVal ) && HasSubProcesses;
+				bool bLVal = ( HasInputs || HasOutputs ) || ( HasPreconditions || HasEffects );
+				bool bRVal = ( HasConditionalOutputs || HasCoConditions ) || ( HasCoOutputs || HasParameters );
+				return ( bLVal || bRVal ) || HasSubProcesses;
 			}
+		}
+
+		public bool isEmpty
+		{
+			get
+			{ return !HasData; }
 		}
 	}
 }

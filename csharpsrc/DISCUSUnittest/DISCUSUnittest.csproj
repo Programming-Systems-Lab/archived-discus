@@ -126,6 +126,11 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "DAMLProcessExec.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "DAMLProcessModel.cs"
                     SubType = "Code"
                     BuildAction = "Compile"

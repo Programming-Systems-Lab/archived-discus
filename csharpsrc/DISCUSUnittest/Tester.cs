@@ -118,7 +118,7 @@ namespace DISCUSUnittest
 				bStatus = ireg.RegisterServiceMethod( "SecurityManagerService", "verifyTreaty2" );
 			}
 		}
-		
+		*/
 		public static void ResetServiceLocations()
 		{
 			InternalRegistry ireg = new InternalRegistry();
@@ -167,14 +167,12 @@ namespace DISCUSUnittest
 			// SecurityManager Service
 			g.GenerateProxy( "SecurityManagerService", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl", "http://church.psl.cs.columbia.edu:8080/security/jaxrpc/SecurityManagerService" );
 		}
-
+		
 		public static void TestServiceMethods()
 		{
 			// GateKeeper instance
 			GateKeeper g = new GateKeeper();
-			//localhost.PSLGatekeeper g = new localhost.PSLGatekeeper();
-			//
-			//DynamicPxy.PSLGatekeeper1 g = new DynamicPxy.PSLGatekeeper1();
+			g.TraceOn = false;
 			object objRes = null;
 			//InternalRegistry ireg = new InternalRegistry();
 			//ireg.UpdateServiceLocation( "SecurityManagerService", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl" );
@@ -184,14 +182,15 @@ namespace DISCUSUnittest
 			ExecServiceMethodRequestType e = new ExecServiceMethodRequestType();
 			
 			// TODO: WeatherConditions testing webservice
-			/* e.TreatyID = -1820085390;//-115276743;
+			e.TreatyID = -1820085390;//-115276743;
 			e.ServiceName = "WeatherRetriever";
-			// e.MethodName = "GetTemperature";
+			e.MethodName = "GetTemperature";
 			e.MethodName = "GetWeather";
 			e.m_ParamValue.Clear();
 			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>10027</string>" );
-			*/ 
-
+			 
+			objRes = g.ExecuteServiceMethod( e.ToXml() );
+		
 			// TODO: Traffic Conditions in Chicago testing webservice
 			/* e.TreatyID = -1820085390;//-115276743;
 			e.ServiceName = "CATrafficService";
@@ -244,29 +243,9 @@ namespace DISCUSUnittest
 			//e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>10025</string>" );
 			//objRes = g.ExecuteServiceMethod( e.ToXml() );
 
-			// Google
+			// Google*/
 		}
 
-		
-		static void SendHttpPostData( string strData )
-		{
-			HttpWebRequest req = (HttpWebRequest) WebRequest.Create( "http://127.0.0.1:8080" );
-			req.Method = "POST";
-			req.KeepAlive = false;
-			req.AllowWriteStreamBuffering = false;
-			req.ContentLength = strData.Length;	
-			
-			//TcpClient client = new TcpClient( "localhost", 8080 );
-			//StreamWriter output = new StreamWriter( client.GetStream() );
-			
-			StreamWriter output = new StreamWriter( req.GetRequestStream() );
-
-			output.Write( strData );
-
-			output.Flush();
-			output.Close();
-		}
-		*/
 		/// <summary>
 		/// The main entry point for the application.
 		/// </summary>
@@ -275,14 +254,9 @@ namespace DISCUSUnittest
 		{
 			try
 			{
-				//SetupServiceSpace();
 				//ResetServiceLocations();
 				// TestServiceMethods();
-                //GenerateAllProxies();
-
-				//GateKeeper g = new GateKeeper();
-				// g.TraceOn = true;
-
+				
 				//FileStream fs = new FileStream( "CongoProfile.txt", FileMode.Open );
 				FileStream fs = new FileStream( "CongoProcess.txt", FileMode.Open );
 				StreamReader s = new StreamReader( fs );
@@ -291,15 +265,27 @@ namespace DISCUSUnittest
 				DAMLProcessModel process = new DAMLProcessModel();
 				process.LoadXml( strDAML );
 				
-				//string[] arrRes = null;
-				//arrRes = process.SimpleProcesses;
-				//arrRes = process.CompositeProcesses;
-				//arrRes = process.AtomicProcesses;
-				//arrRes = process.AllProcesses;
-				//arrRes = process.GetInputsOfNamedProcess( "LocateBook" );
+				string[] arrProcessNames = process.AtomicProcesses;
+				DAMLProcess[] arrAtomicProcesses = new DAMLProcess[arrProcessNames.Length];
+
+				for( int i = 0; i < arrProcessNames.Length; i++ )
+				{
+					arrAtomicProcesses[i] = process.GetProcessData( arrProcessNames[i], enuProcessType.AtomicProcess );
+				}
 				
-				DAMLProcess res = process.GetProcessData( "ExpandedCongoBuy", enuProcessType.CompositeProcess );
+				// Simple execution scenario
+				// define IExecuteDAMLProcess
+				// single method Execute(DAMLParameters[] arrParams) - hashtable better
+				// Parameter map
+				// organized by types of inputs
+
+											
+				DAMLProcess res = process.GetProcessData( "CongoBuy", enuProcessType.SimpleProcess );
 								
+				
+
+
+				
 				//DAMLServiceProfile profile = new DAMLServiceProfile();
 				// Load DAML from web/file too big to hardcode in source file
 				// exceeds 2K compiler limit
