@@ -1,0 +1,27 @@
+Microsoft Visual Studio Solution File, Format Version 7.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncCore", "AsyncCore.csproj", "{1E8BA3A8-8D8A-4802-97D0-DAA0425AA45B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncCoreUnittest", "..\AsyncCoreUnittest\AsyncCoreUnittest.csproj", "{B11691E6-B627-4DBF-869E-56CBDA119BBC}"
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{1E8BA3A8-8D8A-4802-97D0-DAA0425AA45B}.Debug.ActiveCfg = Debug|.NET
+		{1E8BA3A8-8D8A-4802-97D0-DAA0425AA45B}.Debug.Build.0 = Debug|.NET
+		{1E8BA3A8-8D8A-4802-97D0-DAA0425AA45B}.Release.ActiveCfg = Release|.NET
+		{1E8BA3A8-8D8A-4802-97D0-DAA0425AA45B}.Release.Build.0 = Release|.NET
+		{B11691E6-B627-4DBF-869E-56CBDA119BBC}.Debug.ActiveCfg = Debug|.NET
+		{B11691E6-B627-4DBF-869E-56CBDA119BBC}.Debug.Build.0 = Debug|.NET
+		{B11691E6-B627-4DBF-869E-56CBDA119BBC}.Release.ActiveCfg = Release|.NET
+		{B11691E6-B627-4DBF-869E-56CBDA119BBC}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
