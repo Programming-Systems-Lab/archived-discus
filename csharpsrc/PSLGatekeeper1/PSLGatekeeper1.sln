@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 7.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PSLGatekeeper1", "http://localhost/PSLGatekeeper1/PSLGatekeeper1.csproj", "{D37FE69B-CD8F-4D6B-A652-783BEA78B607}"
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{D37FE69B-CD8F-4D6B-A652-783BEA78B607}.Debug.ActiveCfg = Debug|.NET
+		{D37FE69B-CD8F-4D6B-A652-783BEA78B607}.Debug.Build.0 = Debug|.NET
+		{D37FE69B-CD8F-4D6B-A652-783BEA78B607}.Release.ActiveCfg = Release|.NET
+		{D37FE69B-CD8F-4D6B-A652-783BEA78B607}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<definitions xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:s0="http://tempuri.org/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" targetNamespace="http://tempuri.org/" xmlns="http://schemas.xmlsoap.org/wsdl/">
+  <types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+      <s:element name="ExecuteServiceMethod">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="strXMLExecRequest" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="ExecuteServiceMethodResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="ExecuteServiceMethodResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="ExecuteAlphaProtocol">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="strAlphaProtocol" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="ExecuteAlphaProtocolResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="ExecuteAlphaProtocolResult" type="s0:ArrayOfString" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfString">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="string" nillable="true" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="EnlistServicesByName">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="strXmlTreatyReq" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="EnlistServicesByNameResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="EnlistServicesByNameResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="string" nillable="true" type="s:string" />
+      <s:element name="ArrayOfString" nillable="true" type="s0:ArrayOfString" />
+    </s:schema>
+  </types>
+  <message name="ExecuteServiceMethodSoapIn">
+    <part name="parameters" element="s0:ExecuteServiceMethod" />
+  </message>
+  <message name="ExecuteServiceMethodSoapOut">
+    <part name="parameters" element="s0:ExecuteServiceMethodResponse" />
+  </message>
+  <message name="ExecuteAlphaProtocolSoapIn">
+    <part name="parameters" element="s0:ExecuteAlphaProtocol" />
+  </message>
+  <message name="ExecuteAlphaProtocolSoapOut">
+    <part name="parameters" element="s0:ExecuteAlphaProtocolResponse" />
+  </message>
+  <message name="EnlistServicesByNameSoapIn">
+    <part name="parameters" element="s0:EnlistServicesByName" />
+  </message>
+  <message name="EnlistServicesByNameSoapOut">
+    <part name="parameters" element="s0:EnlistServicesByNameResponse" />
+  </message>
+  <message name="ExecuteServiceMethodHttpGetIn">
+    <part name="strXMLExecRequest" type="s:string" />
+  </message>
+  <message name="ExecuteServiceMethodHttpGetOut">
+    <part name="Body" element="s0:string" />
+  </message>
+  <message name="ExecuteAlphaProtocolHttpGetIn">
+    <part name="strAlphaProtocol" type="s:string" />
+  </message>
+  <message name="ExecuteAlphaProtocolHttpGetOut">
+    <part name="Body" element="s0:ArrayOfString" />
+  </message>
+  <message name="EnlistServicesByNameHttpGetIn">
+    <part name="strXmlTreatyReq" type="s:string" />
+  </message>
+  <message name="EnlistServicesByNameHttpGetOut">
+    <part name="Body" element="s0:string" />
+  </message>
+  <message name="ExecuteServiceMethodHttpPostIn">
+    <part name="strXMLExecRequest" type="s:string" />
+  </message>
+  <message name="ExecuteServiceMethodHttpPostOut">
+    <part name="Body" element="s0:string" />
+  </message>
+  <message name="ExecuteAlphaProtocolHttpPostIn">
+    <part name="strAlphaProtocol" type="s:string" />
+  </message>
+  <message name="ExecuteAlphaProtocolHttpPostOut">
+    <part name="Body" element="s0:ArrayOfString" />
+  </message>
+  <message name="EnlistServicesByNameHttpPostIn">
+    <part name="strXmlTreatyReq" type="s:string" />
+  </message>
+  <message name="EnlistServicesByNameHttpPostOut">
+    <part name="Body" element="s0:string" />
+  </message>
+  <portType name="PSLGatekeeper2Soap">
+    <operation name="ExecuteServiceMethod">
+      <input message="s0:ExecuteServiceMethodSoapIn" />
+      <output message="s0:ExecuteServiceMethodSoapOut" />
+    </operation>
+    <operation name="ExecuteAlphaProtocol">
+      <input message="s0:ExecuteAlphaProtocolSoapIn" />
+      <output message="s0:ExecuteAlphaProtocolSoapOut" />
+    </operation>
+    <operation name="EnlistServicesByName">
+      <input message="s0:EnlistServicesByNameSoapIn" />
+      <output message="s0:EnlistServicesByNameSoapOut" />
+    </operation>
+  </portType>
+  <portType name="PSLGatekeeper2HttpGet">
+    <operation name="ExecuteServiceMethod">
+      <input message="s0:ExecuteServiceMethodHttpGetIn" />
+      <output message="s0:ExecuteServiceMethodHttpGetOut" />
+    </operation>
+    <operation name="ExecuteAlphaProtocol">
+      <input message="s0:ExecuteAlphaProtocolHttpGetIn" />
+      <output message="s0:ExecuteAlphaProtocolHttpGetOut" />
+    </operation>
+    <operation name="EnlistServicesByName">
+      <input message="s0:EnlistServicesByNameHttpGetIn" />
+      <output message="s0:EnlistServicesByNameHttpGetOut" />
+    </operation>
+  </portType>
+  <portType name="PSLGatekeeper2HttpPost">
+    <operation name="ExecuteServiceMethod">
+      <input message="s0:ExecuteServiceMethodHttpPostIn" />
+      <output message="s0:ExecuteServiceMethodHttpPostOut" />
+    </operation>
+    <operation name="ExecuteAlphaProtocol">
+      <input message="s0:ExecuteAlphaProtocolHttpPostIn" />
+      <output message="s0:ExecuteAlphaProtocolHttpPostOut" />
+    </operation>
+    <operation name="EnlistServicesByName">
+      <input message="s0:EnlistServicesByNameHttpPostIn" />
+      <output message="s0:EnlistServicesByNameHttpPostOut" />
+    </operation>
+  </portType>
+  <binding name="PSLGatekeeper2Soap" type="s0:PSLGatekeeper2Soap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document" />
+    <operation name="ExecuteServiceMethod">
+      <soap:operation soapAction="http://tempuri.org/ExecuteServiceMethod" style="document" />
+      <input>
+        <soap:body use="literal" />
+      </input>
+      <output>
+        <soap:body use="literal" />
+      </output>
+    </operation>
+    <operation name="ExecuteAlphaProtocol">
+      <soap:operation soapAction="http://tempuri.org/ExecuteAlphaProtocol" style="document" />
+      <input>
+        <soap:body use="literal" />
+      </input>
+      <output>
+        <soap:body use="literal" />
+      </output>
+    </operation>
+    <operation name="EnlistServicesByName">
+      <soap:operation soapAction="http://tempuri.org/EnlistServicesByName" style="document" />
+      <input>
+        <soap:body use="literal" />
+      </input>
+      <output>
+        <soap:body use="literal" />
+      </output>
+    </operation>
+  </binding>
+  <binding name="PSLGatekeeper2HttpGet" type="s0:PSLGatekeeper2HttpGet">
+    <http:binding verb="GET" />
+    <operation name="ExecuteServiceMethod">
+      <http:operation location="/ExecuteServiceMethod" />
+      <input>
+        <http:urlEncoded />
+      </input>
+      <output>
+        <mime:mimeXml part="Body" />
+      </output>
+    </operation>
+    <operation name="ExecuteAlphaProtocol">
+      <http:operation location="/ExecuteAlphaProtocol" />
+      <input>
+        <http:urlEncoded />
+      </input>
+      <output>
+        <mime:mimeXml part="Body" />
+      </output>
+    </operation>
+    <operation name="EnlistServicesByName">
+      <http:operation location="/EnlistServicesByName" />
+      <input>
+        <http:urlEncoded />
+      </input>
+      <output>
+        <mime:mimeXml part="Body" />
+      </output>
+    </operation>
+  </binding>
+  <binding name="PSLGatekeeper2HttpPost" type="s0:PSLGatekeeper2HttpPost">
+    <http:binding verb="POST" />
+    <operation name="ExecuteServiceMethod">
+      <http:operation location="/ExecuteServiceMethod" />
+      <input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </input>
+      <output>
+        <mime:mimeXml part="Body" />
+      </output>
+    </operation>
+    <operation name="ExecuteAlphaProtocol">
+      <http:operation location="/ExecuteAlphaProtocol" />
+      <input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </input>
+      <output>
+        <mime:mimeXml part="Body" />
+      </output>
+    </operation>
+    <operation name="EnlistServicesByName">
+      <http:operation location="/EnlistServicesByName" />
+      <input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </input>
+      <output>
+        <mime:mimeXml part="Body" />
+      </output>
+    </operation>
+  </binding>
+  <service name="PSLGatekeeper2">
+    <port name="PSLGatekeeper2Soap" binding="s0:PSLGatekeeper2Soap">
+      <soap:address location="http://localhost/PSLGatekeeper2/PSLGatekeeper2.asmx" />
+    </port>
+    <port name="PSLGatekeeper2HttpGet" binding="s0:PSLGatekeeper2HttpGet">
+      <http:address location="http://localhost/PSLGatekeeper2/PSLGatekeeper2.asmx" />
+    </port>
+    <port name="PSLGatekeeper2HttpPost" binding="s0:PSLGatekeeper2HttpPost">
+      <http:address location="http://localhost/PSLGatekeeper2/PSLGatekeeper2.asmx" />
+    </port>
+  </service>
+</definitions>
