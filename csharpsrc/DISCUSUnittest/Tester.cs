@@ -275,48 +275,43 @@ namespace DISCUSUnittest
 		{
 			try
 			{
-				//GateKeeper g = new GateKeeper();
-				//DynamicPxy.GeoCash g = new DynamicPxy.GeoCash();
-				//object objRes = g.GetATMLocations( "10025", "0" );
-
 				//SetupServiceSpace();
 				//ResetServiceLocations();
 				// TestServiceMethods();
                 //GenerateAllProxies();
 
-				//localhost.PSLGatekeeper g = new localhost.PSLGatekeeper();
-				//g.ExecuteAlphaProtocol("<?xml version=\"1.0\" encoding=\"utf-8\" ?><definitions name=\"DemoAlpha\" targetNamespace=\"http://psl.cs.columbia.edu\" xmlns:xlang=\"http://schemas.microsoft.com/bixtalk/xlang\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"> <!-- Simple demo using simple xlang constructs --> <xlang:behavior><xlang:body><xlang:sequence><xlang:action activation=\"true\" gatekeeper=\"PSLGatekeeperRemote\" servicename=\"WeatherRetriever\" operation=\"GetTemperature\"><parameter name = \"zipCode\">><![CDATA[<?xml version=\"1.0\"?><string>10027</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeperRemote\" servicename=\"CATrafficService\" operation=\"getTraffic\"><parameter name = \"HighWayNum\"><![CDATA[<?xml version=\"1.0\"?><string>209</string>]]></parameter></xlang:action></xlang:sequence></xlang:body></xlang:behavior></definitions>");
-
-				//edu.columbia.cs.psl.madison.PSLGatekeeper g = new edu.columbia.cs.psl.madison.PSLGatekeeper();
-				//object o = g.ExecuteAlphaProtocol("<?xml version=\"1.0\" encoding=\"utf-8\" ?><definitions name=\"DemoAlpha\" targetNamespace=\"http://psl.cs.columbia.edu\" xmlns:xlang=\"http://schemas.microsoft.com/bixtalk/xlang\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"> <!-- Simple demo using simple xlang constructs --><xlang:behavior><xlang:body><xlang:sequence><xlang:action activation=\"true\" gatekeeper=\"PSLGatekeeper\" servicename=\"WeatherRetriever\" operation=\"GetTemperature\"><parameter name = \"zipCode\"><![CDATA[<?xml version=\"1.0\"?><string>10027</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeper\" servicename=\"CATrafficService\" operation=\"getTraffic\"><parameter name = \"HighWayNum\"><![CDATA[<?xml version=\"1.0\"?><string>209</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeper\" servicename=\"WeatherRetriever\" operation=\"GetTemperature\"><parameter name = \"zipCode\"><![CDATA[<?xml version=\"1.0\"?><string>92152</string>]]></parameter></xlang:action></xlang:sequence></xlang:body></xlang:behavior></definitions>");
-	
 				//GateKeeper g = new GateKeeper();
 				// g.TraceOn = true;
 
-				//string strAlpha = "<?xml version=\"1.0\" encoding=\"utf-8\"?><definitions name=\"DemoAlpha\" targetNamespace=\"http://psl.cs.columbia.edu\" xmlns:xlang=\"http://schemas.microsoft.com/bixtalk/xlang\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><!-- Simple demo using simple xlang constructs --><xlang:behavior><xlang:body><xlang:sequence><xlang:action activation=\"true\" gatekeeper=\"PSLGatekeeper1\" servicename=\"BNQuoteService\" operation=\"getPrice\"><parameter name=\"isbn\"><![CDATA[<?xml version=\"1.0\"?><string>1861005458</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeper1\" servicename=\"GeoCash\" operation=\"GetATMLocations\"><parameter name=\"Zipcode\"><![CDATA[<?xml version=\"1.0\"?><string>10025</string>]]></parameter></xlang:action></xlang:sequence></xlang:body></xlang:behavior></definitions>";
-				//GateKeeper g = new GateKeeper();
-				//string [] arrRes = g.ExecuteAlphaProtocol( strAlpha );
-
-				//string strTreaty = "<?xml version=\"1.0\"?><Treaty xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://localhost/Discus/Schema/Treaty.xsd\"><ServiceInfo><ServiceMethod><Parameter>&lt;?xml version=\"1.0\"?&gt;&lt;string&gt;1861005458&lt;/string&gt;</Parameter><MethodName>getPrice</MethodName></ServiceMethod><ServiceName>BNQuoteService</ServiceName></ServiceInfo><ServiceInfo><ServiceMethod><Parameter>&lt;?xml version=\"1.0\"?&gt;&lt;string&gt;10025&lt;/string&gt;</Parameter><MethodName>GetATMLocations</MethodName></ServiceMethod><ServiceName>GeoCash</ServiceName></ServiceInfo><ServiceInfo><ServiceMethod><MethodName>getAllServiceSummaries</MethodName></ServiceMethod><ServiceName>XMethodsQuery</ServiceName></ServiceInfo><TreatyID>0</TreatyID><ClientServiceSpace>100</ClientServiceSpace><ProviderServiceSpace>PSLGatekeeper1</ProviderServiceSpace></Treaty>";
-				//g.EnlistServicesByName( strTreaty );
-				
-				//PSLGatekeeper2 g = new PSLGatekeeper2();
-				//string[] arrRes = g.ExecuteAlphaProtocol( strAlpha ); 
-
-				//SendHttpPostData( "testing" );
-				//SendHttpPostData( "testing" );
-				
-				FileStream fs = new FileStream( "CongoProfile.txt", FileMode.Open );
+				//FileStream fs = new FileStream( "CongoProfile.txt", FileMode.Open );
+				FileStream fs = new FileStream( "CongoProcess.txt", FileMode.Open );
 				StreamReader s = new StreamReader( fs );
 				string strDAML = s.ReadToEnd();
 
-				DAMLServiceProfile profile = new DAMLServiceProfile();
+				DAMLProcessModel process = new DAMLProcessModel();
+				process.LoadXml( strDAML );
+				
+				string[] arrRes = null;
+				//arrRes = process.SimpleProcesses;
+				//arrRes = process.CompositeProcesses;
+				//arrRes = process.AtomicProcesses;
+				//arrRes = process.AllProcesses;
+				arrRes = process.GetInputsOfNamedProcess( "LocateBook" );
+				
+				
+				
+				
+				
+				
+				//DAMLServiceProfile profile = new DAMLServiceProfile();
 				// Load DAML from web/file too big to hardcode in source file
 				// exceeds 2K compiler limit
-								
-				profile.LoadProfile( strDAML );
+				//profile.LoadXml( strDAML );
+				
+				//string strRes = profile.ProcessModel;
 				//string[] arrRes = profile.OntologyImports;
-				//string strRes = profile.GeographicRadius;
+				//strRes = profile.GeographicRadius;
+				//strRes = profile.PresentedBy;
 				//IOType[] arrInputs = profile.InputParameters;
 				//IOType[] arrOutputs = profile.OutputParameters;
 				//EPType[] arrPreconds = profile.Preconditions;
@@ -328,8 +323,12 @@ namespace DISCUSUnittest
 				//strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_NAME, "packagingSelection" );
 				//strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_DESC, "PackagingSelection" );
 				
-				IOType i = profile.GetInputByName( "creditCardNumber" );
-				IOType j = profile.GetInputByDescription( "CreditCardNumber" );
+				//IOType i = profile.GetInputByReference( "http://www.daml.org/services/daml-s/2001/10/Congo.daml#packagingSelection" );
+				//i = profile.GetOutputByReference( "http://www.daml.org/services/daml-s/2001/10/Congo.daml#createAcctOutput" );
+				//EPType k = profile.GetPreconditionByReference( "http://www.daml.org/services/daml-s/2001/10/Congo.daml#congoBuyCreditExistsPrecondition" );
+				//k = profile.GetEffectByReference( "http://www.daml.org/services/daml-s/2001/10/Congo.daml#congoBuyEffect" );
+
+				//IOType j = profile.GetInputByDescription( "CreditCardNumber" );
 				
 				/*
 				strRes = profile.IOPERefersTo( enuIOPEType.Input, enuIOPESearchBy.PARAM_DESC, "xyz" );
