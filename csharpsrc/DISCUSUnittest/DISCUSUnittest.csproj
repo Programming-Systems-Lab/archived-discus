@@ -97,6 +97,11 @@
                     AssemblyName = "System.Web.Services"
                     HintPath = "..\..\..\..\WINNT\Microsoft.NET\Framework\v1.0.3705\System.Web.Services.dll"
                 />
+                <Reference
+                    Name = "PSLGatekeeper1"
+                    AssemblyName = "PSLGatekeeper1"
+                    HintPath = "..\..\..\..\TEMP\PxyCache\PSLGatekeeper1.dll"
+                />
             </References>
         </Build>
         <Files>
@@ -111,8 +116,18 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "PSLGatekeeper2.cs"
+                    SubType = "code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "Tester.cs"
                     SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "XMethodsQuery.cs"
+                    SubType = "code"
                     BuildAction = "Compile"
                 />
             </Include>
