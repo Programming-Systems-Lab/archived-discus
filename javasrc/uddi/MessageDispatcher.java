@@ -12,7 +12,7 @@ import org.apache.xml.serialize.OutputFormat;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.juddi.transport.axis.RequestHandler;
+import psl.discus.javasrc.uddi.transport.axis.RequestHandler;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.*;
@@ -35,10 +35,13 @@ public class MessageDispatcher {
     private SignatureManager signatureManager;
     private DocumentBuilder documentBuilder;
     private XMLSerializer xmlSerializer;
+    private DataSource ds;
 
 
-    public MessageDispatcher(SignatureManager signatureManager)
+    public MessageDispatcher(DataSource ds, SignatureManager signatureManager)
         throws MessageDispatcherException {
+
+        this.ds = ds;
         this.signatureManager = signatureManager;
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -52,17 +55,22 @@ public class MessageDispatcher {
         xmlSerializer = new XMLSerializer();
     }
 
-    public Message dispatchMessage(InputStream in)
+    /**
+     * Verifies an XML document containing a signed SOAP message, and dispatches it to the UDDI registry
+     * @param doc the message to verify and dispatch
+     * @return an XML element containing the response from the UDDI registry
+     * @throws MessageDispatcherException
+     */
+    public Element verifyAndDispatchMessage(Document doc)
         throws MessageDispatcherException {
 
         try {
 
             // first verify message
-            Document doc = documentBuilder.parse(in);
             SignatureManagerResponse result = signatureManager.verifyDocument(doc);
 
             // ok, document verified (otherwise an exception would have been thrown)
-            doc = result.document;
+            doc = result.getDocument();
 
             // most unfortunately, the current Axis API doesn't have a way to create a
             // Message from a Document object... so we have to output it and then re-parse it... sigh
@@ -74,15 +82,12 @@ public class MessageDispatcher {
             SOAPEnvelope env = new SOAPEnvelope(new ByteArrayInputStream(out.toByteArray()));
             Message msg = new Message(env, true);
 
-            RequestHandler handler = new RequestHandler();
+            RequestHandler handler = new RequestHandler(ds);
 
-            DiscusCredential credential = new DiscusCredential();
-            credential.setServiceSpaceId(1);
+            logger.info("dispatching message to UDDI module...");
+            Message response = handler.invoke(msg, result.getSigner());
 
-            Message response = handler.invoke(msg, credential);
-
-            response.writeContentToStream(System.out);
-            return response;
+            return response.getSOAPEnvelope().getAsDOM();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -91,14 +96,48 @@ public class MessageDispatcher {
     }
 
     /**
+     * Dispatches a verified SOAP message to the UDDI registry
+     * @param envelopeElement the SOAP message to dispatch, as an XML document
+     * @param signer the service space that signed the request
+     * @return the results from the UDDI registry
+     * @throws MessageDispatcherException
+     */
+    public Element dispatchMessage(Element envelopeElement, ServiceSpace signer)
+        throws MessageDispatcherException {
+
+        try {
+
+            ByteArrayOutputStream docBytes = new ByteArrayOutputStream();
+            xmlSerializer.setOutputByteStream(docBytes);
+            xmlSerializer.serialize(envelopeElement);
+
+            logger.debug("soap document: \n" + docBytes.toString());
+
+            SOAPEnvelope env = new SOAPEnvelope(new ByteArrayInputStream(docBytes.toByteArray()));
+            Message msg = new Message(env, true);
+
+            RequestHandler handler = new RequestHandler(ds);
+
+            Message response = handler.invoke(msg, signer);
+
+            return response.getSOAPEnvelope().getAsDOM();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new MessageDispatcherException(e);
+        }
+
+    }
+    /**
      * Test driver
      */
     public static void main(String args[])
             throws Exception {
 
         //FileInputStream in = new FileInputStream(args[0]);
-        SignatureManager sigManager = new SignatureManagerImpl(new FakeDataSource());
-        MessageDispatcher md = new MessageDispatcher(sigManager);
+        DataSource ds = new FakeDataSource();
+        SignatureManager sigManager = new SignatureManagerImpl(ds);
+        MessageDispatcher md = new MessageDispatcher(ds, sigManager);
 
         FindService findService = new FindService("*");
         findService.setMaxRows(5);
@@ -117,14 +156,7 @@ public class MessageDispatcher {
 
         Document signedDoc = sigManager.signDocument(document);
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        org.apache.xml.security.utils.XMLUtils.outputDOMc14nWithComments(signedDoc,out);
-        //md.xmlSerializer.setOutputByteStream(out);
-        //md.xmlSerializer.serialize(signedDoc);
-
-        logger.debug(out.toString());
-
-        md.dispatchMessage(new ByteArrayInputStream(out.toByteArray()));
+        md.verifyAndDispatchMessage(signedDoc);
    }
 
 
