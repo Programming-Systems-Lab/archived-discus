@@ -68,6 +68,18 @@ namespace PSL.DISCUS.DAML
 			}
 		}
 
+		/* Function retrieves all the interesting data about a process given its name and 
+		 * type.
+		 * 
+		 * Interesting data:
+		 * Inputs, Outputs, Preconditions, Effects, Parameters, ConditionalOutputs,
+		 * Co-Conditions, Sub Processes (if process is a composite process)
+		 * 
+		 * Inputs: strProcessName - named process
+		 *		   processType - process type (atomic, simple, composite)
+		 * 
+		 * Return value: DAMLProcess containing all the relevant data
+		 */ 
 		public DAMLProcess GetProcessData( string strProcessName, enuProcessType processType )
 		{
 			DAMLProcess retVal = new DAMLProcess();
@@ -95,7 +107,7 @@ namespace PSL.DISCUS.DAML
 				XmlNode processNode = root.SelectSingleNode( strXPath, m_mgr ).ParentNode;
 
 				// No such process exists so just exit - should throw exception since
-				// returned DAMLProcess is useless
+				// returned DAMLProcess is useless?
 				if( processNode == null )
 					return retVal;
 				
@@ -235,7 +247,14 @@ namespace PSL.DISCUS.DAML
 			return retVal;
 		}
 		
-        private RDFProperty GetNodeData( XmlNode node )
+        /* Function extracts the RDFProperty data from an XmlNode. Function expects
+		 * specific RDFProperty information available.
+		 * 
+		 * Inputs: node - the XmlNode to extract RDFProperty data
+		 * 
+		 * Return values: the RDFProperty instance containing the node data
+		 */ 
+		private RDFProperty GetNodeData( XmlNode node )
 		{
 			// Go up to parent node
 			XmlNode propertyNode = node.ParentNode;
@@ -258,6 +277,12 @@ namespace PSL.DISCUS.DAML
 			return data;
 		}
 		
+		/* Function retrieves the input restriction data given a process name and 
+		 * a named input.
+		 * 
+		 * Inputs: strProcessName - named process we are interested in
+		 *		   strInput - named input of the process
+		 */
 		private int GetInputRestrictions( string strProcessName, string strInput )
 		{
 			XmlNode root = m_doc.DocumentElement;
@@ -276,6 +301,17 @@ namespace PSL.DISCUS.DAML
 			else return Int32.Parse( cardinalityNode.Value );
 		}
 		
+		/* Private helper function used to extract URIs from our namespace
+		 * manager given a namespace prefix - even though the namespace manager is 
+		 * *supposed* to be accessible like a hashtable (m_mgr[<prefixname>]) this
+		 * does not work, a for each construct is needed to iterate through all
+		 * entries in the namespace manager.
+		 * 
+		 * Inputs: strNamespacePrefix - the namespace prefix we want to find the 
+		 *								base Uri of
+		 * 
+		 * Return values: the Basr Uri of the namespace prefix
+		 */ 
 		private string GetNamespaceBaseUri( string strNamespacePrefix )
 		{
 			string strBaseUri = "";
@@ -292,6 +328,13 @@ namespace PSL.DISCUS.DAML
 			return strBaseUri;
 		}
 
+		/* Function returns the sub task type of a named process
+		 * 
+		 * Inputs: strProcessName - named process
+		 * 
+		 * Return values: the type of the named process' subtasks 
+		 *				  sequence, choice etc.
+		 */
 		private enuProcessSubTaskType GetProcessSubTaskType( string strProcessName )
 		{
 			XmlNode root = m_doc.DocumentElement;
@@ -315,6 +358,12 @@ namespace PSL.DISCUS.DAML
 			else return enuProcessSubTaskType.Sequence;
 		}
 		
+		/* Function returns all the sub processes of a named process
+		 * 
+		 * Inputs: strProcessName - named process
+		 * 
+		 * Return values: an array of its sub processes
+		 */
 		private DAMLProcess[] GetSubProcesses( string strProcessName )
 		{
 			ArrayList lstSubProcesses = new ArrayList();
@@ -353,6 +402,12 @@ namespace PSL.DISCUS.DAML
 			return (DAMLProcess[]) lstSubProcesses.ToArray( typeof(DAMLProcess) );
 		}
 
+		/* Function returns the process type of a named process
+		 * 
+		 * Inputs: strProcessName - named process
+		 * 
+		 * Return values: the type of the named process (atomic, simple, composite)
+		 */
 		private enuProcessType GetProcessType( string strProcessName )
 		{
 			// process may be atomic, simple or complex
@@ -378,6 +433,13 @@ namespace PSL.DISCUS.DAML
 			throw new Exception( "Process " + strProcessName + " does not exist" );
 		}
 
+		/* Function returns all the names of processes of a given type.
+		 * 
+		 * Inputs: processType - types of processes to retrieve
+		 * 
+		 * Return values: an array of process names of a given type (atomic, simple, 
+		 *				  composite)
+		 */
 		private string[] GetProcesses( enuProcessType processType )
 		{
 			ArrayList arrProcess = new ArrayList();

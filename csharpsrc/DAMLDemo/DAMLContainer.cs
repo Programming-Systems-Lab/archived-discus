@@ -8,7 +8,8 @@ using System.Xml.Serialization;
 namespace PSL.DISCUS.DAML
 {
 	/// <summary>
-	/// Summary description for DAMLContainer.
+	/// Basic base class for all DAML Document containers e.g DAMLProcessModel 
+	/// and DAMLServiceProfile
 	/// </summary>
 	public abstract class DAMLContainer
 	{
@@ -27,6 +28,11 @@ namespace PSL.DISCUS.DAML
 		// stream
 		// xml string - already implemented
 
+		/* Function loads an Xml Document from a (possibly large) string
+		 * Inputs: strXml - string containing document text
+		 * Return value: true on successful load
+		 *				 false otherwise
+		 */
 		public virtual bool LoadXml( string strXml )
 		{
 			bool bStatus = false;
@@ -73,6 +79,12 @@ namespace PSL.DISCUS.DAML
 			return bStatus;
 		}
 
+		/* Function returns an array of all the ontology imports defined in a 
+		 * DAML document.
+		 * 
+		 * Inputs: none
+		 * Return value: an array of Ontology imports defined in the document
+		 */ 
 		protected virtual string[] GetOntologyImports()
 		{
 			ArrayList arrImports = new ArrayList();

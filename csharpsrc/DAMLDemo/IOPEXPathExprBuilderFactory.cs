@@ -3,7 +3,7 @@ using System;
 namespace PSL.DISCUS.DAML
 {
 	/// <summary>
-	/// Summary description for IOPEXPathExprBuilderFactory.
+	/// Factory creates XPath expression builders
 	/// </summary>
 	public sealed class IOPEXPathExprBuilderFactory
 	{

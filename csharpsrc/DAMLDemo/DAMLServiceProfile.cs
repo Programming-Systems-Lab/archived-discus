@@ -115,6 +115,7 @@ namespace PSL.DISCUS.DAML
 	/// </summary>
 	public class DAMLServiceProfile:DAMLContainer
 	{
+		/* Constructor */
 		public DAMLServiceProfile()
 		{
 			// Init inherited members
@@ -253,6 +254,13 @@ namespace PSL.DISCUS.DAML
 		
 		
 		// Methods
+
+		/* Function returns the data of a named input
+		 * 
+		 * Inputs: strName - name of input to retrieve data about
+		 * 
+		 * Return value: the IOType data structure of the named input
+		 */
 		public IOType GetInputByName( string strName )
 		{
 			// Create Expression Builder instance
@@ -268,6 +276,12 @@ namespace PSL.DISCUS.DAML
 			return ioData;
 		}
 		
+		/* Function returns the data of a input based on its description
+		 * 
+		 * Inputs: strDesc - description of input to retrieve data about
+		 * 
+		 * Return value: the IOType data structure of the input
+		 */
 		public IOType GetInputByDescription( string strDesc )
 		{
 			// Create Expression Builder instance
@@ -282,6 +296,12 @@ namespace PSL.DISCUS.DAML
 			return ioData;
 		}
 		
+		/* Function returns the data of a input based on a refersTo statement
+		 * 
+		 * Inputs: strRef - reference of input to retrieve data about
+		 * 
+		 * Return value: the IOType data structure of the input
+		 */
 		public IOType GetInputByReference( string strRef )
 		{
 			// Create Expression Builder instance
@@ -297,6 +317,12 @@ namespace PSL.DISCUS.DAML
 			return ioData;
 		}
 		
+		/* Function returns the data of a named output
+		 * 
+		 * Inputs: strName - name of output to retrieve data about
+		 * 
+		 * Return value: the IOType data structure of the named output
+		 */
 		public IOType GetOutputByName( string strName )
 		{
 			// Create Expression Builder instance
@@ -312,6 +338,12 @@ namespace PSL.DISCUS.DAML
 			return ioData;
 		}
 
+		/* Function returns the data of a output based on its description
+		 * 
+		 * Inputs: strDesc - description of output to retrieve data about
+		 * 
+		 * Return value: the IOType data structure of the output
+		 */
 		public IOType GetOutputByDescription( string strDesc )
 		{
 			// Create Expression Builder instance
@@ -326,6 +358,12 @@ namespace PSL.DISCUS.DAML
 			return ioData;
 		}
 		
+		/* Function returns the data of a output based on a refersTo statement
+		 * 
+		 * Inputs: strRef - reference of output to retrieve data about
+		 * 
+		 * Return value: the IOType data structure of the output
+		 */
 		public IOType GetOutputByReference( string strRef )
 		{
 			// Create Expression Builder instance
@@ -341,6 +379,12 @@ namespace PSL.DISCUS.DAML
 			return ioData;
 		}
 
+		/* Function returns the data of a named precondition
+		 * 
+		 * Inputs: strName - name of precondition to retrieve data about
+		 * 
+		 * Return value: the EPType data structure of the named precondition
+		 */
 		public EPType GetPreconditionByName( string strName )
 		{
 			// Create Expression Builder instance
@@ -356,6 +400,12 @@ namespace PSL.DISCUS.DAML
 			return epData;
 		}
 
+		/* Function returns the data of a precondition based on its description
+		 * 
+		 * Inputs: strDesc - description of precondition to retrieve data about
+		 * 
+		 * Return value: the EPType data structure of the precondition
+		 */
 		public EPType GetPreconditionByDescription( string strDesc )
 		{
 			// Create Expression Builder instance
@@ -370,6 +420,12 @@ namespace PSL.DISCUS.DAML
 			return epData;
 		}
 
+		/* Function returns the data of a precondition based on a refersTo statement
+		 * 
+		 * Inputs: strRef - reference of precondition to retrieve data about
+		 * 
+		 * Return value: the EPType data structure of the precondition
+		 */
 		public EPType GetPreconditionByReference( string strRef )
 		{
 			// Create Expression Builder instance
@@ -385,6 +441,12 @@ namespace PSL.DISCUS.DAML
 			return epData;
 		}
 		
+		/* Function returns the data of a named effect
+		 * 
+		 * Inputs: strName - name of effect to retrieve data about
+		 * 
+		 * Return value: the EPType data structure of the named effect
+		 */
 		public EPType GetEffectByName( string strName )
 		{
 			// Create Expression Builder instance
@@ -400,6 +462,12 @@ namespace PSL.DISCUS.DAML
 			return epData;
 		}
 
+		/* Function returns the data of an effect based on its description
+		 * 
+		 * Inputs: strDesc - description of effect to retrieve data about
+		 * 
+		 * Return value: the EPType data structure of the effect
+		 */
 		public EPType GetEffectByDescription( string strDesc )
 		{
 			// Create Expression Builder instance
@@ -414,6 +482,12 @@ namespace PSL.DISCUS.DAML
 			return epData;
 		}
 		
+		/* Function returns the data of an effect based on a refersTo statement
+		 * 
+		 * Inputs: strRef - reference of effect to retrieve data about
+		 * 
+		 * Return value: the EPType data structure of the effect
+		 */
 		public EPType GetEffectByReference( string strRef )
 		{
 			// Create Expression Builder instance
@@ -428,7 +502,13 @@ namespace PSL.DISCUS.DAML
 
 			return epData;
 		}
-
+		
+		/* Function returs all the effects in a ServiceProfile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return values: an array of effects
+		 */
 		private EPType[] GetEffects()
 		{
 			ArrayList lstEffects = new ArrayList();
@@ -461,6 +541,12 @@ namespace PSL.DISCUS.DAML
 			return (EPType[]) lstEffects.ToArray( typeof(EPType) );
 		}
 
+		/* Function returs all the preconditions in a ServiceProfile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return values: an array of preconditions
+		 */
 		private EPType[] GetPreconditions()
 		{
 			ArrayList lstPreconds = new ArrayList();
@@ -493,24 +579,12 @@ namespace PSL.DISCUS.DAML
 			return (EPType[]) lstPreconds.ToArray( typeof(EPType) );
 		}
 		
-		private EPType GetEPNodeData( XmlNode descNode )
-		{
-			EPType epData = new EPType();
-				
-			epData.ConditionDesc = descNode.Attributes[DAMLConstants.RDF_ID].Value;
-								
-			XmlNode nameNode = descNode.SelectSingleNode( DAMLConstants.PROFILE_CONDITION_NAME, m_mgr );
-			epData.ConditionName = nameNode.InnerText;
-					
-			XmlNode stmntNode = descNode.SelectSingleNode( DAMLConstants.PROFILE_STATEMENT, m_mgr );
-			epData.Statement = stmntNode.Attributes[DAMLConstants.RDF_RESOURCE].Value;
-						
-			XmlNode referNode = descNode.SelectSingleNode( DAMLConstants.PROFILE_REFERS_TO, m_mgr );
-			epData.RefersTo = referNode.Attributes[DAMLConstants.RDF_RESOURCE].Value;
-
-			return epData;
-		}
-
+		/* Function returs all the outputs in a ServiceProfile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return values: an array of outputs
+		 */
 		private IOType[] GetOutputParameters()
 		{
 			ArrayList lstOutputs = new ArrayList();
@@ -543,6 +617,12 @@ namespace PSL.DISCUS.DAML
 			return (IOType[]) lstOutputs.ToArray( typeof(IOType) );
 		}
 
+		/* Function returs all the inputs in a ServiceProfile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return values: an array of inputs
+		 */
 		private IOType[] GetInputParameters()
 		{
 			ArrayList lstInputs = new ArrayList();
@@ -575,6 +655,12 @@ namespace PSL.DISCUS.DAML
 			return (IOType[]) lstInputs.ToArray( typeof(IOType) );
 		}
 		
+		/* Function strips the IONode data from a description node
+		 * 
+		 * Inputs: descNode - description node
+		 * 
+		 * Return values: the IOType data retrieved
+		 */
 		private IOType GetIONodeData( XmlNode descNode )
 		{
 			IOType ioData = new IOType();
@@ -596,6 +682,36 @@ namespace PSL.DISCUS.DAML
 			return ioData;
 		}
 
+		/* Function strips the EPNode data from a description node
+		 * 
+		 * Inputs: descNode - description node
+		 * 
+		 * Return values: the EPType data retrieved
+		 */
+		private EPType GetEPNodeData( XmlNode descNode )
+		{
+			EPType epData = new EPType();
+				
+			epData.ConditionDesc = descNode.Attributes[DAMLConstants.RDF_ID].Value;
+								
+			XmlNode nameNode = descNode.SelectSingleNode( DAMLConstants.PROFILE_CONDITION_NAME, m_mgr );
+			epData.ConditionName = nameNode.InnerText;
+					
+			XmlNode stmntNode = descNode.SelectSingleNode( DAMLConstants.PROFILE_STATEMENT, m_mgr );
+			epData.Statement = stmntNode.Attributes[DAMLConstants.RDF_RESOURCE].Value;
+						
+			XmlNode referNode = descNode.SelectSingleNode( DAMLConstants.PROFILE_REFERS_TO, m_mgr );
+			epData.RefersTo = referNode.Attributes[DAMLConstants.RDF_RESOURCE].Value;
+
+			return epData;
+		}
+
+		/* Function returns the process model uri from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: process model uri
+		 */
 		private string GetProcessModel()
 		{
 			string strRetVal = "";
@@ -618,6 +734,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 
+		/* Function returns the quality rating data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: quality rating data
+		 */
 		private string GetQualityRating()
 		{
 			string strRetVal = "";
@@ -640,6 +762,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 		
+		/* Function returns the geographical radius data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: geographical radius data
+		 */
 		private string GetGeographicRadius()
 		{
 			string strRetVal = "";
@@ -662,6 +790,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 
+		/* Function returns the web url data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: web url data
+		 */
 		private string GetWebUrl()
 		{
 			string strRetVal = "";
@@ -684,6 +818,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 
+		/* Function returns the physical address data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: physical address data
+		 */
 		private string GetPhysicalAddress()
 		{
 			string strRetVal = "";
@@ -706,6 +846,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 
+		/* Function returns the profile email data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: profile email data
+		 */
 		private string GetProfileEmail()
 		{
 			string strRetVal = "";
@@ -728,6 +874,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 
+		/* Function returns the profile fax data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: profile fax data
+		 */
 		private string GetProfileFax()
 		{
 			string strRetVal = "";
@@ -750,6 +902,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 		
+		/* Function returns the profile phone data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: profile phone data
+		 */
 		private string GetProfilePhone()
 		{
 			string strRetVal = "";
@@ -772,6 +930,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 	
+		/* Function returns the profile name data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: profile name data
+		 */
 		private string GetProfileName()
 		{
 			string strRetVal = "";
@@ -794,6 +958,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 
+		/* Function returns the profile service provider data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: profile service provider data
+		 */
 		private string GetServiceProvider()
 		{
 			string strRetVal = "";
@@ -817,6 +987,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 		
+		/* Function returns the profile RequestedBy data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: profile RequestedBy data
+		 */
 		private string GetRequestedBy()
 		{
 			string strRetVal = "";
@@ -839,6 +1015,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 
+		/* Function returns the profile IntendedPurpose data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: profile IntendedPurpose data
+		 */
 		private string GetIntendedPurpose()
 		{
 			string strRetVal = "";
@@ -861,6 +1043,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 
+		/* Function returns the profile TextDescription data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: profile TextDescription data
+		 */
 		private string GetTextDescription()
 		{
 			string strRetVal = "";
@@ -883,6 +1071,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 
+		/* Function returns the profile PresentedBy data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: profile PresentedBy data
+		 */
 		private string GetPresentedBy()
 		{
 			string strRetVal = "";
@@ -905,6 +1099,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 		
+		/* Function returns the ServiceProfile data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: ServiceProfile data
+		 */
 		private string GetServiceProfile()
 		{
 			string strRetVal = "";
@@ -927,6 +1127,12 @@ namespace PSL.DISCUS.DAML
 			return strRetVal;
 		}
 		
+		/* Function returns the ServiceName data from the service profile
+		 * 
+		 * Inputs: none
+		 * 
+		 * Return value: ServiceName data
+		 */
 		private string GetServiceName()
 		{
 			string strRetVal = "";

@@ -3,7 +3,9 @@ using System;
 namespace PSL.DISCUS.DAML
 {
 	/// <summary>
-	/// Summary description for IIOPEXPathExprBuilder.
+	/// Interface implemented by classes used to generart XPath expressions
+	/// for searching DAMLServiceProfile documents for inputs, outputs, preconditiond
+	/// and effects.
 	/// </summary>
 	public interface IIOPEXPathExprBuilder
 	{

@@ -2,14 +2,13 @@ using System;
 
 namespace PSL.DISCUS.DAML
 {
-	/// <summary>
-	/// Summary description for InputXPathExprBuilder.
-	/// </summary>
 	internal sealed class InputXPathExprBuilder:IIOPEXPathExprBuilder
 	{
+		/* Constructor */
 		internal InputXPathExprBuilder()
 		{}
 
+		/* Function */
 		public string BuildExpression( enuIOPESearchBy filter )
 		{
 			switch( filter )
@@ -50,6 +49,7 @@ namespace PSL.DISCUS.DAML
 
 	internal sealed class OutputXPathExprBuilder:IIOPEXPathExprBuilder
 	{
+		/* Constructor */
 		internal OutputXPathExprBuilder()
 		{}
 
@@ -93,6 +93,7 @@ namespace PSL.DISCUS.DAML
 	
 	internal sealed class PreconditionXPathExprBuilder:IIOPEXPathExprBuilder
 	{
+		/* Constructor */
 		internal PreconditionXPathExprBuilder()
 		{}
 
@@ -135,6 +136,7 @@ namespace PSL.DISCUS.DAML
 	
 	internal sealed class EffectXPathExprBuilder:IIOPEXPathExprBuilder
 	{
+		/* Constructor */
 		internal EffectXPathExprBuilder()
 		{}
 
