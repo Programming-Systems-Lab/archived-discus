@@ -7,8 +7,8 @@ namespace PSL.DISCUS.Interfaces
 	/// </summary>
 	public interface ITracer
 	{
-		void TraceError( string strMsg );
-		void TraceInfo( string strMsg );
-		void TraceWarning( string strMsg );
+		void TraceError( string strSource, string strMsg );
+		void TraceInfo( string strSource, string strMsg );
+		void TraceWarning( string strSource, string strMsg );
 	}
 }

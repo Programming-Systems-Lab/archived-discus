@@ -28,7 +28,23 @@ using System.Runtime.CompilerServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("1.0.917.28228")]
+[assembly: AssemblyVersion("1.1.1030.33055")]
+
+/// Initial version 1.0.917.28228
+/// 
+/// Changed 10/27/02 to 1.1.1030.33055
+/// Main Changes: 1) Integration with of Async library PSL.Async
+///				  2) Bulk operation interfaces ExecuteMultipleServiceMethods
+///				  3) New protocol for ExecuteServiceMethod and 
+///					 ExecuteMultipleServiceMethods returns an array of strings
+///					 where the first two array positions contain a status code
+///					 and a status message.	
+///				  4) Added new web service proxy generator and proxy mutator objects
+///	
+///	Breaking changes from previous version
+///	1)	Change of protocol for ExecuteServiceMethod now returns string[] instead of 
+///		string.
+				
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 

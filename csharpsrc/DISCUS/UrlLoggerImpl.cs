@@ -10,9 +10,7 @@ namespace PSL.DISCUS.Logging
 	/// </summary>
 	public class UrlLoggerImpl:LoggerImpl
 	{
-		// In the event that something goes wrong sending data over the network
-		// record error in local event log
-		private EventLog m_EvtLogger;
+		private const string SOURCENAME = "PSL.DISCUS.Impl.Logging.UrlLoggerImpl";
 		private string m_strHostname = "";
 		public string Hostname
 		{
@@ -40,34 +38,17 @@ namespace PSL.DISCUS.Logging
 					throw new Exception( "Invalid Logging Port" );
 			}
 		}
-
-		public override string Source
-		{
-			get
-			{ return m_strSource; }
-
-			set
-			{ 
-				m_strSource = value; 
-				
-				if( m_strSource.Length == 0 )
-					throw new Exception( "Invalid Logging Source" );
-			}
-		}
 		
 		public UrlLoggerImpl( LogTraceContext logCtx )
 		{
-			m_EvtLogger = new EventLog( "Application" );
-			m_EvtLogger.Source = "PSL.DISCUS.Impl.Logging.UrlLoggerImpl";
+			if( logCtx.Hostname.Length == 0 || logCtx.Port <= 0 )
+				throw new Exception( "Invalid Logging Hostname and/or Port" );
 
 			m_strHostname = logCtx.Hostname;
 			m_nPort = logCtx.Port;
-
-			if( m_strHostname.Length == 0 || m_nPort <= 0 )
-				throw new Exception( "Invalid Logging Hostname and/or Port" );
 		}
 
-		public override void LogError( string strMsg )
+		public override void LogError( string strSource, string strMsg )
 		{
 			string strXmlMsg = "";
 			try
@@ -79,7 +60,7 @@ namespace PSL.DISCUS.Logging
 				// strXmlMsg += "<Message><![CDATA[" + strMsg + "]]></Message>\n"; // Set message
 
 				// TODO: Remove later...For Demo only
-				strXmlMsg += "LOG_" + m_strSource + " " + strMsg;
+				strXmlMsg += "LOG_" + strSource + " " + strMsg;
 
 				// Send message (using TCP)
 				TcpClient clientSocket = new TcpClient( m_strHostname, m_nPort );
@@ -91,11 +72,11 @@ namespace PSL.DISCUS.Logging
 			}
 			catch( Exception e )
 			{
-				m_EvtLogger.WriteEntry( "Error: " + e.Message + " occurred while sending data: " + strXmlMsg, EventLogEntryType.Error );
+				EventLog.WriteEntry( strSource, "Error: " + e.Message + " occurred while sending data: " + strXmlMsg, EventLogEntryType.Error );
 			}
 		}
 
-		public override void LogInfo( string strMsg )
+		public override void LogInfo( string strSource, string strMsg )
 		{
 			string strXmlMsg = "";
 			try
@@ -107,7 +88,7 @@ namespace PSL.DISCUS.Logging
 				// strXmlMsg += "<Message><![CDATA[" + strMsg + "]]></Message>\n"; // Set message
 
 				// TODO: Remove later...For Demo only
-				strXmlMsg += "LOG_" + m_strSource + " " + strMsg;
+				strXmlMsg += "LOG_" + strSource + " " + strMsg;
 
 				// Send message (using TCP)
 				TcpClient clientSocket = new TcpClient( m_strHostname, m_nPort );
@@ -119,11 +100,11 @@ namespace PSL.DISCUS.Logging
 			}
 			catch( Exception e )
 			{
-				m_EvtLogger.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( strSource, e.Message, EventLogEntryType.Error );
 			}
 		}
 
-		public override void LogWarning( string strMsg )
+		public override void LogWarning( string strSource, string strMsg )
 		{
 			string strXmlMsg = "";
 			try
@@ -135,7 +116,7 @@ namespace PSL.DISCUS.Logging
 				// strXmlMsg += "<Message><![CDATA[" + strMsg + "]]></Message>\n"; // Set message
 
 				// TODO: Remove later...For Demo only
-				strXmlMsg += "LOG_" + m_strSource + " " + strMsg;
+				strXmlMsg += "LOG_" + strSource + " " + strMsg;
 
 				// Send message (using TCP)
 				TcpClient clientSocket = new TcpClient( m_strHostname, m_nPort );
@@ -147,7 +128,7 @@ namespace PSL.DISCUS.Logging
 			}
 			catch( Exception e )
 			{
-				m_EvtLogger.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( strSource, e.Message, EventLogEntryType.Error );
 			}
 		}
 	}

@@ -3,6 +3,7 @@ using System.Data;
 using System.IO;
 using System.Xml;
 using System.Xml.XPath;
+using System.Text;
 using System.Diagnostics;
 using Microsoft.Data.Odbc;
 using PSL.DISCUS.Interfaces.DataAccess;
@@ -18,44 +19,15 @@ namespace PSL.DISCUS.DataAccess
 	/// </summary>
 	public class RegServiceDAO:IDataObj
 	{
-		// Database configuration file
-		private string DATACONFIG = DConst.DBASECONFIG_FILE;
 		// Source name used for event logging
 		private const string SOURCENAME = "DataAccess.RegServiceDAO";
-		private EventLog m_EvtLog;
 		// Database connection string
 		private string m_strConnect = "";
 
 		/* Constructor */		
-		public RegServiceDAO()
+		public RegServiceDAO( string strDBConnect )
 		{
-			try
-			{
-				// Initialize event logging facility
-				m_EvtLog = new EventLog( "Application" );
-				m_EvtLog.Source = SOURCENAME;
-				
-				// Load config info, dbase, connection info etc.
-				FileStream fs = File.Open( DATACONFIG, FileMode.Open );
-				TextReader tr = new StreamReader( fs );
-				string strConfigFile = tr.ReadToEnd();
-
-				// Load config file
-				XmlDocument doc = new XmlDocument();
-				doc.LoadXml( strConfigFile );
-				
-				// Use XPath to extract what info we need
-				XmlNode root =  doc.DocumentElement;
-				// Get dbase connection info
-				m_strConnect = root.SelectSingleNode( "ConnectionString" ).InnerText;
-
-				fs.Close(); // Close file stream
-			}
-			catch( System.Exception e )
-			{
-				// Report error
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
-			}
+			m_strConnect = strDBConnect; 
 		}// End constructor
 
 		/* Implementation IDataObj ExecuteCommandText method
@@ -88,7 +60,7 @@ namespace PSL.DISCUS.DataAccess
 				// Report error
 				string strError = e.Message;
 				strError += " LAST QUERY: " + strCmd;
-				m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, strError, EventLogEntryType.Error );
 			}
 			return bRetVal;
 		}
@@ -116,7 +88,7 @@ namespace PSL.DISCUS.DataAccess
 				// Report error
 				string strError = e.Message;
 				strError += " LAST QUERY: " + strCmd;
-				m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, strError, EventLogEntryType.Error );
 			}
 			return dr;
 		}
@@ -138,30 +110,32 @@ namespace PSL.DISCUS.DataAccess
 				return 0;
 			
 			int nServiceID = -1;
-			string strSQL = "INSERT INTO ";
-			strSQL += DBC.REGISTERED_SERVICES_TABLE;
-			strSQL += " (" + DBC.RS_SERVICE_NAME + ","; 
+			StringBuilder strSQL = new StringBuilder();
+
+			strSQL.Append( "INSERT INTO " );
+			strSQL.Append( DBC.REGISTERED_SERVICES_TABLE );
+			strSQL.Append( " (" + DBC.RS_SERVICE_NAME + "," ); 
 			// Add namespace if supplied
 			if( strServiceNamespace.Length > 0 )
-				strSQL += DBC.RS_SERVICENAMESPACE + ",";
+				strSQL.Append( DBC.RS_SERVICENAMESPACE + "," );
 			
 			if( strServiceAccessPoint.Length > 0 )
-				strSQL += DBC.RS_SERVICE_ACCESSPOINT + ",";
+				strSQL.Append( DBC.RS_SERVICE_ACCESSPOINT + "," );
 
-			strSQL += DBC.RS_SERVICE_LOCATION + ")";
+			strSQL.Append( DBC.RS_SERVICE_LOCATION + ")" );
 			
-			strSQL += " VALUES(" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'" + ","; 
+			strSQL.Append( " VALUES(" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'" + "," ); 
 			
 			if( strServiceNamespace.Length > 0 )
-				strSQL += "'" + DBUtil.MakeStringSafe( strServiceNamespace ) + "'" + ",";
+				strSQL.Append( "'" + DBUtil.MakeStringSafe( strServiceNamespace ) + "'" + "," );
 			
 			if( strServiceAccessPoint.Length > 0 )
-				strSQL += "'" + DBUtil.MakeStringSafe(strServiceAccessPoint) + "'" + ",";
+				strSQL.Append( "'" + DBUtil.MakeStringSafe(strServiceAccessPoint) + "'" + "," );
 
-			strSQL += "'" + DBUtil.MakeStringSafe(strServiceLocation) + "'" + ")";
+			strSQL.Append( "'" + DBUtil.MakeStringSafe(strServiceLocation) + "'" + ")" );
 
 
-			if( ExecuteCommandText( strSQL ) )
+			if( ExecuteCommandText( strSQL.ToString() ) )
 				nServiceID = GetServiceID( strServiceName );
 			
 			return nServiceID;
@@ -178,11 +152,12 @@ namespace PSL.DISCUS.DataAccess
 			if( strServiceName.Length == 0 )
 				return false;
 			
-			string strSQL = "DELETE FROM ";
-			strSQL += DBC.REGISTERED_SERVICES_TABLE;
-			strSQL += " WHERE " + DBUtil.MakeStringSafe(DBC.RS_SERVICE_NAME) + "=" + "'" + strServiceName + "'";
+			StringBuilder strSQL = new StringBuilder();
+			strSQL.Append( "DELETE FROM " );
+			strSQL.Append( DBC.REGISTERED_SERVICES_TABLE );
+			strSQL.Append( " WHERE " + DBUtil.MakeStringSafe(DBC.RS_SERVICE_NAME) + "=" + "'" + strServiceName + "'" );
 			
-			bRetVal = ExecuteCommandText( strSQL );
+			bRetVal = ExecuteCommandText( strSQL.ToString() );
 
 			return bRetVal;
 		}
@@ -199,11 +174,13 @@ namespace PSL.DISCUS.DataAccess
 			if( strServiceName.Length == 0 || strServiceAccessPoint.Length == 0 )
 				return false;
 			
-			string strSQL = "UPDATE " + DBC.REGISTERED_SERVICES_TABLE;
-			strSQL += " SET " + DBC.RS_SERVICE_ACCESSPOINT + "=" + "'" + DBUtil.MakeStringSafe(strServiceAccessPoint) + "'";
-			strSQL += " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'";
+			StringBuilder strSQL = new StringBuilder();
 
-			bRetVal = ExecuteCommandText( strSQL );
+			strSQL.Append( "UPDATE " + DBC.REGISTERED_SERVICES_TABLE );
+			strSQL.Append( " SET " + DBC.RS_SERVICE_ACCESSPOINT + "=" + "'" + DBUtil.MakeStringSafe(strServiceAccessPoint) + "'" );
+			strSQL.Append( " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'" );
+
+			bRetVal = ExecuteCommandText( strSQL.ToString() );
 			
 			return bRetVal;
 		}
@@ -220,11 +197,13 @@ namespace PSL.DISCUS.DataAccess
 			if( strServiceName.Length == 0 || strServiceNamespace.Length == 0 )
 				return false;
 			
-			string strSQL = "UPDATE " + DBC.REGISTERED_SERVICES_TABLE;
-			strSQL += " SET " + DBC.RS_SERVICENAMESPACE + "=" + "'" + DBUtil.MakeStringSafe(strServiceNamespace) + "'";
-			strSQL += " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'";
+			StringBuilder strSQL = new StringBuilder();
 
-			bRetVal = ExecuteCommandText( strSQL );
+			strSQL.Append( "UPDATE " + DBC.REGISTERED_SERVICES_TABLE );
+			strSQL.Append( " SET " + DBC.RS_SERVICENAMESPACE + "=" + "'" + DBUtil.MakeStringSafe(strServiceNamespace) + "'" );
+			strSQL.Append( " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'" );
+
+			bRetVal = ExecuteCommandText( strSQL.ToString() );
 			
 			return bRetVal;
 		}
@@ -235,11 +214,13 @@ namespace PSL.DISCUS.DataAccess
 			if( strServiceName.Length == 0 || strServiceLocation.Length == 0 )
 				return false;
 			
-			string strSQL = "UPDATE " + DBC.REGISTERED_SERVICES_TABLE;
-			strSQL += " SET " + DBC.RS_SERVICE_LOCATION + "=" + "'" + DBUtil.MakeStringSafe(strServiceLocation) + "'";
-			strSQL += " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'";
+			StringBuilder strSQL = new StringBuilder();
 
-			bRetVal = ExecuteCommandText( strSQL );
+			strSQL.Append( "UPDATE " + DBC.REGISTERED_SERVICES_TABLE ); 
+			strSQL.Append( " SET " + DBC.RS_SERVICE_LOCATION + "=" + "'" + DBUtil.MakeStringSafe(strServiceLocation) + "'" );
+			strSQL.Append( " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'" );
+
+			bRetVal = ExecuteCommandText( strSQL.ToString() );
 			
 			return bRetVal;
 		}
@@ -262,12 +243,13 @@ namespace PSL.DISCUS.DataAccess
 			int nServiceID = GetServiceID( strServiceName );
 			if( nServiceID != -1 )
 			{
-				string strSQL = "INSERT INTO ";
-				strSQL += DBC.SERVICE_METHODS_TABLE;
-				strSQL += "(" + DBC.RS_SERVICE_ID + "," + DBC.SM_METHODNAME + ")";
-				strSQL += " VALUES(" + nServiceID.ToString() + "," + "'" + DBUtil.MakeStringSafe( strMethod ) + "'" + ")";
+				StringBuilder strSQL = new StringBuilder();
+				strSQL.Append( "INSERT INTO " );
+				strSQL.Append( DBC.SERVICE_METHODS_TABLE );
+				strSQL.Append( "(" + DBC.RS_SERVICE_ID + "," + DBC.SM_METHODNAME + ")" );
+				strSQL.Append( " VALUES(" + nServiceID.ToString() + "," + "'" + DBUtil.MakeStringSafe( strMethod ) + "'" + ")" );
 
-				bRetVal = ExecuteCommandText( strSQL );
+				bRetVal = ExecuteCommandText( strSQL.ToString() );
 			}
 
 			return bRetVal;
@@ -290,12 +272,13 @@ namespace PSL.DISCUS.DataAccess
 			int nServiceID = GetServiceID( strServiceName );
 			if( nServiceID != -1 )
 			{
-				string strSQL = "DELETE FROM ";
-				strSQL += DBC.SERVICE_METHODS_TABLE;
-				strSQL += " WHERE " + DBC.RS_SERVICE_ID + "=" + nServiceID.ToString();
-				strSQL += " AND " + DBC.SM_METHODNAME + "=" + "'" + DBUtil.MakeStringSafe( strMethod ) + "'";
+				StringBuilder strSQL = new StringBuilder();
+				strSQL.Append( "DELETE FROM " );
+				strSQL.Append( DBC.SERVICE_METHODS_TABLE );
+				strSQL.Append( " WHERE " + DBC.RS_SERVICE_ID + "=" + nServiceID.ToString() );
+				strSQL.Append( " AND " + DBC.SM_METHODNAME + "=" + "'" + DBUtil.MakeStringSafe( strMethod ) + "'" );
 
-				bRetVal = ExecuteCommandText( strSQL );
+				bRetVal = ExecuteCommandText( strSQL.ToString() );
 			}
 
 			return bRetVal;
@@ -319,12 +302,13 @@ namespace PSL.DISCUS.DataAccess
 			int nServiceID = GetServiceID( strServiceName );
 			if( nServiceID != -1 )
 			{
-				string strSQL = "UPDATE " + DBC.SERVICE_METHODS_TABLE;
-				strSQL += " SET " + DBC.SM_METHODNAME + "=" + "'" + DBUtil.MakeStringSafe( strNewMethod ) + "'";
-				strSQL += " WHERE " + DBC.RS_SERVICE_ID + "=" + nServiceID.ToString();
-				strSQL += " AND " + DBC.SM_METHODNAME + "=" + "'" + DBUtil.MakeStringSafe( strOldMethod ) + "'";
+				StringBuilder strSQL = new StringBuilder();
+				strSQL.Append( "UPDATE " + DBC.SERVICE_METHODS_TABLE );
+				strSQL.Append( " SET " + DBC.SM_METHODNAME + "=" + "'" + DBUtil.MakeStringSafe( strNewMethod ) + "'" );
+				strSQL.Append( " WHERE " + DBC.RS_SERVICE_ID + "=" + nServiceID.ToString() );
+				strSQL.Append( " AND " + DBC.SM_METHODNAME + "=" + "'" + DBUtil.MakeStringSafe( strOldMethod ) + "'" );
 
-				bRetVal = ExecuteCommandText( strSQL );
+				bRetVal = ExecuteCommandText( strSQL.ToString() );
 			}
 
 			return bRetVal;
@@ -341,11 +325,12 @@ namespace PSL.DISCUS.DataAccess
 
 			try
 			{
-				string strSQL = "SELECT " + DBC.RS_SERVICE_ID;
-				strSQL += " FROM " + DBC.REGISTERED_SERVICES_TABLE;
-				strSQL += " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'";
+				StringBuilder strSQL = new StringBuilder();
+				strSQL.Append( "SELECT " + DBC.RS_SERVICE_ID );
+				strSQL.Append( " FROM " + DBC.REGISTERED_SERVICES_TABLE );
+				strSQL.Append( " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'" );
 			
-				dr = ExecuteReader( strSQL );
+				dr = ExecuteReader( strSQL.ToString() );
 				if( dr != null )
 				{
 					dr.Read(); // move reader past BOF to first record
@@ -358,7 +343,7 @@ namespace PSL.DISCUS.DataAccess
 			catch( System.Exception e )
 			{
 				// Report error
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, e.Message, EventLogEntryType.Error );
 			}
 			finally // cleanup after exception handled
 			{
@@ -383,11 +368,12 @@ namespace PSL.DISCUS.DataAccess
 
 			try
 			{
-				string strSQL = "SELECT " + DBC.RS_SERVICE_ACCESSPOINT;
-				strSQL += " FROM " + DBC.REGISTERED_SERVICES_TABLE;
-				strSQL += " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'";
+				StringBuilder strSQL = new StringBuilder();
+				strSQL.Append( "SELECT " + DBC.RS_SERVICE_ACCESSPOINT );
+				strSQL.Append( " FROM " + DBC.REGISTERED_SERVICES_TABLE );
+				strSQL.Append( " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'" );
 			
-				dr = ExecuteReader( strSQL );
+				dr = ExecuteReader( strSQL.ToString() );
 				if( dr != null )
 				{
 					dr.Read(); // move reader past BOF to first record
@@ -400,7 +386,7 @@ namespace PSL.DISCUS.DataAccess
 			catch( System.Exception e )
 			{
 				// Report error
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, e.Message, EventLogEntryType.Error );
 			}
 			finally // cleanup after exception handled
 			{
@@ -427,11 +413,12 @@ namespace PSL.DISCUS.DataAccess
 
 			try
 			{
-				string strSQL = "SELECT " + DBC.RS_SERVICENAMESPACE;
-				strSQL += " FROM " + DBC.REGISTERED_SERVICES_TABLE;
-				strSQL += " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'";
+				StringBuilder strSQL = new StringBuilder();
+				strSQL.Append( "SELECT " + DBC.RS_SERVICENAMESPACE );
+				strSQL.Append( " FROM " + DBC.REGISTERED_SERVICES_TABLE );
+				strSQL.Append( " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'" );
 			
-				dr = ExecuteReader( strSQL );
+				dr = ExecuteReader( strSQL.ToString() );
 				if( dr != null )
 				{
 					dr.Read(); // move reader past BOF to first record
@@ -444,7 +431,7 @@ namespace PSL.DISCUS.DataAccess
 			catch( System.Exception e )
 			{
 				// Report error
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, e.Message, EventLogEntryType.Error );
 			}
 			finally // cleanup after exception handled
 			{
@@ -470,11 +457,12 @@ namespace PSL.DISCUS.DataAccess
 
 			try
 			{
-				string strSQL = "SELECT " + DBC.RS_SERVICE_LOCATION;
-				strSQL += " FROM " + DBC.REGISTERED_SERVICES_TABLE;
-				strSQL += " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'";
+				StringBuilder strSQL = new StringBuilder();
+				strSQL.Append( "SELECT " + DBC.RS_SERVICE_LOCATION );
+				strSQL.Append( " FROM " + DBC.REGISTERED_SERVICES_TABLE );
+				strSQL.Append( " WHERE " + DBC.RS_SERVICE_NAME + "=" + "'" + DBUtil.MakeStringSafe(strServiceName) + "'" );
 			
-				dr = ExecuteReader( strSQL );
+				dr = ExecuteReader( strSQL.ToString() );
 				if( dr != null )
 				{
 					dr.Read(); // move reader past BOF to first record
@@ -487,7 +475,7 @@ namespace PSL.DISCUS.DataAccess
 			catch( System.Exception e )
 			{
 				// Report error
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, e.Message, EventLogEntryType.Error );
 			}
 			finally // cleanup after exception handled
 			{
@@ -520,12 +508,13 @@ namespace PSL.DISCUS.DataAccess
 				if( nServiceID == -1 )
 					return false;
 
-				string strSQL = "SELECT COUNT(*) FROM ";
-				strSQL += DBC.SERVICE_METHODS_TABLE;
-				strSQL += " WHERE " + DBC.RS_SERVICE_ID + "=" + nServiceID.ToString();
-				strSQL += " AND " + DBC.SM_METHODNAME + "=" + "'" + strMethod + "'";
+				StringBuilder strSQL = new StringBuilder();
+				strSQL.Append( "SELECT COUNT(*) FROM " );
+				strSQL.Append( DBC.SERVICE_METHODS_TABLE );
+				strSQL.Append( " WHERE " + DBC.RS_SERVICE_ID + "=" + nServiceID.ToString() );
+				strSQL.Append( " AND " + DBC.SM_METHODNAME + "=" + "'" + strMethod + "'" );
 
-				dr = ExecuteReader( strSQL );
+				dr = ExecuteReader( strSQL.ToString() );
 				if( dr != null )
 				{
 					dr.Read();
@@ -542,7 +531,7 @@ namespace PSL.DISCUS.DataAccess
 			catch( System.Exception e )
 			{
 				// Report error
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, e.Message, EventLogEntryType.Error );
 			}
 			finally // cleanup after exception handled
 			{

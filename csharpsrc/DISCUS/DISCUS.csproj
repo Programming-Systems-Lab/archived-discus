@@ -102,9 +102,9 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "DataConfig.xml"
-                    Link = "..\..\bin\DataConfig.xml"
-                    BuildAction = "Content"
+                    RelPath = "Constants.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
                 />
                 <File
                     RelPath = "DbaseConstants.cs"
@@ -117,18 +117,8 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "DConst.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "DemoAlpha.xml"
                     Link = "..\..\bin\DemoAlpha.xml"
-                    BuildAction = "Content"
-                />
-                <File
-                    RelPath = "DiscusConf.xml"
-                    Link = "..\..\bin\DiscusConf.xml"
                     BuildAction = "Content"
                 />
                 <File
@@ -163,6 +153,11 @@
                 />
                 <File
                     RelPath = "GateKeeper.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "GatekeeperSettings.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -255,10 +250,6 @@
                     RelPath = "RegServiceDAO.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SampleDAMLWF.xml"
-                    BuildAction = "Content"
                 />
                 <File
                     RelPath = "ServiceSpaceDAO.cs"

@@ -7,8 +7,8 @@ namespace PSL.DISCUS.Interfaces
 	/// </summary>
 	public interface ILogger
 	{
-		void LogError( string strMsg );
-		void LogInfo( string strMsg );
-		void LogWarning( string strMsg );
+		void LogError( string strSource, string strMsg );
+		void LogInfo( string strSource, string strMsg );
+		void LogWarning( string strSource, string strMsg );
 	}
 }

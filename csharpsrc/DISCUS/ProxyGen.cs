@@ -23,7 +23,6 @@ namespace PSL.DISCUS.DynamicProxy
 	{
 		// Source name used for event logging
 		private const string SOURCENAME = "DynamicProxy.ProxyGen";
-		private EventLog m_EvtLog;
 		private ProxyMutator m_mutator = null;
 
 		// Set mutator
@@ -46,9 +45,6 @@ namespace PSL.DISCUS.DynamicProxy
 
 		public ProxyGen()
 		{
-			// Inititalize event logging facility
-			m_EvtLog = new EventLog( "Application" );
-			m_EvtLog.Source = SOURCENAME;
 		}
 
 		/*	Function generates an assembly based on a dynamic
@@ -64,15 +60,12 @@ namespace PSL.DISCUS.DynamicProxy
 			{
 				ServiceDescriptionImporter sdImport = new ServiceDescriptionImporter();
 				// Read Service description from WSDL file
-				ServiceDescription svcDesc = ServiceDescription.Read( Util.DynProxyUtil.GetHttpStream( req.wsdlFile ) );
+				ServiceDescription svcDesc = ServiceDescription.Read( Util.DynProxyUtil.GetHttpStream( req.WsdlFile ) );
 				// Set Protocol
-				sdImport.ProtocolName = req.protocol;
-				// Add service description
-				if( req.baseURL.Length > 0 )
-					sdImport.AddServiceDescription( svcDesc, null, req.baseURL );
-				else sdImport.AddServiceDescription( svcDesc, null, null );
+				sdImport.ProtocolName = req.Protocol;
+				sdImport.AddServiceDescription( svcDesc, null, null );
 				// Set namespace for generated proxy
-				CodeNamespace cnSpace = new CodeNamespace( req.dynNamespace );
+				CodeNamespace cnSpace = new CodeNamespace( req.DynNamespace );
 				// Create new code compiled unit
 				CodeCompileUnit ccUnit = new CodeCompileUnit();
 				ServiceDescriptionImportWarnings sdiWarning = sdImport.Import( cnSpace, ccUnit );
@@ -88,8 +81,18 @@ namespace PSL.DISCUS.DynamicProxy
 					m_mutator.Mutate( ref cnSpace );
 
 				// Construct paths to source code and assembly
-				string strFilenameSource = req.proxyPath + "\\" + req.filenameSource + ".cs";
-				string strAssemblyFilename = req.proxyPath + "\\" + req.filenameSource + ".dll";
+				string strFilenameSource = "";
+				
+				if( req.ProxyPath.Length > 0 )
+					strFilenameSource = req.ProxyPath + "\\" + req.FilenameSource + ".cs";
+				else strFilenameSource = req.FilenameSource + ".cs";
+
+				string strAssemblyFilename = "";
+				
+				if( req.ProxyPath.Length > 0 )
+					strAssemblyFilename = req.ProxyPath + "\\" + req.FilenameSource + ".dll";
+				else strAssemblyFilename = req.FilenameSource + ".dll";
+
 				// Create an output stream associated with assembly
 				StreamWriter sw = new StreamWriter( strFilenameSource );
 								
@@ -105,7 +108,7 @@ namespace PSL.DISCUS.DynamicProxy
 				
 				cparams.GenerateExecutable = false;
 				cparams.GenerateInMemory = false;
-				cparams.MainClass = req.serviceName;
+				cparams.MainClass = req.ServiceName;
 				cparams.OutputAssembly = strAssemblyFilename;
 				cparams.IncludeDebugInformation = true;
 			
@@ -120,7 +123,7 @@ namespace PSL.DISCUS.DynamicProxy
 			catch( System.Exception e )
 			{
 				// Report Error
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, e.Message, EventLogEntryType.Error );
 			}
 
 			return strAssemblyLoc;

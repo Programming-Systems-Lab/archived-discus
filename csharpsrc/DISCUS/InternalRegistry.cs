@@ -12,10 +12,10 @@ namespace PSL.DISCUS.DataAccess
 		private RegServiceDAO m_svcDAO;
 		private ServiceSpaceDAO m_svcSpaceDAO;
 
-		public InternalRegistry()
+		public InternalRegistry( string strDBConnect )
 		{
-			m_svcDAO = new RegServiceDAO();
-			m_svcSpaceDAO = new ServiceSpaceDAO();
+			m_svcDAO = new RegServiceDAO( strDBConnect );
+			m_svcSpaceDAO = new ServiceSpaceDAO( strDBConnect );
 		}
 		
 		/* RegisteredServices interactions */

@@ -8,69 +8,55 @@ namespace PSL.DISCUS.DynamicProxy
 	/// </summary>
 	public class DynamicRequest
 	{
-		private string m_strWSDLFile; // URL to WSDL file
-		private string m_strServiceName; // Name of service (class)
-		private string m_strDynNamespace; // Namespace to use
-		private string m_strFilenameSource; // Code file to generate
-		private string m_strProtocol; // Protocol to use (SOAP, HTTP Get or HTTP Post )
-		private string m_strProxyPath; // Path where proxy generated
-		private string m_strBaseURL;
-		public static string DEFAULT_PROXY_NAMESPACE = "DynamicPxy";
-
+		private string m_strWSDLFile = ""; // URL to WSDL file
+		private string m_strServiceName = ""; // Name of service (class)
+		private string m_strDynNamespace = DEFAULT_PROXY_NAMESPACE; // Namespace to use
+		private string m_strFilenameSource = ""; // Code file to generate
+		private string m_strProtocol = SOAPProtocol; // Protocol to use (SOAP, HTTP Get or HTTP Post )
+		private string m_strProxyPath = ""; // Path where proxy generated
+		
+		public const string DEFAULT_PROXY_NAMESPACE = "DynamicPxy";
 		// Request protocols, Default = SOAPProtocol
-		public static string SOAPProtocol = "SOAP";
-		public static string HTTPGetProtocol = "HTTP GET";
-		public static string HTTPPostProtocol = "HTTP POST";
+		public const string SOAPProtocol = "SOAP";
+		public const string HTTPGetProtocol = "HTTP GET";
+		public const string HTTPPostProtocol = "HTTP POST";
 
 		public DynamicRequest()
 		{
-			m_strWSDLFile = "";
-			m_strServiceName = "";
-			m_strDynNamespace = DEFAULT_PROXY_NAMESPACE; // Default namespace
-			m_strFilenameSource = "";
-			m_strProtocol = DynamicRequest.SOAPProtocol; // Default request protocol
-			m_strBaseURL = "";
 		}
-
 		
 		// Properties (gets and sets)
-		public string wsdlFile
+		public string WsdlFile
 		{
 			get { return m_strWSDLFile; }
 			set { m_strWSDLFile = value; }
 		}
 
-		public string baseURL
-		{
-			get { return m_strBaseURL; }
-			set { m_strBaseURL = value; }
-		}
-
-		public string serviceName
+		public string ServiceName
 		{
 			get { return m_strServiceName; }
 			set { m_strServiceName = value; }
 		}
 	
-		public string dynNamespace
+		public string DynNamespace
 		{
 			get { return m_strDynNamespace; }
 			set { m_strDynNamespace = value; }
 		}
 		
-		public string filenameSource
+		public string FilenameSource
 		{
 			get { return m_strFilenameSource; }
 			set { m_strFilenameSource = value; }
 		}
 
-		public string proxyPath
+		public string ProxyPath
 		{
 			get { return m_strProxyPath; }
 			set { m_strProxyPath = value; }
 		}
 
-		public string protocol
+		public string Protocol
 		{
 			get { return m_strProtocol; }
 			set { m_strProtocol = value; }

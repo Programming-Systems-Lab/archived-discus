@@ -11,8 +11,6 @@ using PSL.DISCUS.Interfaces;
 using PSL.DISCUS.DataAccess;
 using PSL.DISCUS.DynamicProxy;
 using PSL.DISCUS.Logging;
-
-using System.Threading;
 using PSL.AsyncCore;
 
 // DISCUS GateKeeper package
@@ -112,35 +110,13 @@ namespace PSL.DISCUS
 		// Fields
 		
 		/// <summary>
-		/// get/set Gatekeeper name 
+		/// Threadsafe settings object
 		/// </summary>
-		private string m_strName = "";
+		private GatekeeperSettings m_settings = new GatekeeperSettings();
 		
-		/// <summary>
-		/// get/set Location where dynamically generated proxies are stored 
-		/// </summary>
-		private string m_strPxyCacheDir = "";
-		
-		/// <summary>
-		/// get/set Config file name
-		/// </summary>
-		private string CONFIG = DConst.DISCUSCONFIG_FILE;
-		
-		/// <summary>
-		/// get/set(true/false) tracing 
-		/// </summary>
-		private bool m_bTraceOn = false;
-		
-		/// <summary>
-		/// LogTrace context
-		/// </summary>
-		private LogTraceContext m_logCtx = new LogTraceContext();
-		
-		/// <summary>
-		/// LogTrace context
-		/// </summary>
-		private LogTraceContext m_traceCtx = new LogTraceContext();
-		
+		/*****************************************************************/
+		// Clean up log trace infrastructure - objects need to be threadsafe
+
 		/// <summary>
 		/// Logger object
 		/// </summary>
@@ -151,22 +127,14 @@ namespace PSL.DISCUS
 		/// </summary>
 		private TracerImpl m_objTracer; 
 		
-		/// <summary>
-		/// get/set (true/false) Async facility setting 
-		/// </summary>
-		private bool m_bUseAsync = false;
-		
+		/*****************************************************************/
+
 		// Properties
 
-		/// <summary>
-		/// get/set (true/false) Async facility setting 
-		/// </summary>
-		public bool UseAsync
+		public string CurrentDirectoryFromCodebase
 		{
 			get
-			{ return m_bUseAsync; }
-			set
-			{ m_bUseAsync = value; }
+			{ return Assembly.GetExecutingAssembly().CodeBase; }
 		}
 
 		/// <summary>
@@ -175,14 +143,11 @@ namespace PSL.DISCUS
 		public string Name
 		{
 			get
-			{ return m_strName; }
+			{ return m_settings.GatekeeperName; }
 			set
 			{ 
 				// Set GK name
-				m_strName = value; 
-				// Update logging & tracing facilities
-				m_objLogger.Source = m_strName;
-				m_objTracer.Source = m_strName;
+				m_settings.GatekeeperName = value; 
 			}
 		}
 				
@@ -192,31 +157,79 @@ namespace PSL.DISCUS
 		public string ProxyCache
 		{
 			get
-			{ return m_strPxyCacheDir; }
+			{ return m_settings.ProxyCache; }
 			set
-			{ m_strPxyCacheDir = value; }
+			{ m_settings.ProxyCache = value; }
 		}
 				
-		/// <summary>
-		/// get/set Config file name
-		/// </summary>
-		public string ConfigFile
-		{
-			get
-			{ return CONFIG; }
-			set
-			{ CONFIG = value; }
-		}
-
 		/// <summary>
 		/// get/set(true/false) tracing 
 		/// </summary>
 		public bool TraceOn
 		{
 			get
-			{ return m_bTraceOn; }
+			{ return m_settings.TraceOn; }
 			set
-			{ m_bTraceOn = value; }
+			{ m_settings.TraceOn = value; }
+		}
+
+		/// <summary>
+		/// get/set the database connection string
+		/// </summary>
+		public string DatabaseConnectString
+		{
+			get
+			{ return this.m_settings.DatabaseConnectString; }
+			set
+			{ this.m_settings.DatabaseConnectString = value; }
+		}
+		
+		public enuLoggingType LoggingType
+		{
+			get
+			{ return this.m_settings.LoggingType; }
+			set
+			{ this.m_settings.LoggingType = value; }
+		}
+
+		public enuTracingType TracingType
+		{
+			get
+			{ return this.m_settings.TracingType; }
+			set
+			{ this.m_settings.TracingType = value; }
+		}
+		
+		public string UrlLoggingHostname
+		{
+			get
+			{ return this.m_settings.UrlLoggingHostname; }
+			set
+			{ this.m_settings.UrlLoggingHostname = value; }
+		}
+
+		public int UrlLoggingPort
+		{
+			get
+			{ return this.m_settings.UrlLoggingPort; }
+			set
+			{ this.m_settings.UrlLoggingPort = value; }
+		}
+
+		public string UrlTracingHostname
+		{
+			get
+			{ return this.m_settings.UrlTracingHostname; }
+			set
+			{ this.m_settings.UrlTracingHostname = value; }
+		}
+
+		public int UrlTracingPort
+		{
+			get
+			{ return this.m_settings.UrlTracingPort; }
+			set
+			{ this.m_settings.UrlTracingPort = value; }
 		}
 
 		// Private inner class representing an AlphaProtocol execution 
@@ -256,129 +269,112 @@ namespace PSL.DISCUS
 		{
 			try
 			{
-				//string strLoc = Assembly.GetExecutingAssembly().Location;
-								
+				string strLocalPath = new Uri( Assembly.GetExecutingAssembly().CodeBase ).LocalPath;
+				this.m_settings.ProxyCache = new FileInfo( strLocalPath ).Directory.FullName + "\\" + Constants.DEFAULT_PROXY_CACHE;				
+							
+				// GatekeeperSettings object sets appropriate defaults
+				// Create logging and tracing objects based on appsettings data
+				LogTraceContext logCtx = new LogTraceContext();
 				
+				// This data may or may not be set let the factory method 
+				// CreateLoggingInstance handle it
+				logCtx.Hostname = this.UrlLoggingHostname;
+				logCtx.Port = this.UrlLoggingPort;
 
-				//string strCodebase = Assembly.GetExecutingAssembly().CodeBase;
-								
-				// Read DISCUS config file
-				FileStream fs = File.Open( CONFIG, FileMode.Open );
-				TextReader tr = new StreamReader( fs );
-				string strConfigFile = tr.ReadToEnd();
+				this.m_objLogger = CreateLoggingInstance( this.LoggingType, logCtx );
 
-				// Load config file into XML document
-				XmlDocument doc = new XmlDocument();
-				doc.LoadXml( strConfigFile );
-				
-				// Use XPath to extract what info we need
-				XmlNode root =  doc.DocumentElement;
-				// Get specific GateKeeper name
-				XmlNode currentNode = root.SelectSingleNode( "GateKeeperName" );
-				
-				if( currentNode != null )
-					m_strName = currentNode.InnerText;
-
-				// Set logging and tracing contexts
-
-				// Logging context info
-				currentNode = root.SelectSingleNode( "Logging/UrlLogging/Hostname" );
-				if( currentNode != null )
-					m_logCtx.Hostname = currentNode.InnerText;
-
-				currentNode = root.SelectSingleNode( "Logging/UrlLogging/Port" );
-				if( currentNode != null )
-					m_logCtx.Port = Int32.Parse( currentNode.InnerText );
-
-				currentNode = root.SelectSingleNode( "Logging/WebServiceLogging/WSDL" );
-				if( currentNode != null )
-					m_logCtx.WebServiceWSDL = currentNode.InnerText;
-
-				currentNode = root.SelectSingleNode( "Logging/WebServiceLogging/AccessPoint" );
-				if( currentNode != null )
-					m_logCtx.WebServiceAccessPoint = currentNode.InnerText;
-
-				// Tracing context info
-				currentNode = root.SelectSingleNode( "Tracing/TraceOn" );
-				if( currentNode != null )
-					m_bTraceOn = ( currentNode.InnerText.ToLower().CompareTo( "true" ) == 0 );
-                				
-				currentNode = root.SelectSingleNode( "Tracing/UrlTracing/Hostname" );
-				if( currentNode != null )
-					m_traceCtx.Hostname = currentNode.InnerText;
-
-				currentNode = root.SelectSingleNode( "Tracing/UrlTracing/Port" );
-				if( currentNode != null )
-					m_traceCtx.Port = Int32.Parse( currentNode.InnerText );
-
-				currentNode = root.SelectSingleNode( "Tracing/WebServiceTracing/WSDL" );
-				if( currentNode != null )
-					m_traceCtx.WebServiceWSDL = currentNode.InnerText;
-
-				currentNode = root.SelectSingleNode( "Tracing/WebServiceTracing/AccessPoint" );
-				if( currentNode != null )
-					m_traceCtx.WebServiceAccessPoint = currentNode.InnerText;
-
-				
-				// Determine the type of logging anf tracing facilities to use
-                string strLoggingType = "";
-				currentNode = root.SelectSingleNode( "Logging/LoggingType" );
-				if( currentNode == null || currentNode.InnerText.Length == 0 )
-					strLoggingType = DConst.EVENT_LOGGING;
-				else strLoggingType = currentNode.InnerText;
-
-				string strTracingType = "";
-				currentNode = root.SelectSingleNode( "Tracing/TracingType" );
-				if( currentNode == null || currentNode.InnerText.Length == 0 )
-					strTracingType = DConst.EVENT_TRACING;
-				else strTracingType = currentNode.InnerText;
-				
-				// Gaurantees that some logging and tracing facility is available
-				m_objLogger = CreateLoggingInstance( strLoggingType, m_logCtx );
-				m_objTracer = CreateTracingInstance( strTracingType, m_traceCtx );
-				
-				// Specific sourcename
-				if( m_strName.Length > 0 )
+				if( this.TraceOn )
 				{
-					m_objLogger.Source = m_strName;
-					m_objTracer.Source = m_strName;
-				}
-				else
-				{
-					m_objLogger.Source = "Gatekeeper";
-					m_objTracer.Source = "Gatekeeper";
-				}
-				
-				// Find out where we store dynamic proxies
-				// if no dir specified create default 
-				// proxy cache directory under the current directory
-				currentNode = root.SelectSingleNode( "ProxyCache" );
-				
-				if( currentNode != null )
-					m_strPxyCacheDir = currentNode.InnerText;
-				
-				if( m_strPxyCacheDir.Length == 0 )
-					m_strPxyCacheDir = DConst.DEFAULT_PXY_DIR;
+					LogTraceContext traceCtx = new LogTraceContext();
+					
+					// This data may or may not be set let the factory method 
+					// CreateTracingInstance handle it
+					traceCtx.Hostname = this.UrlTracingHostname;
+					traceCtx.Port = this.UrlTracingPort;
+					
+					// Turn off tracing if invalid data passed in
+					if( traceCtx.Hostname.Length == 0 || this.UrlTracingPort == -1 )
+						this.TracingType = enuTracingType.None;
 
-				fs.Close(); // Close file stream
+					this.m_objTracer = CreateTracingInstance( this.TracingType, traceCtx );
+				}
 				
 				// Determine whether ProxyCache Directory exists
 				// If it does not exist then we try to create it
 				bool bStatus = InitializeProxyCacheDir();
-				if( m_bTraceOn )
+				if( this.TraceOn )
 				{
 					if( bStatus )
-						TraceInfo( "ProxyCache Initialized" );
-					else TraceError( "ProxyCache NOT Initialized" );
+						TraceInfo( this.Name, "ProxyCache Initialized" );
+					else TraceError( this.Name, "ProxyCache NOT Initialized" );
 				}
 			}
 			catch( System.Exception e ) // Catch exception
 			{
 				// Report error
-				LogError( e.Message );
+				LogError( this.Name, e.Message );
 			}
 		}
 
+		/// <summary>
+		/// Ctor.
+		/// </summary>
+		/// <param name="settings">GatekeeperSettings object used to configure
+		/// the Gatekeeper</param>
+		public Gatekeeper( GatekeeperSettings settings )
+		{
+			// Set the Gatekeeper settings instance, this sets all the Gatekeeper
+			// public properties
+			if( settings == null )
+				LogInfo( this.Name, "settings parameter is null, creating Gatekeeper using defaults" );
+			else this.m_settings = settings; 
+			
+			try
+			{
+				// GatekeeperSettings object sets appropriate defaults
+				// Create logging and tracing objects based on appsettings data
+				LogTraceContext logCtx = new LogTraceContext();
+				
+				// This data may or may not be set let the factory method 
+				// CreateLoggingInstance handle it
+				logCtx.Hostname = this.UrlLoggingHostname;
+				logCtx.Port = this.UrlLoggingPort;
+
+				this.m_objLogger = CreateLoggingInstance( this.LoggingType, logCtx );
+
+				if( this.TraceOn )
+				{
+					LogTraceContext traceCtx = new LogTraceContext();
+					
+					// This data may or may not be set let the factory method 
+					// CreateTracingInstance handle it
+					traceCtx.Hostname = this.UrlTracingHostname;
+					traceCtx.Port = this.UrlTracingPort;
+					
+					// Turn off tracing if invalid data passed in
+					if( traceCtx.Hostname.Length == 0 || this.UrlTracingPort == -1 )
+						this.TracingType = enuTracingType.None;
+
+					this.m_objTracer = CreateTracingInstance( this.TracingType, traceCtx );
+				}
+				
+				// Determine whether ProxyCache Directory exists
+				// If it does not exist then we try to create it
+				bool bStatus = InitializeProxyCacheDir();
+				if( this.TraceOn )
+				{
+					if( bStatus )
+						TraceInfo( this.Name, "ProxyCache Initialized" );
+					else TraceError( this.Name, "ProxyCache NOT Initialized" );
+				}
+			}
+			catch( System.Exception e ) // Catch exception
+			{
+				// Report error
+				LogError( this.Name, e.Message );
+			}
+		}
+		
 		/// <summary>
 		/// Function builds an Execution Queue (sequence of steps)
 		/// from an Alpha protocol
@@ -392,8 +388,8 @@ namespace PSL.DISCUS
 			
 			try
 			{
-				if( m_bTraceOn )
-					TraceInfo( "About to build execQ from Alpha-Protocol" );// + strAlphaProtocol );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "About to build execQ from Alpha-Protocol" );// + strAlphaProtocol );
 				
 				// Stage 1 - Verify alpha-protocol is valid
 				// Create XML text reader
@@ -485,11 +481,11 @@ namespace PSL.DISCUS
 			}
 			catch( Exception e )
 			{
-				LogError( e.Message );				
+				LogError( this.Name, e.Message );				
 			}
 			
-			if( m_bTraceOn )
-				TraceInfo( "Built execQ: " + execQ.Count + " actions to perform" );
+			if( this.TraceOn )
+				TraceInfo( this.Name, "Built execQ: " + execQ.Count + " actions to perform" );
 				
 			return execQ; // return Execution Queue
 		}// End BuildAlphaProtocolExecutionQ
@@ -509,8 +505,8 @@ namespace PSL.DISCUS
 			if( stkProviders.Count == 0 )
 				return null;
 			
-			if( m_bTraceOn )
-				TraceInfo( "About to build treaty" );
+			if( this.TraceOn )
+				TraceInfo( this.Name, "About to build treaty" );
 			
 			// Treaty to be returned
 			TreatyType treaty = null;
@@ -522,7 +518,7 @@ namespace PSL.DISCUS
 				// Get Client Service Space name
 				treaty.ClientServiceSpace = DEFAULT_CLIENT_SERVICE_SPACE;
 				// Get Provider Service Space name
-				treaty.ProviderServiceSpace = ( (AlphaRequest) stkProviders.Peek() ).Provider; //DEFAULT_PROVIDER_SERVICE_SPACE;
+				treaty.ProviderServiceSpace = ( (AlphaRequest) stkProviders.Peek() ).Provider;
 				// Count the number of services requested
 				int nServiceCount = 0;
 				// Create entries for each service to be requested
@@ -555,12 +551,12 @@ namespace PSL.DISCUS
 				// Debugging to verify serialization to Xml
 				strCheck = treaty.ToXml();
 				
-				if( m_bTraceOn )
-					TraceInfo( "Built treaty" );// + treaty.ToXml() );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Built treaty" );// + treaty.ToXml() );
 			}
 			catch( Exception e )
 			{
-				LogError( e.Message );				
+				LogError( this.Name, e.Message );				
 			}
 			return treaty; // return the Treaty we create from the stack
 		}// End BuildTreaty
@@ -584,8 +580,8 @@ namespace PSL.DISCUS
 
 			bool bRetVal = false;
 
-			if( m_bTraceOn )
-				TraceInfo( "Checking whether we can execute all requested service methods" );
+			if( this.TraceOn )
+				TraceInfo( this.Name, "Checking whether we can execute all requested service methods" );
 			
 			try
 			{
@@ -608,7 +604,7 @@ namespace PSL.DISCUS
 			}
 			catch( Exception e )
 			{
-				LogError( e.Message );				
+				LogError( this.Name, e.Message );				
 			}
 			return bRetVal;
 		}
@@ -616,36 +612,31 @@ namespace PSL.DISCUS
 		/// <summary>
 		/// Function creates a logging instance. 
 		/// </summary>
-		/// <param name="strLoggingType">The type of logging instance to create
-		/// EvtLoggerImpl, UrlLoggerImpl or WebServiceLoggerImpl
-		/// based on the names: "EventLog", "UrlLog", "WebServiceLog"
+		/// <param name="logType">The type of logging instance to create
+		/// EvtLoggerImpl or UrlLoggerImpl
+		/// based on the logging types
 		/// </param>
 		/// <param name="logCtx"></param>
-		/// <returns>An instance of the named logging implementation OR
+		/// <returns>An instance of the specified logging implementation OR
 		/// an instance of the default logging implementation, EvtLoggerImpl
 		/// </returns>
-		private LoggerImpl CreateLoggingInstance( string strLoggingType, LogTraceContext logCtx )
+		private LoggerImpl CreateLoggingInstance( enuLoggingType logType, LogTraceContext logCtx )
 		{
 			LoggerImpl objLoggingInst = null;
 			
 			try
 			{
-				if( strLoggingType.ToLower().CompareTo( DConst.URL_LOGGING.ToLower() ) == 0 )
+				if( logType == enuLoggingType.UrlLog )
 				{
 					// UrlLoggerImpl
 					objLoggingInst = new UrlLoggerImpl( logCtx );
-				}
-				else if( strLoggingType.ToLower().CompareTo( DConst.WEB_SERVICE_LOGGING.ToLower() ) == 0 )
-				{
-					// WebServiceLoggerImpl
-					objLoggingInst = new EvtLoggerImpl( logCtx );
 				}
 				else objLoggingInst = new EvtLoggerImpl( logCtx );
 			}
 			catch( Exception e )
 			{
 				objLoggingInst = new EvtLoggerImpl( logCtx );
-				objLoggingInst.LogError( e.Message );
+				objLoggingInst.LogError( this.Name, e.Message );
 			}
 
 			return objLoggingInst;
@@ -654,36 +645,36 @@ namespace PSL.DISCUS
 		/// <summary>
 		/// Function creates a tracing instance.  
 		/// </summary>
-		/// <param name="strTracingType">The type of logging instance to create
-		/// EvtTracerImpl, UrlTracerImpl or WebServiceTracerImpl
-		/// based on the names: "EventTrace", "UrlTrace", "WebServiceTrace"
+		/// <param name="traceType">The type of tracing instance to create
+		/// EvtTracerImpl or UrlTracerImpl
+		/// based on the tracing types
 		/// </param>
 		/// <param name="traceCtx"></param>
-		/// <returns>An instance of the named tracing implementation OR
+		/// <returns>An instance of the specified tracing implementation OR
 		/// an instance of the default tracing implementation, EvtTracerImpl
 		/// </returns>
-		private TracerImpl CreateTracingInstance( string strTracingType, LogTraceContext traceCtx )
+		private TracerImpl CreateTracingInstance( enuTracingType traceType, LogTraceContext traceCtx )
 		{
 			TracerImpl objTracingInst = null;
 			
 			try
 			{
-				if( strTracingType.ToLower().CompareTo( DConst.URL_TRACING.ToLower() ) == 0 )
+				if( traceType == enuTracingType.None )
+				{
+					this.TraceOn = false;
+					return null;
+				}
+				else if( traceType ==  enuTracingType.UrlTrace )
 				{
 					// UrlTracerImpl
 					objTracingInst = new UrlTracerImpl( traceCtx );
-				}
-				else if( strTracingType.ToLower().CompareTo( DConst.WEB_SERVICE_TRACING.ToLower() ) == 0 )
-				{
-					// WebServiceTracerImpl
-					objTracingInst = new EvtTracerImpl( traceCtx );
 				}
 				else objTracingInst = new EvtTracerImpl( traceCtx );
 			}
 			catch( Exception e )
 			{
 				objTracingInst = new EvtTracerImpl( traceCtx );
-				objTracingInst.TraceError( e.Message );
+				objTracingInst.TraceError( this.Name, e.Message );
 			}
 
 			return objTracingInst;
@@ -695,12 +686,35 @@ namespace PSL.DISCUS
 		/// <param name="nTreatyID">The treaty to be dissolved</param>
 		public void DissolveTreaty( int nTreatyID )
 		{
-			if( m_bTraceOn )
-				TraceInfo( "Dissolving Treaty " + nTreatyID );
+			if( this.TraceOn )
+				TraceInfo( this.Name, "Dissolving Treaty " + nTreatyID );
 			
 		}// End DissolveTreaty
 
-		 
+		/* 
+		// Async version
+		private string[] DoRequestCheck( string[] strXmlExecRequest, bool bSigned )
+		{
+			ArrayList lstResults = new ArrayList();
+				
+			try
+			{
+				if( this.TraceOn )
+					TraceInfo( "Doing request check - Async" );
+
+				// Resolve SecurityManager location first, in the event that
+				// a proxy has to be generated
+				
+			}
+			catch( System.Exception e )
+			{
+				LogError( e.Message );		
+			}
+
+			return (string[]) lstResults.ToArray( typeof(System.String) );
+		}
+		*/
+
 		/// <summary>
 		/// Function uses the SecurityManagerService to check whether
 		/// a request for service use is allowed or not.
@@ -714,40 +728,39 @@ namespace PSL.DISCUS
 		{
 			string[] arrRetVal = null;
 			
-			// Workaround Security Manager
-			//*****************************************************************************
-			/*arrRetVal = new string[2];
-			arrRetVal[0] = "1";
-			arrRetVal[1] = strXMLExecRequest;
-			int c = 9;
-			if( c == 9 )
-				return arrRetVal;*/
-			//*****************************************************************************
-
 			try
 			{
-				if( m_bTraceOn )
-					TraceInfo( "Doing request check" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Doing request check" );
 			
-				// Interact with SecurityManagerService via reflection
-				InternalRegistry ireg = new InternalRegistry();
-				string strLocation = ireg.GetServiceLocation( SECURITY_MANAGER );
-				if( strLocation.Length == 0 )
+				WSDetails details = ServiceDetails( SECURITY_MANAGER );
+				ResolveServiceLocation( ref details );
+								
+				if( details.Location.Length == 0  )
 					throw new Exception( "Cannot Find Security Manager" );
 				
 				// Create array of parameters to pass to SecurityManagerService
-				object[] objParams = new Object[2];
+				object[] objParams = new object[2];
 				objParams[0] = strXmlExecRequest;
-				objParams[1] = false;//bSigned; //Request not signed (yet)
+				objParams[1] = bSigned;
+				
+				ExecServiceContext ctx = new ExecServiceContext();
+				ctx.AccessPointUrl = details.AccessPoint;
+				ctx.Assembly = details.Location;
+				ctx.ServiceName = details.Name;
+				ctx.MethodName = REQUEST_CHECK_METHOD;
+				ctx.Parameters.AddRange( objParams );
+				
 				// Execute Request Check method of security manager
-				object objExecResult = ExecuteService( SECURITY_MANAGER, REQUEST_CHECK_METHOD, objParams );
+				object objExecResult = ExecuteServiceDirect( ctx );
+				
 				// Convert result to string[] 
 				if( objExecResult != null )
 					arrRetVal = objExecResult as string[];
 			}
 			catch( System.Exception e )
 			{
-				LogError( e.Message );		
+				LogError( this.Name, e.Message );		
 			}
 			return arrRetVal; // return SecurityManagerService response
 		}//End DoRequestCheck
@@ -762,8 +775,8 @@ namespace PSL.DISCUS
 			string strRetVal = "";
 			try
 			{
-				if( m_bTraceOn )
-					TraceInfo( "Received treaty request, passing to SecurityManager to verify" );// + strXmlTreatyReq );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Received treaty request, passing to SecurityManager to verify" );// + strXmlTreatyReq );
 			
 				// Create array of params to pass to VerifyTreaty
 				// of SecurityManagerService
@@ -773,11 +786,25 @@ namespace PSL.DISCUS
 				object objRes = null; // return value
 				
 				//TODO: Remove later...for demo only
-				if( m_bTraceOn )
-					TraceInfo( "EXECGUI_5" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "EXECGUI_5" );
+
+				WSDetails details = ServiceDetails( SECURITY_MANAGER );
+				ResolveServiceLocation( ref details );
+								
+				if( details.Location.Length == 0  )
+					throw new Exception( "Cannot Find Security Manager" );
+				
+				ExecServiceContext ctx = new ExecServiceContext();
+				ctx.AccessPointUrl = details.AccessPoint;
+				ctx.Assembly = details.Location;
+				ctx.ServiceName = details.Name;
+				ctx.MethodName = VERIFY_TREATY_METHOD;
+				ctx.Parameters.AddRange( objParams );
 
 				// Execute method
-				objRes = ExecuteService( SECURITY_MANAGER, VERIFY_TREATY_METHOD, objParams );
+				objRes = ExecuteServiceDirect( ctx );
+								
 				// Check whether execution returned something
 				if( objRes != null )
 				{
@@ -790,18 +817,18 @@ namespace PSL.DISCUS
 
 					if( strRetVal.Length > 0 )
 					{
-						if( m_bTraceOn )
+						if( this.TraceOn )
 						{
 							//TraceInfo( "SecurityManager verification returned: " + strRetVal );
 							//TODO: Remove later...for demo only
-							TraceInfo( "EXECGUI_6" );
+							TraceInfo( this.Name, "EXECGUI_6" );
 						}
 					}
 				}
 			}
 			catch( Exception e )
 			{
-				LogError( e.Message );		
+				LogError( this.Name, e.Message );		
 			}
 			return strRetVal;
 		}// End EnlistServicesByName
@@ -819,27 +846,28 @@ namespace PSL.DISCUS
 				return null;
 
 			// TODO: Remove later...for demo only
-			if( m_bTraceOn )
-				TraceInfo( "EXECGUI_2" );
+			if( this.TraceOn )
+				TraceInfo( this.Name, "EXECGUI_2" );
+
+			ArrayList lstResults = new ArrayList();
+			ArrayList lstTaskIDs = new ArrayList();
 			
 			// 4 stage execution			
 			// 1) Build the execution queue (steps to perform)
 			// 2) Create nec treaties with other GKs - Resource Acquire stage
 			// 3) Ensure that all requested service authorized
 			// 4) Execution stage
-			string [] arrRetVal = null; // Holds returned values
+			
 			try
 			{
 				// Stage 1 - Build Execution queue (steps to execute)
-				if( m_bTraceOn )
-					TraceInfo( "MESSAGE " + "Executing Alpha Protocol Stage 1 - Building ExecutionQ" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "MESSAGE " + "Executing Alpha Protocol Stage 1 - Building ExecutionQ" );
 			
 				Queue execQ = BuildAlphaProtocolExecutionQ( strAlphaProtocol );
 				if( execQ == null || execQ.Count == 0 )
 					throw new Exception( "Error obtaining sequence of actions to perform" );
 
-				// Create appropriate sized array to hold results
-				arrRetVal = new string[execQ.Count];
 				// Create an array of requests
 				AlphaRequest[] arrReqs = new AlphaRequest[execQ.Count];
 				// Copy values from execQ
@@ -853,26 +881,25 @@ namespace PSL.DISCUS
 				// request all the services we need from a GK
 				// in one go.
 				Array.Sort( arrReqs );
-				
-				
+								
 				// Stage 2 - Create the necessary treaties and return a hashtable
 				// of treatyIDs to be used with each GK.
-				if( m_bTraceOn )
-					TraceInfo( "MESSAGE " + "Executing Alpha Protocol Stage 2 - Creating Treaties" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "MESSAGE " + "Executing Alpha Protocol Stage 2 - Creating Treaties" );
 				
 				Hashtable mapping = FormTreaties( arrReqs );
 				if( mapping == null || mapping.Count == 0 )
 					throw new Exception( "Resource Acquire Failed, Error Creating Treaties" );
 
-				if( m_bTraceOn )
-					TraceInfo( "Executing Alpha Protocol Stage 3 - Analyzing Treaty Responses" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Executing Alpha Protocol Stage 3 - Analyzing Treaty Responses" );
 				// Stage 3 - Analyze mapping to make sure all requested methods authorized
 				// if not then we report the failure and exit
 				if( !CanExecuteAllSteps( mapping ) )
 				{
 					// TODO: Edit later...for demo only
-					if( m_bTraceOn )
-						TraceError( "All Necessary Resources NOT Acquired" );
+					if( this.TraceOn )
+						TraceError( this.Name, "All Necessary Resources NOT Acquired" );
 					
 					// Write Treaties to event log for analysis later
 					throw new Exception( "Resource Acquire Failed, All Requests NOT Authorized" );
@@ -880,24 +907,24 @@ namespace PSL.DISCUS
 				else
 				{
 					// TODO: Edit later...for demo only
-					if( m_bTraceOn )
+					if( this.TraceOn )
 					{
-						TraceInfo( "MESSAGE " + "Acquired All Necessary Resources" );
-						TraceInfo( "EXECGUI_7" );
+						TraceInfo( this.Name, "MESSAGE " + "Acquired All Necessary Resources" );
+						TraceInfo( this.Name, "EXECGUI_7" );
 					}
 				}
 
 				// Stage 4 - Execution stage
-				if( m_bTraceOn )
-					TraceInfo( "MESSAGE " + "Executing Alpha Protocol Stage 4 - Execution" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "MESSAGE " + "Executing Alpha Protocol Stage 4 - Execution" );
 				
 				IEnumerator it = execQ.GetEnumerator();
-				InternalRegistry ireg = new InternalRegistry();
-				int nIndex = 0;	
+				InternalRegistry ireg = new InternalRegistry( this.DatabaseConnectString );
+				TaskProxy pxy = new TaskProxy();
 			
 				// TODO: Edit later...for demo only
-				if( m_bTraceOn )
-					TraceInfo( "EXECGUI_8" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "EXECGUI_8" );
 
 				while( it.MoveNext() )
 				{
@@ -905,6 +932,7 @@ namespace PSL.DISCUS
 					// GK expects one parameter - an XML document
 					// representing a request
 					object[] objParams = new object[1];
+					objParams[0] = actionReq.m_Req.ToXml();
 					// Retrieve current treaty (applicable for provider)
 					TreatyType currentTreaty = (TreatyType) mapping[actionReq.Provider];
 					if( currentTreaty == null )
@@ -915,36 +943,53 @@ namespace PSL.DISCUS
 					// Resolve method implementation as specified by treaty
 					actionReq.m_Req.MethodName = ResolveMethodImplementation( actionReq, currentTreaty );
 					
-					// Can use TaskProxy here to have 
+					WSDetails details = GatekeeperDetails( actionReq.Provider );
+					ResolveGatekeeperLocation( ref details );
 					
-					// Ideally request should be signed first
-					objParams[0] = actionReq.m_Req.ToXml();
-					// Execute against provider GK
-					object objRes = ExecuteGatekeeper( actionReq.Provider, GK_EXECUTE_SERVICE_METHOD , objParams );
-					if( objRes != null )
+					ExecServiceContext ctx = new ExecServiceContext();
+					ctx.AccessPointUrl = details.AccessPoint;
+					ctx.Assembly = details.Location;
+					ctx.ServiceName = details.Name;
+					ctx.MethodName = GK_EXECUTE_SERVICE_METHOD;
+					ctx.Parameters.AddRange( objParams );
+
+                    lstTaskIDs.Add( pxy.AddTaskRequest( new TaskRequest( new TaskRequest.TaskCallback(ExecuteServiceDirect), ctx ) ) );
+				}// End while it.MoveNext()
+
+				// Start proxy wait
+				pxy.StartWait();
+
+				// Do Something here
+				
+				// Wait on proxy signal
+				pxy.WaitOnProxySignal();
+
+				for( int i = 0; i < lstTaskIDs.Count; i++ )
+				{
+					TPTaskCompleteEventArgs tceArg = pxy.QueryResult( (Guid) lstTaskIDs[i] );
+					
+					if( tceArg != null )
 					{
-						// save results returned
-						string strTemp = (string) objRes;
+						string strTemp = (string) tceArg.Result;
 						string strVerify = VerifyDocument( strTemp );
 						if( strVerify.Length > 0 )
-							arrRetVal[nIndex] = strVerify;
-						else arrRetVal[nIndex] = strTemp;
+							lstResults.Add( strVerify );
+						else lstResults.Add( strTemp );
 					}
-					nIndex++;
-				}// End while it.MoveNext()
+				}
 			}
 			catch( System.Exception e )
 			{
-				LogError( e.Message );
+				LogError( this.Name, e.Message );
 			}
 			
-			if( m_bTraceOn )
+			if( this.TraceOn )
 			{
-				TraceInfo( "Finished Executing Alpha Protocol" );
-				TraceInfo( "EXECGUI_9" );
+				TraceInfo( this.Name, "Finished Executing Alpha Protocol" );
+				TraceInfo( this.Name, "EXECGUI_9" );
 			}
 				
-			return arrRetVal;
+			return (string[]) lstResults.ToArray( typeof(System.String) );
 		}//End ExecuteAlphaProtocol
 		
 		/// <summary>
@@ -954,12 +999,12 @@ namespace PSL.DISCUS
 		/// <param name="strGKMethod">Name of method to execute</param>
 		/// <param name="objParams">Array of parameters to pass to proxy method</param>
 		/// <returns></returns>
-		private object ExecuteGatekeeper( string strGKName, string strGKMethod, object[] objParams )
+		/*private object ExecuteGatekeeper( string strGKName, string strGKMethod, object[] objParams )
 		{
 			object objInvokeResult = null;
 			try
 			{
-				if( m_bTraceOn )
+				if( this.TraceOn )
 					TraceInfo( "Executing method " + strGKMethod + " against GK " + strGKName  );
 							
 				// Check that we have been given a GK name and a method name to execute
@@ -991,7 +1036,7 @@ namespace PSL.DISCUS
 				execCtx.ServiceName = details.Name;
 				execCtx.Parameters.AddRange( objParams );
 
-				/*// Use Async invocation
+				// Use Async invocation
 				if( m_bUseAsync )
 				{
 					// Create condition variable, set to non-signaled state
@@ -1014,7 +1059,7 @@ namespace PSL.DISCUS
 					else throw new Exception( pxy.QueryResult( execTaskId ).ExceptionMessage );
 				}
 				else 
-				*/
+				
 
 				objInvokeResult = ExecuteServiceDirect( execCtx );
 			}
@@ -1025,7 +1070,7 @@ namespace PSL.DISCUS
 
 			return objInvokeResult;		
 		}//End ExecuteGatekeeper
-
+		*/
 				 
 		/// <summary>
 		/// Function takes an array of AlphaRequests and attempts
@@ -1047,9 +1092,9 @@ namespace PSL.DISCUS
 			Hashtable mapping = null;
 			try
 			{
-				if( m_bTraceOn )
+				if( this.TraceOn )
 				{
-					TraceInfo( "Forming Treaties for " + arrReqs.Length + " requests" );
+					TraceInfo( this.Name, "Forming Treaties for " + arrReqs.Length + " requests" );
 					
 					//  TODO: Remove later...for demo only
 					string strServicesTraceMsg = "SERVICE ";
@@ -1060,7 +1105,7 @@ namespace PSL.DISCUS
 							strServicesTraceMsg += ";";
 					}
 					// Send Trace message
-					TraceInfo( strServicesTraceMsg );
+					TraceInfo( this.Name, strServicesTraceMsg );
 				}
 				
 				mapping = new Hashtable();
@@ -1073,7 +1118,10 @@ namespace PSL.DISCUS
 				else return null;
 				// Add request to stack
 				stkProviders.Push( currReq );
-				
+								
+				TaskProxy pxy = new TaskProxy();
+				Hashtable providers = new Hashtable();
+
 				// Create a stack that contains all the requests
 				// going to one Gatekeeper so that we can create
 				// a consolidated treaty to request all the services
@@ -1090,8 +1138,8 @@ namespace PSL.DISCUS
 					if( stkProviders.Count > 0 )
 					{
 						// TODO: Remove later...for demo only
-						if( m_bTraceOn )
-							TraceInfo( "EXECGUI_3" );
+						if( this.TraceOn )
+							TraceInfo( this.Name, "EXECGUI_3" );
 						
 						// Build treaty
 						TreatyType treaty = BuildTreaty( stkProviders );
@@ -1101,31 +1149,26 @@ namespace PSL.DISCUS
 						objParams[0] = treaty.ToXml();
 
 						//  TODO: Remove later...for demo only
-						if( m_bTraceOn )
+						if( this.TraceOn )
 						{
-							TraceInfo( "EXECGUI_4" );
+							TraceInfo( this.Name, "EXECGUI_4" );
 						}
 
-						object objRes = ExecuteGatekeeper( treaty.ProviderServiceSpace, GK_ENLIST_SERVICES_BY_NAME_METHOD, objParams );
-
-						if( objRes != null && ((string) objRes).Length > 0 )
-						{
-							//Deserialize into TreatyType
-							TreatyType returnedTreaty = null;
-							string strTreaty = (string) objRes;
-							
-							XmlSerializer ser = new XmlSerializer( typeof(TreatyType) );
-							
-							XmlReader xt = new XmlTextReader( strTreaty, XmlNodeType.Document, null );
-							xt.Read();
-							object objInst = ser.Deserialize( xt );
-							returnedTreaty = objInst as TreatyType;
-							
-							// Store the Treaty assoc with the ProviderServiceSpace
-							mapping.Add( returnedTreaty.ProviderServiceSpace, returnedTreaty );
-						}
-						else throw new Exception( "Error Creating Treaty with " + treaty.ProviderServiceSpace );
+						// Give operation to TaskProxy
+						WSDetails details = GatekeeperDetails( treaty.ProviderServiceSpace );
+						ResolveGatekeeperLocation( ref details );
 						
+						ExecServiceContext ctx = new ExecServiceContext();
+						ctx.ServiceName = details.Name;
+						ctx.MethodName = GK_ENLIST_SERVICES_BY_NAME_METHOD;
+						ctx.Parameters.AddRange( objParams );
+						ctx.AccessPointUrl = details.AccessPoint;
+						ctx.Assembly = details.Location;
+						
+						Guid taskID = pxy.AddTaskRequest( new TaskRequest( new TaskRequest.TaskCallback(ExecuteServiceDirect), ctx ) );	
+						// Map the taskIDs to specific provider service spaces
+						providers.Add( treaty.ProviderServiceSpace, taskID );
+												
 						// Clear stack	
 						stkProviders.Clear();
 						// If no nore requests then exit otherwise get the next one
@@ -1136,11 +1179,47 @@ namespace PSL.DISCUS
 					
 					stkProviders.Push( (AlphaRequest) it.Current );
 					currReq = (AlphaRequest) it.Current;
+				}// End While true
+
+				// Start proxy waiting
+				pxy.StartWait();
+
+				// Do something here
+
+				// Wait on proxy signal
+				pxy.WaitOnProxySignal();
+
+				IDictionaryEnumerator ide = providers.GetEnumerator();
+
+				while( ide.MoveNext() )
+				{
+					Guid task = (Guid) ide.Value;
+					string strProvider = (string) ide.Key;
+
+					object objRes = pxy.QueryResult( task ).Result;
+					
+					if( objRes != null && ((string) objRes).Length > 0 )
+					{
+						// Deserialize into TreatyType
+						TreatyType returnedTreaty = null;
+						string strTreaty = (string) objRes;
+							
+						XmlSerializer ser = new XmlSerializer( typeof(TreatyType) );
+							
+						XmlReader xt = new XmlTextReader( strTreaty, XmlNodeType.Document, null );
+						xt.Read();
+						object objInst = ser.Deserialize( xt );
+						returnedTreaty = objInst as TreatyType;
+							
+						// Store the Treaty assoc with the ProviderServiceSpace
+						mapping.Add( returnedTreaty.ProviderServiceSpace, returnedTreaty );
+					}
+					else throw new Exception( "Error Creating Treaty with " + strProvider );
 				}
 			}
 			catch( Exception e )
 			{
-				LogError( e.Message );				
+				LogError( this.Name, e.Message );				
 			}
 			return mapping;
 		}// End FormTreaties
@@ -1158,15 +1237,15 @@ namespace PSL.DISCUS
 			
 			try
 			{
-				if( m_bTraceOn )
-					TraceInfo( "Initizlize Proxy Cache Dir" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Initizlize Proxy Cache Dir" );
 				
 				// Determine if directory name of the proxy cache
 				// read from the system config file is NOT Fully 
 				// Quallified i.e <drive letter>:\<path>
 				// If not Fully Qualified then we must prefix
 				// with Current Directory
-				if( m_strPxyCacheDir.IndexOf( ":" ) == -1 )
+				if( m_settings.ProxyCache.IndexOf( ":" ) == -1 )
 				{
 					// Link to current dir
 					DirectoryInfo temp = new DirectoryInfo( "." );
@@ -1174,13 +1253,13 @@ namespace PSL.DISCUS
 					string strPath = temp.FullName;
 					// Append proxy cache sub dir
 					strPath += "\\";
-					strPath += m_strPxyCacheDir;
-					m_strPxyCacheDir = strPath;
+					strPath += m_settings.ProxyCache;
+					m_settings.ProxyCache = strPath;
 					temp = null;
 				}
 				
 				// Try to access DirectoryInfo of ProxyCache
-				DirectoryInfo dirInfo = new DirectoryInfo( m_strPxyCacheDir );
+				DirectoryInfo dirInfo = new DirectoryInfo( m_settings.ProxyCache );
 				// If the directory does not exist then try creating it
 				if( !dirInfo.Exists )
 					Directory.CreateDirectory( dirInfo.FullName );
@@ -1194,7 +1273,7 @@ namespace PSL.DISCUS
 				try
 				{
 					string strTemp = e.Message;
-					Directory.CreateDirectory( m_strPxyCacheDir ); 
+					Directory.CreateDirectory( m_settings.ProxyCache ); 
 					bRetVal = true;
 				}
 				catch( System.Exception sysE )
@@ -1202,7 +1281,7 @@ namespace PSL.DISCUS
 					// Report Error
 					string strError = "Error Creating ProxyCache ";
 					strError += sysE.Message;
-					LogError( strError );
+					LogError( this.Name, strError );
 				}
 			}
 			return bRetVal;
@@ -1212,27 +1291,27 @@ namespace PSL.DISCUS
 		/// Procedure writes an error message
 		/// </summary>
 		/// <param name="strMsg">The messsage to write</param>
-		public void LogError( string strMsg )
+		public void LogError( string strSource, string strMsg )
 		{
-			m_objLogger.LogError( strMsg );
+			m_objLogger.LogError( strSource, strMsg );
 		}
 	
 		/// <summary>
 		/// Procedure writes an info message
 		/// </summary>
 		/// <param name="strMsg">The messsage to write</param>
-		public void LogInfo( string strMsg )
+		public void LogInfo( string strSource, string strMsg )
 		{
-			m_objLogger.LogInfo( strMsg );
+			m_objLogger.LogInfo( strSource, strMsg );
 		}
 
 		/// <summary>
 		/// Procedure writes a warning message
 		/// </summary>
 		/// <param name="strMsg">The messsage to write</param>
-		public void LogWarning( string strMsg )
+		public void LogWarning( string strSource, string strMsg )
 		{
-			m_objLogger.LogWarning( strMsg );
+			m_objLogger.LogWarning( strSource, strMsg );
 		}
 		
 		/// <summary>
@@ -1266,7 +1345,7 @@ namespace PSL.DISCUS
 			}
 			catch( Exception e )
 			{
-				LogError( e.Message );
+				LogError( this.Name, e.Message );
 			}
 			return strRetVal;
 		}
@@ -1278,8 +1357,8 @@ namespace PSL.DISCUS
 		/// <param name="nTreatyID">The treaty to revoke</param>
 		public void RevokeTreaty( int nTreatyID )
 		{
-			if( m_bTraceOn )
-				TraceInfo( "Revoking Treaty " + nTreatyID );
+			if( this.TraceOn )
+				TraceInfo( this.Name, "Revoking Treaty " + nTreatyID );
 				
 		}//End RevokeTreaty
 
@@ -1287,27 +1366,27 @@ namespace PSL.DISCUS
 		/// Procedure writes an error message
 		/// </summary>
 		/// <param name="strMsg">The message to write</param>
-		public void TraceError( string strMsg )
+		public void TraceError( string strSource, string strMsg )
 		{
-			m_objTracer.TraceError( strMsg );
+			m_objTracer.TraceError( strSource, strMsg );
 		}
 
 		/// <summary>
 		/// Procedure writes an Info message
 		/// </summary>
 		/// <param name="strMsg">The message to write</param>
-		public void TraceInfo( string strMsg )
+		public void TraceInfo( string strSource, string strMsg )
 		{
-			m_objTracer.TraceInfo( strMsg );
+			m_objTracer.TraceInfo( strSource, strMsg );
 		}
 
 		/// <summary>
 		/// Procedure writes a Warning trace message
 		/// </summary>
 		/// <param name="strMsg">The message to write</param>
-		public void TraceWarning( string strMsg )
+		public void TraceWarning( string strSource, string strMsg )
 		{
-			m_objTracer.TraceWarning( strMsg );
+			m_objTracer.TraceWarning( strSource, strMsg );
 		}
 				
 		
@@ -1325,14 +1404,18 @@ namespace PSL.DISCUS
 		public string[] ExecuteServiceMethod( string strXmlExecRequest )
 		{
 			ArrayList lstRetVal = new ArrayList();
+			object[] arrStatus = new object[2];
 			string strRetVal = "";
 			ExecServiceMethodRequestType execReq = null;
-			InternalRegistry ireg = new InternalRegistry();
+			InternalRegistry ireg = new InternalRegistry( this.DatabaseConnectString );
 
 			try
 			{
-				if( m_bTraceOn )
-					TraceInfo( "Received ExecServiceMethodRequest" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Received ExecServiceMethodRequest" );
+				
+				arrStatus[Gatekeeper.GK_STATUS_FIELD] = enuGatekeeperStatus.Ok.ToString();
+				arrStatus[Gatekeeper.GK_STATUS_MSG_FIELD] = Gatekeeper.GK_SUCCESS_STATE_MSG;
 				
 				// 6 stages for execution
 				// 1) Do Security check
@@ -1346,22 +1429,22 @@ namespace PSL.DISCUS
 				// Contact SecurityManageService
 				// Pass request, get back string []
 				// Status code and actual XML request
-				if( m_bTraceOn )
-					TraceInfo( "Stage 1 - Do Security Check" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Stage 1 - Do Security Check" );
 				
 				// TODO: Ignoring SecurityManager for now
 				//string[] arrSecurityManagerResponse = DoRequestCheck( strXmlExecRequest, false );
 				//if( arrSecurityManagerResponse == null || arrSecurityManagerResponse[SECURITY_MANAGER_STATUS_FIELD].CompareTo( SECURITY_MANAGER_ERROR_CODE ) == 0 )
 				//	throw new System.Exception( "Security Exception: Request Not Verified - Reason: " + arrSecurityManagerResponse[1] );
 				
-				if( m_bTraceOn )
-					TraceInfo( "Passed Security Check" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Passed Security Check" );
 				
 				try
 				{
 					// Stage 2 - Deserialize Execution request
-					if( m_bTraceOn )
-						TraceInfo( "Stage 2 - Deserialize Execution Request" );
+					if( this.TraceOn )
+						TraceInfo( this.Name, "Stage 2 - Deserialize Execution Request" );
 				
 					execReq = new ExecServiceMethodRequestType();
 					XmlSerializer ser = new XmlSerializer( execReq.GetType() );
@@ -1376,8 +1459,8 @@ namespace PSL.DISCUS
 				}
 
 				// Stage 3 - Resolve Web Service Proxy Location
-				if( m_bTraceOn )
-					TraceInfo( "Stage 3 - Resolve Web Service Proxy Location" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Stage 3 - Resolve Web Service Proxy Location" );
 				
 				WSDetails details = ServiceDetails( execReq.ServiceName );
 				// Fill in method details
@@ -1407,57 +1490,29 @@ namespace PSL.DISCUS
 				execCtx.AccessPointUrl = details.AccessPoint;
 				execCtx.Parameters = execReq.m_ParamValue;
 				
-				/*****************************************************************/
-				/*
-				// Async invocation 
-				if( m_bUseAsync )
-				{
-					// Create condition variable, set to non-signaled state
-					AutoResetEvent cond = new AutoResetEvent( false );
-					// Create a task proxy with the condition variable
-					TaskProxy pxy = new TaskProxy( ref cond );
-					// Give tasks to the TaskProxy
-					Guid execTaskId = pxy.AddTaskRequest( new TaskRequest( new TaskRequest.TaskCallback( ExecuteServiceRequest ), execCtx ) );
-					// Let the TaskProxy wait on them
-					pxy.WaitOnTasks();
-					
-					// TODO: Find stuff to do here while waiting on task(s) to finish
-					// Could do logging, context save etc.
-					
-					// Sit and wait for proxy to signal tasks done
-					pxy.Condition.WaitOne();
-
-					strRetVal = (string) pxy.QueryResult( execTaskId ).Result;
-				}
-				// Sync invocation
-				else 
-				*/
-				
 				strRetVal = (string) ExecuteServiceRequest( execCtx );
 				if( strRetVal.Length == 0 )
 					throw new Exception( "Executing request returned no results" );
 
 				// New protocol to give clients more info
-				lstRetVal.Insert( Gatekeeper.GK_STATUS_FIELD, enuGatekeeperStatus.Ok.ToString() );
-				lstRetVal.Insert( Gatekeeper.GK_STATUS_MSG_FIELD, Gatekeeper.GK_SUCCESS_STATE_MSG );
-				lstRetVal.Insert( lstRetVal.Count - 1, strRetVal );
-				
-				/*****************************************************************/
+				lstRetVal.Add( strRetVal );
 			}
 			catch( System.Exception e )
 			{
-				LogError( e.Message );
-
-				lstRetVal.Clear();
-				
-				// New protocol to give clients more info
-				lstRetVal.Insert( Gatekeeper.GK_STATUS_FIELD, enuGatekeeperStatus.Error.ToString() );
-				lstRetVal.Insert( Gatekeeper.GK_STATUS_MSG_FIELD, Gatekeeper.GK_ERROR_STATE_MSG );
-				lstRetVal.Insert( lstRetVal.Count - 1, e.Message );
+				LogError( this.Name, e.Message );
+				// Update status data	
+				arrStatus[Gatekeeper.GK_STATUS_FIELD] = enuGatekeeperStatus.Error.ToString();
+				arrStatus[Gatekeeper.GK_STATUS_MSG_FIELD] = Gatekeeper.GK_ERROR_STATE_MSG;
+				lstRetVal.Add( e.Message );
+			}
+			finally
+			{
+				// put arrStatus at the start of lstResults
+				lstRetVal.InsertRange( 0, arrStatus );
 			}
 						
-			if( m_bTraceOn )
-				TraceInfo( "Finished Executing Service Method Request" );
+			if( this.TraceOn )
+				TraceInfo( this.Name, "Finished Executing Service Method Request" );
 						
 			return (string[]) lstRetVal.ToArray( typeof(System.String) );
 		}//End ExecuteServiceMethod
@@ -1480,10 +1535,8 @@ namespace PSL.DISCUS
 			// Stores the names of services for which we must generate
 			// proxy assemblies
 			Hashtable proxiesToGen = new Hashtable();
-			// Create a condition variable to use with the TaskProxy
-			AutoResetEvent cond = new AutoResetEvent( false );
 			// Create a TaskProxy to give tasks to
-			TaskProxy pxy = new TaskProxy( ref cond );
+			TaskProxy pxy = new TaskProxy();
 				
 			try
 			{
@@ -1516,8 +1569,6 @@ namespace PSL.DISCUS
 
 					// Reset proxy
 					pxy.Reset();
-					// Reset condition variable to non-signaled state
-					cond.Reset();
 					// Reset taskIDs list
 					lstTaskIDs.Clear();
 				}
@@ -1544,11 +1595,11 @@ namespace PSL.DISCUS
 				if( pxy.TasksPending > 0 )
 				{
 					// Let proxy wait on tasks
-					pxy.WaitOnTasks();
+					pxy.StartWait();
 					// Do stuff here
 
 					// Wait on proxy
-					pxy.Condition.WaitOne();
+					pxy.WaitOnProxySignal();
 				
 				
 					// Get results
@@ -1561,8 +1612,6 @@ namespace PSL.DISCUS
 
 					// Reset proxy
 					pxy.Reset();
-					// Reset condition variable to non-signaled state
-					cond.Reset();
 					// Reset taskIDs list
 					lstTaskIDs.Clear();
 				}
@@ -1591,7 +1640,8 @@ namespace PSL.DISCUS
 				}
 				
 				IDictionaryEnumerator it = proxiesToGen.GetEnumerator();
-				
+				Hashtable wsLocationUpdates = new Hashtable();
+
 				while( it.MoveNext() )
 				{
 					// Create WSProxyGenContext
@@ -1601,7 +1651,10 @@ namespace PSL.DISCUS
 					ctx.AccessPointUrl = svcDetails.AccessPoint;
 					ctx.Name = svcDetails.Name;
 					ctx.WsdlUrl = svcDetails.Location;
-					lstTaskIDs.Add( pxy.AddTaskRequest( new TaskRequest( new TaskRequest.TaskCallback( GenerateWSProxy ), ctx ) ) );
+					Guid taskID = pxy.AddTaskRequest( new TaskRequest( new TaskRequest.TaskCallback( GenerateWSProxy ), ctx ) );
+					lstTaskIDs.Add( taskID );
+					// Link taskID to the service for which proxy is going to be generated
+					wsLocationUpdates.Add( taskID, ctx.Name );
 				}
 					
 				if( pxy.TasksPending > 0 )
@@ -1619,17 +1672,22 @@ namespace PSL.DISCUS
 						TPTaskCompleteEventArgs tce = pxy.QueryResult( (Guid) lstTaskIDs[i] );
 						if( tce.HasErrors )
 							throw new Exception( "Proxy generation failed error message: " + tce.ExceptionMessage );
+						
+						// Update web service location
+						string strAssembly = (string) tce.Result;
+						string strServiceName = (string) wsLocationUpdates[tce.TaskID];
+						InternalRegistry ireg = new InternalRegistry( this.DatabaseConnectString );
+						ireg.UpdateServiceLocation( strServiceName, strAssembly );
 					}
 
 					// Reset proxy
 					pxy.Reset();
-					// Reset condition variable to non-signaled state
-					cond.Reset();
 					// Reset taskIDs list
 					lstTaskIDs.Clear();
 				}//End-if pxy.TasksPending > 0
 		
-				
+				// Clear list of web service location updates
+				wsLocationUpdates.Clear();
 				// Stage 4 - Execution 
 				pxy.Reset();
 				lstTaskIDs.Clear();
@@ -1703,97 +1761,6 @@ namespace PSL.DISCUS
 			return (string[]) lstResults.ToArray( typeof(System.String) );
 		}
 
-
-		/// <summary>
-		///	Function executes a method against a web service proxy via reflection. 
-		/// </summary>
-		/// <param name="strServiceName">Name of web service proxy to execute against</param>
-		/// <param name="strServiceMethod">Name of method to execute</param>
-		/// <param name="objParams">Array of parameters to pass to proxy method</param>
-		/// <returns>The results of execution against the web service</returns>
-		public object ExecuteService( string strServiceName, string strServiceMethod, object[] objParams )
-		{
-			TraceInfo( "Started ExecuteService" );
-			
-			object objInvokeResult = null;
-			try
-			{
-				if( m_bTraceOn )
-					TraceInfo( "Executing " + strServiceMethod + " against service " + strServiceName );
-			
-				if( strServiceName.Length == 0 || strServiceMethod.Length == 0 )
-					throw new System.Exception( "Invalid Arguments Passed to Execute" );
-				
-				// Get service details
-				WSDetails details = ServiceDetails( strServiceName );
-				// Fill in method details
-				details.Method = strServiceMethod;
-				InternalRegistry ireg = new InternalRegistry();
-				details.MethodExists = ireg.MethodExists( details.Name, details.Method );
-
-				// Quick checks for valid data returned from database
-				if( details.Location.Length == 0 )
-					throw new Exception( "Cannot Find Location of Service: " + details.Name );
-				// Verify that service supports method
-				if( !details.MethodExists )
-					throw new Exception( "Service: " + details.Name + " does not support method: " + details.Method );
-	
-				// Resolve Web Service Proxy Location
-				// Do Runtime ProxyGeneration if necessary				
-				// If service location is a link to a WSDL file
-				// then we must generate a proxy to the webservice,
-				// store the proxy in the proxy cache, update our
-				// database and set the Location to the generated
-				// proxy. Must also change service namespace in dbase
-				ResolveServiceLocation( ref details );
-								
-				// Set execution context
-				ExecServiceContext execCtx = new ExecServiceContext();
-				execCtx.AccessPointUrl = details.AccessPoint;
-				execCtx.Assembly = details.Location;
-				execCtx.MethodName = details.Method;
-				execCtx.ServiceName = details.Name;
-				execCtx.Parameters.AddRange( objParams );
-				
-				/*****************************************************************/
-				// Async invocation 
-				/*
-				if( m_bUseAsync )
-				{
-					// Create condition variable, set to non-signaled state
-					AutoResetEvent cond = new AutoResetEvent( false );
-					// Create a task proxy with the condition variable
-					TaskProxy pxy = new TaskProxy( ref cond );
-					// Give tasks to the TaskProxy
-					Guid execTaskId = pxy.AddTaskRequest( new TaskRequest( new TaskRequest.TaskCallback( ExecuteServiceDirect ), execCtx ) );
-					// Let the TaskProxy wait on them
-					pxy.WaitOnTasks();
-					
-					// TODO: Find stuff to do here while waiting on task(s) to finish
-					// Could do logging, context save etc.
-					
-					// Sit and wait for proxy to signal tasks done
-					pxy.Condition.WaitOne();
-
-					if( !pxy.QueryResult( execTaskId ).HasErrors )
-						objInvokeResult = pxy.QueryResult( execTaskId ).Result;
-					else throw new Exception( pxy.QueryResult( execTaskId ).ExceptionMessage );
-				}
-				// Sync invocation
-				else 
-				*/
-
-				objInvokeResult = ExecuteServiceDirect( execCtx );
-				/*****************************************************************/
-			}
-			catch( System.Exception e )
-			{
-				LogError( e.Message );		
-			}
-			return objInvokeResult;
-
-		}//End-ExecuteService
-		
 		/// <summary>
 		/// Function uses the SecurityManagerService to sign xml documents.
 		/// </summary>
@@ -1804,12 +1771,15 @@ namespace PSL.DISCUS
 			string strRetVal = "";
 			try
 			{
-				if( m_bTraceOn )
-					TraceInfo( "Signing document" );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Signing document" );
 				
 				string[] arrSecurityManagerResponse = null;
+				
 				// Interact with SecurityManagerService via reflection
 				WSDetails details = ServiceDetails( SECURITY_MANAGER );
+				ResolveServiceLocation( ref details );
+
 				if( details.Location.Length == 0 )
 					throw new System.Exception( "Cannot Find Security Manager" );
 				
@@ -1817,25 +1787,29 @@ namespace PSL.DISCUS
 				object[] objParams = new Object[1];
 				objParams[0] = strXmlDoc;
 
-				// Only do this method async if a proxy does not have to be generated
-				// otherwise there may be file locking issues with the proxy assembly
-				// if multiple threads try to generate and load the web service proxy
-				object objExecResult = ExecuteService( SECURITY_MANAGER, SIGN_DOCUMENT_METHOD, objParams );
+				ExecServiceContext ctx = new ExecServiceContext();
+				ctx.AccessPointUrl = details.AccessPoint;
+				ctx.Assembly = details.Location;
+				ctx.ServiceName = details.Name;
+				ctx.MethodName = SIGN_DOCUMENT_METHOD;
+				ctx.Parameters.AddRange( objParams );
+
+				object objExecResult = ExecuteServiceDirect( ctx );
 				
 				if( objExecResult != null )
 				{
 					// SecurityManagerService returns a string array
 					arrSecurityManagerResponse = objExecResult as string[];
 						strRetVal = arrSecurityManagerResponse[SECURITY_MANAGER_RETURNED_SIGNATURE_INDEX];
-					if( strRetVal.Length > 0 && m_bTraceOn )
+					if( strRetVal.Length > 0 && this.TraceOn )
 					{
-						LogInfo( "Signed doc" );
+						LogInfo( this.Name, "Signed doc" );
 					}
 				}
 			}
 			catch( System.Exception e )
 			{
-				LogError( e.Message );		
+				LogError( this.Name, e.Message );		
 			}
 			return strRetVal;
 		}//End SignDocument
@@ -1851,23 +1825,29 @@ namespace PSL.DISCUS
 			string strRetVal = "";
 			try
 			{
-				if( m_bTraceOn )
-					TraceInfo( "Verifying Document " );
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Verifying Document " );
 				
 				string[] arrSecurityManagerResponse = null;
 				// Interact with SecurityManagerService via reflection
 				WSDetails details = ServiceDetails( SECURITY_MANAGER );
+				ResolveServiceLocation( ref details );
+
 				if( details.Location.Length == 0 )
 					throw new System.Exception( "Cannot Find Security Manager" );
 				
 				// Pass document to verify to SecurityManagerService
-				object[] objParams = new Object[1];
+				object[] objParams = new object[1];
 				objParams[0] = strXmlDoc;
 				
-				// Only do this method async if a proxy does not have to be generated
-				// otherwise there may be file locking issues with the proxy assembly
-				// if multiple threads try to generate and load the web service proxy
-				object objExecResult = ExecuteService( SECURITY_MANAGER, VERIFY_DOCUMENT_METHOD, objParams );
+				ExecServiceContext ctx = new ExecServiceContext();
+				ctx.AccessPointUrl = details.AccessPoint;
+				ctx.Assembly = details.Location;
+				ctx.ServiceName = details.Name;
+				ctx.MethodName = VERIFY_DOCUMENT_METHOD;
+				ctx.Parameters.AddRange( objParams );
+
+				object objExecResult = ExecuteServiceDirect( ctx );
 						
 				if( objExecResult != null )
 				{
@@ -1875,15 +1855,15 @@ namespace PSL.DISCUS
 					arrSecurityManagerResponse = objExecResult as string[];
 					strRetVal = arrSecurityManagerResponse[SECURITY_MANAGER_RETURNED_VERIFICATION_INDEX];
 					
-					if( strRetVal.Length > 0 && m_bTraceOn )
+					if( strRetVal.Length > 0 && this.TraceOn )
 					{
-						LogInfo( "Verified doc" );
+						LogInfo( this.Name, "Verified doc" );
 					}
 				}
 			}
 			catch( System.Exception e )
 			{
-				LogError( e.Message );		
+				LogError( this.Name, e.Message );		
 			}
 			return strRetVal;
 		}//End-VerifyDocument
@@ -2104,14 +2084,13 @@ namespace PSL.DISCUS
 			WSProxyGenContext ctx = objCtx as WSProxyGenContext;
 			if( ctx == null )
 				throw new Exception( "Invalid context passed" );
-			// Verify context object valid
-			
+						
 			DynamicRequest req = new DynamicRequest();
-			req.serviceName = ctx.Name;
-			req.proxyPath = ctx.ProxyCache;
-			req.wsdlFile = ctx.WsdlUrl;
-			req.baseURL = ctx.AccessPointUrl;
-			
+			req.FilenameSource = ctx.Name;
+			req.ServiceName = ctx.Name;
+			req.ProxyPath = ctx.ProxyCache;
+			req.WsdlFile = ctx.WsdlUrl;
+						
 			// Create a proxy generator
 			ProxyGen pxyGen = new ProxyGen();
 			// Set mutator
@@ -2129,7 +2108,7 @@ namespace PSL.DISCUS
 		/// <returns>WSDetails instance</returns>
 		private WSDetails ServiceDetails( string strName )
 		{
-			InternalRegistry ireg = new InternalRegistry();
+			InternalRegistry ireg = new InternalRegistry( this.DatabaseConnectString );
 			WSDetails details = new WSDetails();
 
 			details.Location = ireg.GetServiceLocation( strName );
@@ -2149,7 +2128,7 @@ namespace PSL.DISCUS
 		/// <returns>WSDetails instance</returns>
 		private WSDetails GatekeeperDetails( string strName )
 		{
-			InternalRegistry ireg = new InternalRegistry();
+			InternalRegistry ireg = new InternalRegistry( this.DatabaseConnectString );
 			WSDetails details = new WSDetails();
 			
 			details.Location = ireg.GetGateKeeperLocation( strName );
@@ -2173,8 +2152,8 @@ namespace PSL.DISCUS
 
 			if( details.Location.ToLower().StartsWith( "http" ) )
 			{
-				if( m_bTraceOn )
-					TraceInfo( "Generating Proxy to " + details.Name + " located at " + details.Location + " AccessPoint: " + details.AccessPoint );		
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Generating Proxy to " + details.Name + " located at " + details.Location + " AccessPoint: " + details.AccessPoint );		
 			
 				// Set context for proxy generation
 				WSProxyGenContext ctx = new WSProxyGenContext();
@@ -2192,7 +2171,7 @@ namespace PSL.DISCUS
 				// Do not update location of security manager
 				if( details.Name.CompareTo( SECURITY_MANAGER ) != 0 )
 				{
-					InternalRegistry ireg = new InternalRegistry();
+					InternalRegistry ireg = new InternalRegistry( this.DatabaseConnectString );
 					// Update database location of service, point to
 					// dynamic proxy, change namespace the dynamic proxy namespace
 					ireg.UpdateServiceLocation( details.Name, details.Location );
@@ -2222,8 +2201,8 @@ namespace PSL.DISCUS
 
 			if( details.Location.ToLower().StartsWith( "http" ) )
 			{
-				if( m_bTraceOn )
-					TraceInfo( "Generating Proxy to " + details.Name + " located at " + details.Location + " AccessPoint: " + details.AccessPoint );		
+				if( this.TraceOn )
+					TraceInfo( this.Name, "Generating Proxy to " + details.Name + " located at " + details.Location + " AccessPoint: " + details.AccessPoint );		
 			
 				// Set context for proxy generation
 				WSProxyGenContext ctx = new WSProxyGenContext();
@@ -2241,7 +2220,7 @@ namespace PSL.DISCUS
 				// Do not update location of security manager
 				if( details.Name.CompareTo( SECURITY_MANAGER ) != 0 )
 				{
-					InternalRegistry ireg = new InternalRegistry();
+					InternalRegistry ireg = new InternalRegistry( this.DatabaseConnectString );
 					// Update database location of service, point to
 					// dynamic proxy, change namespace the dynamic proxy namespace
 					ireg.UpdateGateKeeperLocation( details.Name, details.Location );

@@ -8,24 +8,16 @@ namespace PSL.DISCUS.Logging
 	/// </summary>
 	public abstract class LoggerImpl:ILogger
 	{
-		protected string m_strSource = "";
-		public virtual string Source
-		{
-			get{ return m_strSource; }
-			set{ m_strSource = value; }
-		}
-
-		
 		public LoggerImpl()
 		{}
 
-		public virtual void LogError( string strMsg )
+		public virtual void LogError( string strSource, string strMsg )
 		{}
 		
-		public virtual void LogInfo( string strMsg )
+		public virtual void LogInfo( string strSource, string strMsg )
 		{}
 
-		public virtual void LogWarning( string strMsg )
+		public virtual void LogWarning( string strSource, string strMsg )
 		{}
 	}
 }

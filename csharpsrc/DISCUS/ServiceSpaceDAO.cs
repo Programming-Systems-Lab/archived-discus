@@ -3,11 +3,11 @@ using System.Data;
 using System.IO;
 using System.Xml;
 using System.Xml.XPath;
+using System.Text;
 using System.Diagnostics;
 using Microsoft.Data.Odbc;
 using PSL.DISCUS.Interfaces.DataAccess;
 using PSL.DISCUS.DynamicProxy;
-
 
 namespace PSL.DISCUS.DataAccess
 {
@@ -18,44 +18,15 @@ namespace PSL.DISCUS.DataAccess
 	/// </summary>
 	public class ServiceSpaceDAO:IDataObj
 	{
-		// Database configuration file
-		private string DATACONFIG = DConst.DBASECONFIG_FILE;
 		// Source name for event logging
 		private const string SOURCENAME = "DataAccess.ServiceSpaceDAO";
-		private EventLog m_EvtLog;
 		// Database connection string
 		private string m_strConnect = "";
 		
 		/* Constructor */
-		public ServiceSpaceDAO()
+		public ServiceSpaceDAO( string strDBConnect )
 		{
-			try
-			{
-				// Initialize event logging facility
-				m_EvtLog = new EventLog( "Application" );
-				m_EvtLog.Source = SOURCENAME;
-				
-				// Load config info, dbase, connection info etc.
-				FileStream fs = File.Open( DATACONFIG, FileMode.Open );
-				TextReader tr = new StreamReader( fs );
-				string strConfigFile = tr.ReadToEnd();
-
-				// Load config file
-				XmlDocument doc = new XmlDocument();
-				doc.LoadXml( strConfigFile );
-				
-				// Use XPath to extract what info we need
-				XmlNode root =  doc.DocumentElement;
-				// Get dbase connection info
-				m_strConnect = root.SelectSingleNode( "ConnectionString" ).InnerText;
-
-				fs.Close();
-			}
-			catch( System.Exception e )
-			{
-				// Report error
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
-			}
+				m_strConnect = strDBConnect;
 		}
 		
 		/* Implementation IDataObj ExecuteCommandText method
@@ -88,7 +59,7 @@ namespace PSL.DISCUS.DataAccess
 				// Report error
 				string strError = e.Message;
 				strError += " LAST QUERY: " + strCmd;
-				m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, strError, EventLogEntryType.Error );
 			}
 			return bRetVal;
 		}
@@ -116,7 +87,7 @@ namespace PSL.DISCUS.DataAccess
 				// Report error
 				string strError = e.Message;
 				strError += " LAST QUERY: " + strCmd;
-				m_EvtLog.WriteEntry( strError, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, strError, EventLogEntryType.Error );
 			}
 			return dr;
 		}// End ExecuteReader
@@ -136,31 +107,32 @@ namespace PSL.DISCUS.DataAccess
 			if( strGKName.Length == 0 || strGKLocation.Length == 0 )
 				return false;
 
-			string strSQL = "INSERT INTO ";
-			strSQL += DBC.SERVICE_SPACES_TABLE;
+			StringBuilder strSQL = new StringBuilder();
+			strSQL.Append( "INSERT INTO " );
+			strSQL.Append( DBC.SERVICE_SPACES_TABLE );
 			
-			strSQL += "(" + DBC.SS_GK_NAME + ",";
+			strSQL.Append( "(" + DBC.SS_GK_NAME + "," );
 
 			if( strGKNamespace.Length > 0 )
-				strSQL += DBC.SS_GK_NAMESPACE + ",";
+				strSQL.Append( DBC.SS_GK_NAMESPACE + "," );
 			
 			if( strGKAccessPoint.Length > 0 )
-				strSQL += DBC.SS_GK_ACCESSPOINT + ",";
+				strSQL.Append( DBC.SS_GK_ACCESSPOINT + "," );
 
-			strSQL += DBC.SS_GK_LOCATION + ")";
+			strSQL.Append( DBC.SS_GK_LOCATION + ")" );
 			
-			strSQL += " VALUES(";
-			strSQL += "'" + DBUtil.MakeStringSafe( strGKName ) + "'" + ",";
+			strSQL.Append( " VALUES(" );
+			strSQL.Append( "'" + DBUtil.MakeStringSafe( strGKName ) + "'" + "," );
 
 			if( strGKNamespace.Length > 0 )
-				strSQL += "'" + DBUtil.MakeStringSafe( strGKNamespace ) + "'" + ",";
+				strSQL.Append( "'" + DBUtil.MakeStringSafe( strGKNamespace ) + "'" + "," );
 
 			if( strGKAccessPoint.Length > 0 )
-				strSQL += "'" + DBUtil.MakeStringSafe( strGKAccessPoint ) + "'" + ",";
+				strSQL.Append( "'" + DBUtil.MakeStringSafe( strGKAccessPoint ) + "'" + "," );
 
-			strSQL += "'" + DBUtil.MakeStringSafe( strGKLocation ) + "'" + ")";
+			strSQL.Append( "'" + DBUtil.MakeStringSafe( strGKLocation ) + "'" + ")" );
 
-			bRetVal = ExecuteCommandText( strSQL );
+			bRetVal = ExecuteCommandText( strSQL.ToString() );
 
 			return bRetVal;
 		}
@@ -175,11 +147,12 @@ namespace PSL.DISCUS.DataAccess
 		{
 			bool bRetVal = false;
 			
-			string strSQL = "DELETE FROM ";
-			strSQL += DBC.SERVICE_SPACES_TABLE;
-			strSQL += " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'";
+			StringBuilder strSQL = new StringBuilder();
+			strSQL.Append( "DELETE FROM " );
+			strSQL.Append( DBC.SERVICE_SPACES_TABLE );
+			strSQL.Append( " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'" );
 
-			bRetVal = ExecuteCommandText( strSQL );
+			bRetVal = ExecuteCommandText( strSQL.ToString() );
 
 			return bRetVal;
 		}
@@ -191,12 +164,13 @@ namespace PSL.DISCUS.DataAccess
 			if( strGKAccessPoint.Length == 0 )
 				return false;
 			
-			string strSQL = "UPDATE ";
-			strSQL += DBC.SERVICE_SPACES_TABLE;
-			strSQL += " SET " + DBC.SS_GK_ACCESSPOINT + "=" + "'" + DBUtil.MakeStringSafe( strGKAccessPoint ) + "'";
-			strSQL += " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'";
+			StringBuilder strSQL = new StringBuilder();
+			strSQL.Append( "UPDATE " );
+			strSQL.Append( DBC.SERVICE_SPACES_TABLE );
+			strSQL.Append( " SET " + DBC.SS_GK_ACCESSPOINT + "=" + "'" + DBUtil.MakeStringSafe( strGKAccessPoint ) + "'" );
+			strSQL.Append( " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'" );
 
-			bRetVal = ExecuteCommandText( strSQL );
+			bRetVal = ExecuteCommandText( strSQL.ToString() );
 
 			return bRetVal;
 		}
@@ -215,12 +189,13 @@ namespace PSL.DISCUS.DataAccess
 			if( strGKLocation.Length == 0 )
 				return false;
 			
-			string strSQL = "UPDATE ";
-			strSQL += DBC.SERVICE_SPACES_TABLE;
-			strSQL += " SET " + DBC.SS_GK_LOCATION + "=" + "'" + DBUtil.MakeStringSafe( strGKLocation ) + "'";
-			strSQL += " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'";
+			StringBuilder strSQL = new StringBuilder();
+			strSQL.Append( "UPDATE " );
+			strSQL.Append( DBC.SERVICE_SPACES_TABLE );
+			strSQL.Append( " SET " + DBC.SS_GK_LOCATION + "=" + "'" + DBUtil.MakeStringSafe( strGKLocation ) + "'" );
+			strSQL.Append( " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'" );
 
-			bRetVal = ExecuteCommandText( strSQL );
+			bRetVal = ExecuteCommandText( strSQL.ToString() );
 
 			return bRetVal;
 		}
@@ -232,12 +207,13 @@ namespace PSL.DISCUS.DataAccess
 			if( strGKNamespace.Length == 0 )
 				return false;
 			
-			string strSQL = "UPDATE ";
-			strSQL += DBC.SERVICE_SPACES_TABLE;
-			strSQL += " SET " + DBC.SS_GK_NAMESPACE + "=" + "'" + DBUtil.MakeStringSafe( strGKNamespace ) + "'";
-			strSQL += " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'";
+			StringBuilder strSQL = new StringBuilder();
+			strSQL.Append( "UPDATE " );
+			strSQL.Append( DBC.SERVICE_SPACES_TABLE );
+			strSQL.Append( " SET " + DBC.SS_GK_NAMESPACE + "=" + "'" + DBUtil.MakeStringSafe( strGKNamespace ) + "'" );
+			strSQL.Append( " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'" );
 
-			bRetVal = ExecuteCommandText( strSQL );
+			bRetVal = ExecuteCommandText( strSQL.ToString() );
 
 			return bRetVal;
 		}
@@ -249,11 +225,12 @@ namespace PSL.DISCUS.DataAccess
 
 			try
 			{
-				string strSQL = "SELECT " + DBC.SS_GK_ACCESSPOINT;
-				strSQL += " FROM " + DBC.SERVICE_SPACES_TABLE;
-				strSQL += " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'";
+				StringBuilder strSQL = new StringBuilder();
+				strSQL.Append( "SELECT " + DBC.SS_GK_ACCESSPOINT );
+				strSQL.Append( " FROM " + DBC.SERVICE_SPACES_TABLE );
+				strSQL.Append( " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'" );
 			
-				dr = ExecuteReader( strSQL );
+				dr = ExecuteReader( strSQL.ToString() );
 				if( dr != null )
 				{
 					dr.Read(); // move reader past BOF to first record
@@ -266,7 +243,7 @@ namespace PSL.DISCUS.DataAccess
 			catch( System.Exception e )
 			{
 				// Report error
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, e.Message, EventLogEntryType.Error );
 			}
 			finally // cleanup after exception handled
 			{
@@ -291,11 +268,12 @@ namespace PSL.DISCUS.DataAccess
 
 			try
 			{
-				string strSQL = "SELECT " + DBC.SS_GK_LOCATION;
-				strSQL += " FROM " + DBC.SERVICE_SPACES_TABLE;
-				strSQL += " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'";
+				StringBuilder strSQL = new StringBuilder();
+				strSQL.Append( "SELECT " + DBC.SS_GK_LOCATION );
+				strSQL.Append( " FROM " + DBC.SERVICE_SPACES_TABLE );
+				strSQL.Append( " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'" );
 			
-				dr = ExecuteReader( strSQL );
+				dr = ExecuteReader( strSQL.ToString() );
 				if( dr != null )
 				{
 					dr.Read(); // move reader past BOF to first record
@@ -308,7 +286,7 @@ namespace PSL.DISCUS.DataAccess
 			catch( System.Exception e )
 			{
 				// Report error
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, e.Message, EventLogEntryType.Error );
 			}
 			finally // cleanup after exception handled
 			{
@@ -329,11 +307,12 @@ namespace PSL.DISCUS.DataAccess
 
 			try
 			{
-				string strSQL = "SELECT " + DBC.SS_GK_NAMESPACE;
-				strSQL += " FROM " + DBC.SERVICE_SPACES_TABLE;
-				strSQL += " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'";
+				StringBuilder strSQL = new StringBuilder();
+				strSQL.Append( "SELECT " + DBC.SS_GK_NAMESPACE ); 
+				strSQL.Append( " FROM " + DBC.SERVICE_SPACES_TABLE );
+				strSQL.Append( " WHERE " + DBC.SS_GK_NAME + "=" + "'" + DBUtil.MakeStringSafe( strGKName ) + "'" );
 			
-				dr = ExecuteReader( strSQL );
+				dr = ExecuteReader( strSQL.ToString() );
 				if( dr != null )
 				{
 					dr.Read(); // move reader past BOF to first record
@@ -346,7 +325,7 @@ namespace PSL.DISCUS.DataAccess
 			catch( System.Exception e )
 			{
 				// Report error
-				m_EvtLog.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( SOURCENAME, e.Message, EventLogEntryType.Error );
 			}
 			finally // cleanup after exception handled
 			{

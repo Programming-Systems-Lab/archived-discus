@@ -10,9 +10,6 @@ namespace PSL.DISCUS.Logging
 	/// </summary>
 	public class UrlTracerImpl:TracerImpl
 	{
-		// In the event that something goes wrong sending data over the network
-		// record error in local event log
-		private EventLog m_EvtLogger;
 		private string m_strHostname = "";
 		public string Hostname
 		{
@@ -41,33 +38,16 @@ namespace PSL.DISCUS.Logging
 			}
 		}
 
-		public override string Source
-		{
-			get
-			{ return m_strSource; }
-
-			set
-			{ 
-				m_strSource = value; 
-				
-				if( m_strSource.Length == 0 )
-					throw new Exception( "Invalid Tracing Source" );
-			}
-		}
-
 		public UrlTracerImpl( LogTraceContext traceCtx )
 		{
-			m_EvtLogger = new EventLog( "Application" );
-			m_EvtLogger.Source = "PSL.DISCUS.Impl.Logging.UrlTracerImpl";
+			if( traceCtx.Hostname.Length == 0 || traceCtx.Port <= 0 )
+				throw new Exception( "Invalid Tracing Hostname and/or Port" );
 
 			m_strHostname = traceCtx.Hostname;
 			m_nPort = traceCtx.Port;
-
-			if( m_strHostname.Length == 0 || m_nPort <= 0 )
-				throw new Exception( "Invalid Tracing Hostname and/or Port" );
 		}
 
-		public override void TraceError( string strMsg )
+		public override void TraceError( string strSource, string strMsg )
 		{
 			string strXmlMsg = "";
 			try
@@ -79,7 +59,7 @@ namespace PSL.DISCUS.Logging
 				// strXmlMsg += "<Message><![CDATA[" + strMsg + "]]></Message>\n"; // Set message
 			
 				// TODO: Remove later...for demo only
-				strXmlMsg += "TRACE_" + m_strSource + " " + strMsg;
+				strXmlMsg += "TRACE_" + strSource + " " + strMsg;
 
 				// Send message (using TCP)
 				TcpClient clientSocket = new TcpClient( m_strHostname, m_nPort );
@@ -91,11 +71,11 @@ namespace PSL.DISCUS.Logging
 			}
 			catch( Exception e )
 			{
-				m_EvtLogger.WriteEntry( "Error: " + e.Message + " occurred while sending data: " + strXmlMsg, EventLogEntryType.Error );
+				EventLog.WriteEntry( strSource, "Error: " + e.Message + " occurred while sending data: " + strXmlMsg, EventLogEntryType.Error );
 			}
 		}
 
-		public override void TraceInfo( string strMsg )
+		public override void TraceInfo( string strSource, string strMsg )
 		{
 			string strXmlMsg = "";
 			try
@@ -107,7 +87,7 @@ namespace PSL.DISCUS.Logging
 				// strXmlMsg += "<Message><![CDATA[" + strMsg + "]]></Message>\n"; // Set message
 
 				// TODO: Remove later...for demo only
-				strXmlMsg += "TRACE_" + m_strSource + " " + strMsg;
+				strXmlMsg += "TRACE_" + strSource + " " + strMsg;
 
 				// Send message (using TCP)
 				TcpClient clientSocket = new TcpClient( m_strHostname, m_nPort );
@@ -119,11 +99,11 @@ namespace PSL.DISCUS.Logging
 			}
 			catch( Exception e )
 			{
-				m_EvtLogger.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( strSource, e.Message, EventLogEntryType.Error );
 			}
 		}
 
-		public override void TraceWarning( string strMsg )
+		public override void TraceWarning( string strSource, string strMsg )
 		{
 			string strXmlMsg = "";
 			try
@@ -135,7 +115,7 @@ namespace PSL.DISCUS.Logging
 				// strXmlMsg += "<Message><![CDATA[" + strMsg + "]]></Message>\n"; // Set message
 
 				// TODO: Remove later...for demo only
-				strXmlMsg += "TRACE_" + m_strSource + " " + strMsg;
+				strXmlMsg += "TRACE_" + strSource + " " + strMsg;
 
 				// Send message (using TCP)
 				TcpClient clientSocket = new TcpClient( m_strHostname, m_nPort );
@@ -147,7 +127,7 @@ namespace PSL.DISCUS.Logging
 			}
 			catch( Exception e )
 			{
-				m_EvtLogger.WriteEntry( e.Message, EventLogEntryType.Error );
+				EventLog.WriteEntry( strSource, e.Message, EventLogEntryType.Error );
 			}
 		}
 	}
