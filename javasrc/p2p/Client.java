@@ -17,6 +17,7 @@ import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
 import org.w3c.dom.Element;
 import org.w3c.dom.*;
+import org.w3c.dom.Document;
 import psl.discus.javasrc.security.*;
 import psl.discus.javasrc.shared.FakeDataSource;
 import psl.discus.javasrc.shared.DAOException;
@@ -44,7 +45,7 @@ import java.util.*;
  */
 public class Client implements PipeMsgListener {
 
-    private static Logger logger = Logger.getLogger(Client.class);
+    private static final Logger logger = Logger.getLogger(Client.class);
 
     private PeerGroup netPeerGroup = null;
 
@@ -65,10 +66,19 @@ public class Client implements PipeMsgListener {
     private Element inputPipeXMLAd;
     private XMLSerializer xmlSerializer;
 
+    /**
+     * Driver method for testing
+     */
     public static void main(String args[]) {
 
         logger.debug("Starting Client peer ....");
-        Client myapp = new Client(new FakeDataSource());
+        Client client = new Client(new FakeDataSource());
+
+        // dummy XML element for sending
+        Document doc = client.db.newDocument();
+        Element query = doc.createElement("foobar");
+        Text text  = doc.createTextNode("hello there");
+        query.appendChild(text);
 
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -76,7 +86,7 @@ public class Client implements PipeMsgListener {
             while ((line = reader.readLine()) != null) {
 
                 if (line.equals(CMD_MESSAGE)) {
-                    myapp.sendMessageToAll("hi there");
+                    client.sendQuery(Server.ENVELOPE_TAG, query);
                 } else if (line.equals(CMD_QUIT)) {
                     System.exit(0);
                 }
@@ -130,14 +140,15 @@ public class Client implements PipeMsgListener {
     }
 
     private void startJxta() {
+
+        logger.debug("Starting jxta...");
+
         try {
             // create, and Start the default jxta NetPeerGroup
             netPeerGroup = PeerGroupFactory.newNetPeerGroup();
         } catch (PeerGroupException e) {
-            // could not instanciate the group, print the stack and exit
-            logger.debug("fatal error : group creation failure");
             e.printStackTrace();
-            System.exit(1);
+            throw new RuntimeException("fatal error : group creation failure");
         }
 
         // get the discovery, and pipe service
@@ -147,7 +158,7 @@ public class Client implements PipeMsgListener {
         // Load locally-cached advertisments
         // NOTE: this is commented out because unfortunately JXTA will cache all
         // received advertisements, even the ones that we want to ignore,
-        // so we need to keep the ones we want to cache separately.
+        // so we need to keep the ones we want to cache separately (in the database)
         /*try {
             Enumeration ads = discoveryService.getLocalAdvertisements(DiscoveryService.ADV,
                     "Name", "JXTASPEC:" + Server.SERVICE_NAME);
@@ -163,6 +174,8 @@ public class Client implements PipeMsgListener {
 
         ServiceFinder finder = new ServiceFinder();
         finder.start();
+
+        logger.debug("jxta started.");
 
     }
 
@@ -204,7 +217,7 @@ public class Client implements PipeMsgListener {
                         AdvertisementFactory.newAdvertisement(xmlMimeMediaType, is);
                 is.close();
             } catch (Exception e) {
-                logger.fatal("failed to read/parse pipe advertisement");
+                logger.fatal("failed to read or parse pipe advertisement");
                 return;
             }
         }
@@ -233,23 +246,23 @@ public class Client implements PipeMsgListener {
 
     }
 
-    private void sendMessageToAll(String queryString) {
+    public void sendQuery(String tag, Element contents) {
 
         final int BIND_TIMEOUT = 15000;
 
         for (Enumeration endpoints = knownPipeAds.elements(); endpoints.hasMoreElements();) {
             try {
                 ServiceSpaceEndpoint endpoint = (ServiceSpaceEndpoint) endpoints.nextElement();
-                PipeAdvertisement pipeAdv = (PipeAdvertisement) endpoint.getPipeAdvertisement();
+                PipeAdvertisement pipeAd = (PipeAdvertisement) endpoint.getPipeAdvertisement();
 
                 // create the output pipe endpoint to connect
                 // to the server, try 3 times to bind the pipe endpoint to
                 // the listening endpoint pipe of the service
                 OutputPipe myPipe = null;
                 for (int i = 0; i < 3; i++) {
-                    logger.debug("Trying to bind to pipe...");
+                    logger.debug("Trying to bind to pipe for service space id " + endpoint.getServiceSpaceId() + "...");
                     try {
-                        myPipe = pipeService.createOutputPipe(pipeAdv, BIND_TIMEOUT);
+                        myPipe = pipeService.createOutputPipe(pipeAd, BIND_TIMEOUT);
                         logger.debug("bound to pipe");
                         break;
                     } catch (java.io.IOException e) {
@@ -257,7 +270,12 @@ public class Client implements PipeMsgListener {
                     }
                 }
                 if (myPipe == null) {
-                    logger.debug("Could not resolve pipe endpoint");
+                    logger.debug("Could not resolve pipe endpoint - removing");
+
+                    // this pipe seems outdated - remove it from the "known pipes" and the datab
+                    knownPipeAds.remove(pipeAd.getID());
+                    clientDAO.removePipeAdvertisement(pipeAd);
+
                     continue;
                 }
 
@@ -267,8 +285,8 @@ public class Client implements PipeMsgListener {
                 org.w3c.dom.Document doc = db.newDocument();
                 Element main = doc.createElement(Server.DATA_TAG);
 
-                Element query = doc.createElement(Server.QUERY_TAG);
-                query.appendChild(doc.createTextNode(queryString));
+                Node query = doc.importNode(contents,true);
+
                 main.appendChild(query);
 
                 Node ad = doc.importNode(inputPipeXMLAd, true);

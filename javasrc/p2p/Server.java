@@ -30,11 +30,12 @@ import javax.sql.DataSource;
 
 import psl.discus.javasrc.security.*;
 import psl.discus.javasrc.shared.FakeDataSource;
+import psl.discus.javasrc.uddi.*;
 
 /**
  *
  * Initial implementation of the JXTA server for listening to p2p UDDI requests
- * Most of this was borrowed directly from the JXTA Programmer's Guide, http://www.jxta.org/jxtaprogguide_final.pdf
+ * Most of this was borrowed from the JXTA Programmer's Guide, http://www.jxta.org/jxtaprogguide_final.pdf
  *
  * @author matias
  *
@@ -53,7 +54,7 @@ public class Server implements PipeMsgListener {
     private DiscoveryService discoveryService;
     private PipeService pipeService;
 
-    private static Logger logger = Logger.getLogger(Server.class);
+    private static final Logger logger = Logger.getLogger(Server.class);
     public static final String SERVICE_NAME = "discusUddi";
     public static final String MODULE_ADV_FILE = "module.adv";
     public static final String MODULE_SPEC_ADV_FILE = "modulespec.adv";
@@ -63,13 +64,15 @@ public class Server implements PipeMsgListener {
     //public static final String INPUT_PIPE_TAG = "InputPipe";
     public static final MimeMediaType xmlMimeMediaType = new MimeMediaType("text/xml");
     private DocumentBuilder db;
-    private SignatureManagerImpl signatureManager;
+    private SignatureManager signatureManager;
+    private MessageDispatcher messageDispatcher;
     private XMLSerializer xmlSerializer;
 
     public static final String PIPE_TAG = "jxta:PipeAdvertisement";
     public static final String MODULE_SPEC_ID_TAG = "ModuleSpecId";
     public static final String PIPE_ID_TAG = "PipeId";
     public static final String PARAM_TAG = "Parm";
+    public static final String ENVELOPE_TAG = "Envelope";
 
 
     public static void main(String args[]) {
@@ -78,6 +81,8 @@ public class Server implements PipeMsgListener {
         myapp.startJxta();
 
     }
+
+
 
     public Server(DataSource ds) {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -94,6 +99,13 @@ public class Server implements PipeMsgListener {
         }
         catch (SignatureManagerException e) {
             throw new RuntimeException("Could not initialize SignatureManager: " + e);
+        }
+
+        try {
+            logger.debug("Instantiating MessageDispatcher...");
+            messageDispatcher = new MessageDispatcher(signatureManager);
+        } catch (MessageDispatcherException e) {
+            throw new RuntimeException("Could not initialize MessageDispatcher: " + e);
         }
 
         xmlSerializer = new XMLSerializer();
@@ -284,6 +296,8 @@ public class Server implements PipeMsgListener {
                     xmlSerializer.serialize(dataDoc);
                     out.close();
 
+                    // it's sad, but we have to encode it because otherwise signature gets mangled
+                    // and cannot be verified.... sort of defeats the whole point of XML signatures...
                     String encoded = Base64.encodeBase64(out.toByteArray());
 
                     StructuredTextDocument signatureDoc = (StructuredTextDocument)
@@ -387,48 +401,77 @@ public class Server implements PipeMsgListener {
         }
         catch (SignatureManagerException e) {
             logger.warn("Could not verify signature: " + e);
+
             // for now we continue anyway
+            logger.warn("continuing anyway!");
         }
 
         if (response != null) {
-            doc = response.document;
+            doc = response.getDocument();
         }
 
-        // extract inputpipe element
-        NodeList list = doc.getElementsByTagName(PIPE_TAG);
-        if (list == null || list.getLength() == 0) {
-            logger.warn("Did not find pipe element in document");
-            return;
+        String uddiResponse = null;
+        {
+            // extract SOAP Envelope
+            logger.debug("extracting SOAP envelope");
+            NodeList list = doc.getElementsByTagName(ENVELOPE_TAG);
+            if (list == null || list.getLength() == 0) {
+                logger.error("did not find envelope element in document");
+                return;
+            }
+
+            Node envelopeNode = list.item(0);
+            org.w3c.dom.Document envelopeDoc = db.newDocument();
+            Node importedNode = envelopeDoc.importNode(envelopeNode,true);
+            envelopeDoc.appendChild(importedNode);
+
+
+            try {
+                uddiResponse = messageDispatcher.dispatchMessage(envelopeDoc, response.getSigner());
+            } catch (MessageDispatcherException e) {
+                logger.error("could not dispatch message to UDDI registry: " + e);
+                return;
+            }
         }
 
-        // Unfortunately JXTA makes it very hard to create PipeAdvertisements from existing XML...
-        // the only way is to give it the actual XML for the pipe, which means we need to extract it
-        // and feed it in a very inefficient way
+        {
+            // extract inputpipe element
+            logger.debug("extracting pipe element");
+            NodeList list = doc.getElementsByTagName(PIPE_TAG);
+            if (list == null || list.getLength() == 0) {
+                logger.error("did not find pipe element in document");
+                return;
+            }
 
-        Node pipeAdNode = list.item(0);
-        try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            out.write(new String("<?xml version=\"1.0\"?><!DOCTYPE jxta:PipeAdvertisement>").getBytes());
-            XMLUtils.outputDOM(pipeAdNode, out);
+            // Unfortunately JXTA makes it very hard to create PipeAdvertisements from existing XML...
+            // the only way is to give it the actual XML for the pipe, which means we need to extract it
+            // and feed it in a very inefficient way
 
-            logger.debug("creating pipeadvertisement from " + out.toString());
+            Node pipeAdNode = list.item(0);
+            try {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                out.write(new String("<?xml version=\"1.0\"?><!DOCTYPE jxta:PipeAdvertisement>").getBytes());
+                XMLUtils.outputDOM(pipeAdNode, out);
 
-            PipeAdvertisement clientPipeAd = (PipeAdvertisement)
-                    AdvertisementFactory.newAdvertisement(
-                            xmlMimeMediaType, new ByteArrayInputStream(out.toByteArray()));
+                logger.debug("creating pipeadvertisement from " + out.toString());
 
-            OutputPipe clientPipe = pipeService.createOutputPipe(clientPipeAd, WAIT_TIMEOUT);
+                PipeAdvertisement clientPipeAd = (PipeAdvertisement)
+                        AdvertisementFactory.newAdvertisement(
+                                xmlMimeMediaType, new ByteArrayInputStream(out.toByteArray()));
 
-            Message outmsg = pipeService.createMessage();
-            outmsg.setString(DATA_TAG,"Hello there old chap!");
+                OutputPipe clientPipe = pipeService.createOutputPipe(clientPipeAd, WAIT_TIMEOUT);
 
-            clientPipe.send(outmsg);
-            logger.debug("sent message");
+                Message outmsg = pipeService.createMessage();
+                outmsg.setString(DATA_TAG,uddiResponse);
 
-        } catch (Exception e) {
-            logger.error("Could not create client pipe");
-            e.printStackTrace();
+                clientPipe.send(outmsg);
+                logger.debug("sent message");
+
+            } catch (Exception e) {
+                logger.error("Could not create client pipe");
+                e.printStackTrace();
+            }
         }
-
     }
+
 }

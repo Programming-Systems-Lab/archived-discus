@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
  */
 public class ClientDAO {
     private static final MimeMediaType xmlMimeMediaType = new MimeMediaType("text/xml");
-    private static Logger logger = Logger.getLogger(ClientDAO.class);
+    private static final Logger logger = Logger.getLogger(ClientDAO.class);
 
     private DataSource ds;
 
@@ -32,30 +32,57 @@ public class ClientDAO {
         throws DAOException {
 
         Connection con = null;
-            PreparedStatement stmt = null;
+        PreparedStatement stmt = null;
 
-            try {
-                con = ds.getConnection();
-                String sql = "INSERT INTO ServiceSpaceEndpoints(serviceSpaceId,pipeAd) VALUES(?)";
-                stmt = con.prepareStatement(sql);
+        try {
+            con = ds.getConnection();
+            String sql = "INSERT INTO ServiceSpaceEndpoints(serviceSpaceId,pipeAd) VALUES(?,?)";
+            stmt = con.prepareStatement(sql);
 
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                pipeAd.getDocument(xmlMimeMediaType).sendToStream(out);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            pipeAd.getDocument(xmlMimeMediaType).sendToStream(out);
 
-                stmt.setInt(1,serviceSpaceId);
-                stmt.setString(2,out.toString());
+            stmt.setInt(1,serviceSpaceId);
+            stmt.setString(2,out.toString());
 
-                stmt.executeUpdate();
+            stmt.executeUpdate();
 
-                return new ServiceSpaceEndpointImpl(serviceSpaceId, pipeAd);
+            return new ServiceSpaceEndpointImpl(serviceSpaceId, pipeAd);
 
-            } catch (Exception e) {
-                throw new DAOException("Could not store pipe advertisement: " + e.getMessage());
-            }
-            finally {
-                try { if (stmt != null) stmt.close(); } catch (SQLException e) { }
-                try { if (con != null) con.close(); } catch (SQLException e) { }
-            }
+        } catch (Exception e) {
+            throw new DAOException("Could not store pipe advertisement: " + e.getMessage());
+        }
+        finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) { }
+            try { if (con != null) con.close(); } catch (SQLException e) { }
+        }
+    }
+
+     public void removePipeAdvertisement(PipeAdvertisement pipeAd)
+        throws DAOException {
+
+        Connection con = null;
+        PreparedStatement stmt = null;
+
+        try {
+            con = ds.getConnection();
+            String sql = "DELETE FROM ServiceSpaceEndpoints WHERE pipeAd=?";
+            stmt = con.prepareStatement(sql);
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            pipeAd.getDocument(xmlMimeMediaType).sendToStream(out);
+
+            stmt.setString(1,out.toString());
+
+            stmt.executeUpdate();
+
+        } catch (Exception e) {
+            throw new DAOException("Could not remove pipe advertisement: " + e.getMessage());
+        }
+        finally {
+            try { if (stmt != null) stmt.close(); } catch (SQLException e) { }
+            try { if (con != null) con.close(); } catch (SQLException e) { }
+        }
     }
 
     public Vector getServiceSpaceEndpoints()
