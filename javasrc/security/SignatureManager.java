@@ -40,12 +40,12 @@ public class SignatureManager {
     public static final int STATUS_OK = 0;
     public static final int STATUS_ERROR = -1;
 
-    // TODO: passwords should be gotten from somewhere else
+    // TODO: these settings should be gotten from somewhere else
     private static final String KEYSTORE_TYPE = "JKS";
     private static final String KEYSTORE_PASS = "discus";
-    private static final String PRIVATEKEY_ALIAS = "discus";
-    private static final String PRIVATEKEY_PASS = "discus";
-    private static final String CERT_ALIAS = "discus";
+    private static final String PRIVATEKEY_ALIAS = "100";
+    private static final String PRIVATEKEY_PASS = "foobar";
+    private static final String CERT_ALIAS = "100";
 
     // TODO: get keystore from database!
     private static final String keystoreFileName = "keystore.jks";
@@ -68,9 +68,13 @@ public class SignatureManager {
 
                 FileInputStream fis = new FileInputStream(keystoreFile);
                 keyStore.load(fis, KEYSTORE_PASS.toCharArray());
+                if (keyStore == null)
+                    throw new SignatureManagerException("Could not load keystore");
 
-                privateKey = (PrivateKey) keyStore.getKey(PRIVATEKEY_ALIAS,
-                                                    PRIVATEKEY_PASS.toCharArray());
+                privateKey = (PrivateKey) keyStore.getKey(PRIVATEKEY_ALIAS,PRIVATEKEY_PASS.toCharArray());
+                if (privateKey == null)
+                    throw new SignatureManagerException("Could not get PrivateKey");
+
             } catch (Exception e) {
                 throw new SignatureManagerException(e);
             }
@@ -140,7 +144,9 @@ public class SignatureManager {
                 X509Certificate cert =
                         (X509Certificate) keyStore.getCertificate(CERT_ALIAS);
 
-                //sig.addKeyInfo(cert);
+                if (cert == null)
+                    throw new SignatureManagerException("Could not get signing certificate!");
+
                 sig.addKeyInfo(cert);
                 Util.debug("Start signing");
                 sig.sign(privateKey);

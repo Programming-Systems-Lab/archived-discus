@@ -12,12 +12,6 @@ import java.rmi.RemoteException;
 public interface SecurityManagerService extends Remote  {
 
     /**
-     * Assumes treaty document is not signed (for testing)
-     */
-    public String[] verifyTreaty(String treatyXML)
-            throws RemoteException;
-
-    /**
      * When a service space is going to invoke services on another service space, it first
      * creates a treaty for that service space containing a description of the services and
      * methods it wants to access.
@@ -31,6 +25,16 @@ public interface SecurityManagerService extends Remote  {
      */
     public String[] verifyTreaty(String treatyXML, boolean signed)
             throws RemoteException;
+
+    /**
+     * Checks if a requesting service space has permission to invoke a certain method
+     * with certain arguments on a specified service, according to the treaty that the
+     * service space created initially.
+     * @returns an array of 2 strings, where the first string is the status code (0 is OK)
+     * and the second string is the error message, if any
+     */
+    public String[] doRequestCheck(String requestXML, boolean signed)
+        throws RemoteException;
 
     /**
      * Signs the given XML document with this service space's private key.
@@ -48,4 +52,6 @@ public interface SecurityManagerService extends Remote  {
      */
     public String[] verifyDocument(String signedXML)
         throws RemoteException;
+
+
 }

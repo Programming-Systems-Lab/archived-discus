@@ -48,20 +48,6 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
 
     }
 
-    /**
-     * For testing, assumes treatyXML is NOT signed
-     */
-    public String[] verifyTreaty(String treatyXML)
-        throws RemoteException {
-
-        // HACK: there seems to be a bug in the JWSDP that converts newlines to spaces in XML tags...
-        // convert back to newlines!
-        treatyXML = Util.replaceString(treatyXML,"> <", ">\n<");
-
-        return verifyTreaty(treatyXML, false);
-
-    }
-
     public String[] verifyTreaty(String treatyXML, boolean signed)
         throws RemoteException {
 
@@ -74,6 +60,23 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
 
         try {
             return securityManager.verifyTreaty(treatyXML,signed);
+        } catch (SecurityManagerException e) {
+            throw new RemoteException("Error", e);
+        }
+    }
+
+    public String[] doRequestCheck(String requestXML, boolean signed)
+        throws RemoteException {
+
+        if (requestXML == null)
+            throw new RemoteException("xml parameter is null");
+
+        // HACK: there seems to be a bug in the JWSDP that converts newlines to spaces in XML tags...
+        // convert back to newlines!
+        requestXML = Util.replaceString(requestXML,"> <", ">\n<");
+
+        try {
+            return securityManager.doRequestCheck(requestXML, signed);
         } catch (SecurityManagerException e) {
             throw new RemoteException("Error", e);
         }
@@ -113,19 +116,10 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
             throw new RemoteException("Error", e);
         }
     }
+
+
+
     /*
-    public String doRequestCheck(String signedRequestXMLDoc)
-        throws RemoteException {
-
-        return securityManager.doRequestCheck(signedRequestXMLDoc);
-    }
-
-    public String doResponseCheck(String signedResponseXMLDoc)
-        throws RemoteException {
-
-        return securityManager.doResponseCheck(signedResponseXMLDoc);
-    }
-
     public String addServiceSpace(String serviceSpaceXMLDoc)
         throws RemoteException {
 

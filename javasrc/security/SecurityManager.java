@@ -18,8 +18,8 @@ import org.w3c.dom.Document;
  */
 public interface SecurityManager {
 
-    public static final int STATUS_OK = 0;
-    public static final int STATUS_ERROR = -1;
+    public static final String STATUS_OK = "0";
+    public static final String STATUS_ERROR = "-1";
 
 
 
@@ -38,23 +38,19 @@ public interface SecurityManager {
      * @returns an array of 2 strings, where the first string is the status code (0 is OK)
      * and the second string is the content (either treaty XML or error message)
      */
-    public String[] verifyTreaty(String signedTreatyXMLDoc, boolean signed)
+    public String[] verifyTreaty(String treatyXML, boolean signed)
             throws SecurityManagerException;
 
     /**
      * Checks if a requesting service space has permission to invoke a certain method
      * with certain arguments on a specified service, according to the treaty that the
      * service space created initially.
+     * @returns an array of 2 strings, where the first string is the status code (0 is OK)
+     * and the second string is the error message, if any
      */
-    public String doRequestCheck(String signedRequestXMLDoc)
+    public String[] doRequestCheck(String requestXML, boolean signed)
             throws SecurityManagerException;
 
-    /**
-     * Checks if the contents of the response to a request is allowed -- in particular, if all the
-     * arguments in the response are allowed for the requesting service space and the treaty.
-     */
-    public String doResponseCheck(String signedResponseXMLDoc)
-            throws SecurityManagerException;
 
     /*-----------------------------------------------------------------------------------------------*/
     /* Methods to modify the security matrix for this service space */
