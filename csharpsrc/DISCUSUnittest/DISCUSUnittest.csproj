@@ -125,16 +125,6 @@
                     BuildAction = "None"
                 />
                 <File
-                    RelPath = "PSLGatekeeper2.cs"
-                    SubType = "code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "SecurityManagerService.cs"
-                    SubType = "code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "Tester.cs"
                     SubType = "Code"
                     BuildAction = "Compile"

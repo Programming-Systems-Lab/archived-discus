@@ -11,7 +11,7 @@ using PSL.DISCUS.Impl.DynamicProxy;
 using PSL.DISCUS.Impl.DynamicProxy.Util;
 using System.Reflection;
 using System.Collections;
-using DynamicPxy;
+//using DynamicPxy;
 
 
 namespace DISCUSUnittest
@@ -84,16 +84,22 @@ namespace DISCUSUnittest
 
 			ExecServiceMethodRequestType e = new ExecServiceMethodRequestType();
 			// BNQuoteBinding
-			//e.TreatyID = 4;
-			//e.ServiceName = "BNQuoteService";
-			//e.MethodName = "getPrice";
-			//e.m_Parameter.Clear();
-			//e.m_Parameter.Add( "<?xml version=\"1.0\"?><string>1861005458</string>" );
+			e.TreatyID = -115276743;
+			e.ServiceName = "BNQuoteService";
+			e.MethodName = "getPrice";
+			e.m_Parameter.Clear();
+			e.m_Parameter.Add( "<?xml version=\"1.0\"?><string>1861005458</string>" );
 
-			//objRes = g.ExecuteServiceMethod( e.ToXml() );			
+			objRes = g.ExecuteServiceMethod( e.ToXml() );			
 
-			objRes = g.EnlistServicesByName( "<?xml version=\"1.0\"?><Treaty xmlns=\"http://localhost/Discus/Schema/Treaty.xsd\"><TreatyID>1000</TreatyID><ClientServiceSpace>myservicespace</ClientServiceSpace><ProviderServiceSpace>providerss</ProviderServiceSpace><ServiceInfo><ServiceName>service</ServiceName><ServiceMethod><MethodName>method</MethodName><Parameter>foo</Parameter><Parameter>bar</Parameter><NumInvokations>1</NumInvokations><Authorized>true</Authorized></ServiceMethod></ServiceInfo></Treaty>" );
+			//objRes = g.EnlistServicesByName( "<?xml version=\"1.0\"?><Treaty xmlns=\"http://localhost/Discus/Schema/Treaty.xsd\"><TreatyID>1000</TreatyID><ClientServiceSpace>myservicespace</ClientServiceSpace><ProviderServiceSpace>providerss</ProviderServiceSpace><ServiceInfo><ServiceName>service</ServiceName><ServiceMethod><MethodName>method</MethodName><Parameter>foo</Parameter><Parameter>bar</Parameter><NumInvokations>1</NumInvokations><Authorized>true</Authorized></ServiceMethod></ServiceInfo></Treaty>" );
 			
+			// Sql script for service invocation permission table
+			// insert into serviceinvokationpermission values(100,'BNQuoteService','getPrice','isbn',100000,'getPrice');
+			// insert into serviceinvokationpermission values(100,'XMethodsQuery','getAllServiceSummaries','',100000,'getAllServiceSummaries');
+			// insert into serviceinvokationpermission values(100,'XMethodsQuery','getServiceNamesByPublisher','PubName',100000,'getServiceNamesByPublisher');
+			// insert into serviceinvokationpermission values(100,'GeoCash','GetATMLocations','Zipcode',100000,'GetATMLocations');
+
 			// XMethodsQuery
 			/*e.ServiceName = "XMethodsQuery";
 			e.MethodName = "getAllServiceSummaries";
@@ -133,13 +139,16 @@ namespace DISCUSUnittest
 		{
 			try
 			{
-				 //SetupServiceSpace();
-				//TestServiceMethods();
+				//SetupServiceSpace();
+				//ResetServiceLocations();
+				TestServiceMethods();
 
-				PSL.DISCUS.Impl.GateKeeper.TreatyType t = new TreatyType();
 				
-				
-				
+
+
+
+
+			
 				//InternalRegistry ireg = new InternalRegistry();
 				//ireg.RegisterServiceMethod( "XMethodsQuery", "getServiceNamesByPublisher" );
 				//ireg.UpdateGateKeeperLocation( "PSLGatekeeper1", "http://localhost/PSLGatekeeper1/PSLGatekeeper1.asmx?WSDL" );
