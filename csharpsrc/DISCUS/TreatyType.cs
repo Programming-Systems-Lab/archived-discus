@@ -15,8 +15,8 @@ namespace PSL.DISCUS.Impl.GateKeeper
 	public class TreatyType
 	{
 		private int m_nTreatyID = 0;
+		
 		[XmlElementAttribute("TreatyID")]
-		[System.ComponentModel.DefaultValueAttribute(0)]
 		public int TreatyID
 		{
 			get
@@ -45,13 +45,13 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			set
 			{ m_strProviderServiceSpace = value; }
 		}
-		[XmlArrayAttribute("ServiceInfo")]
-		[XmlArrayItem(typeof(ServiceDataType))]
-		public ArrayList m_ServiceInfo;
-	
+		
+		[System.Xml.Serialization.XmlElementAttribute("ServiceInfo")]
+		public ServiceDataType[] m_ServiceInfo;
+		
 		public TreatyType()
 		{
-			m_ServiceInfo = new ArrayList();
+			m_nTreatyID = 0;
 		}
 		
 		public string ToXml()
@@ -82,41 +82,13 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			}
 			return strXml;
 		}
-
-		public void BuildFromXml( string strXml )
-		{
-			if( strXml.Length == 0 )
-				return;
-
-			// Create new XmlSerializer
-			XmlSerializer ser = new XmlSerializer( this.GetType() );
-			// Re-construct object
-			System.Xml.XmlReader xt = new XmlTextReader( strXml, XmlNodeType.Document, null );
-			xt.Read(); 
-			// Deserialize
-			Object objInst = ser.Deserialize( xt );
-			
-			TreatyType temp = objInst as TreatyType;
-			TreatyID = temp.TreatyID;
-			ClientServiceSpace = temp.ClientServiceSpace;
-			ProviderServiceSpace = temp.ProviderServiceSpace;
-			m_ServiceInfo.Clear();
-
-			for( int i = 0; i < temp.m_ServiceInfo.Count; i++ )
-			{
-				m_ServiceInfo.Add( temp.m_ServiceInfo[i] );
-			}
-			
-		}
 	}
-
-	[Serializable]
+	
 	[System.Xml.Serialization.XmlTypeAttribute(Namespace="http://localhost/Discus/Schema/Treaty.xsd")]
 	public class ServiceDataType 
 	{
 		public ServiceDataType()
 		{
-			m_ServiceMethod = new ArrayList();
 		}
 		
 		/// <remarks/>
@@ -129,18 +101,16 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			set
 			{ m_strServiceName = value; }
 		}
-		[XmlArrayAttribute("ServiceMethod")]
-		[XmlArrayItem(typeof(ServiceMethodDataType))]
-		public ArrayList m_ServiceMethod;
+		
+		[System.Xml.Serialization.XmlElementAttribute("ServiceMethod")]
+		public ServiceMethodDataType[] m_ServiceMethod;
     }
 	
-	[Serializable]
 	[System.Xml.Serialization.XmlTypeAttribute(Namespace="http://localhost/Discus/Schema/Treaty.xsd")]
 	public class ServiceMethodDataType 
 	{
 		public ServiceMethodDataType()
 		{
-			m_Parameter = new ArrayList();
 		}
 		
 		/// <remarks/>
@@ -154,9 +124,8 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			{ m_strMethodName = value; }
 		}
     
-		[XmlArrayAttribute("Parameter")]
-		[XmlArrayItem(typeof(string))]
-		public ArrayList m_Parameter;
+		[System.Xml.Serialization.XmlElementAttribute("Parameter")]
+		public string[] m_Parameter;
 		private int m_nNumInvokations = 1;
 		[XmlElementAttribute("NumInvokations")]
 		[System.ComponentModel.DefaultValueAttribute(1)]

@@ -7,7 +7,6 @@ namespace PSL.DISCUS.Interfaces
 	/// </summary>
 	public interface IExecuteService
 	{
-		// Object ExecuteServiceMethod( int nTreatyID, string strServiceName, string strServiceMethod, Object[] parameters );
 		string ExecuteServiceMethod( string strXMLExecRequest );
 	}
 }

@@ -3,11 +3,11 @@ using System;
 namespace PSL.DISCUS.Interfaces
 {
 	/// <summary>
-	/// Summary description for IExecuteWorkflow.
+	/// IExecuteWorkflow interface implemented by all
+	/// entities that need to execute alpha protocols
 	/// </summary>
 	public interface IExecuteWorkflow
 	{
-		//int ExecuteAlphaProtocol( string strXMLProtocol );
 		string [] ExecuteAlphaProtocol( string strXMLProtocol );
 	}
 }

@@ -30,10 +30,6 @@ namespace PSL.DISCUS.Impl.DataAccess
 		public static string SS_GK_NAMESPACE		= "SS_GK_NAMESPACE";
 		public static string SS_GK_LOCATION			= "SS_GK_LOCATION";
 		public static string SS_GK_ACCESSPOINT		= "SS_GK_ACCESSPOINT";
-
-		// Treaty Data Table
-		public static string TD_TREATY_ID			= "TD_TREATY_ID";
-		public static string TD_XML_TREATY			= "TD_XML_TREATY";
-		public static string TD_TREATY_STATUS		= "TD_TREATY_STATUS";
+	
 	}// End DBC
 }
