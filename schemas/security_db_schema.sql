@@ -4,7 +4,8 @@ CREATE TABLE ServiceInvokationPermission (
     serviceName         varchar(32) NOT NULL,
     methodName          varchar(32) NOT NULL,
     params              varchar NOT NULL,
-    numInvokations      integer NOT NULL
+    numInvokations      integer NOT NULL,
+    methodImplementation varchar(64) NOT NULL
 );
 
 CREATE TABLE Treaties (

@@ -84,7 +84,7 @@ implements java.io.Serializable
         throws org.exolab.castor.xml.MarshalException, org.exolab.castor.xml.ValidationException
     {
         return (psl.discus.javasrc.schemas.treaty.ServiceInfo) Unmarshaller.unmarshal(psl.discus.javasrc.schemas.treaty.ServiceInfo.class, reader);
-    } //-- psl.discus.javasrc.schemas.treaty.ServiceInfo unmarshal(java.io.Reader)
+    } //-- psl.discus.javasrc.schemas.treaty.ServiceInfo unmarshal(java.io.Reader) 
 
     /**
     **/

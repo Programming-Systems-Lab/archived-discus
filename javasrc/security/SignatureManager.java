@@ -37,6 +37,9 @@ import psl.discus.javasrc.shared.Util;
  */
 public class SignatureManager {
 
+    public static final int STATUS_OK = 0;
+    public static final int STATUS_ERROR = -1;
+
     // TODO: passwords should be gotten from somewhere else
     private static final String KEYSTORE_TYPE = "JKS";
     private static final String KEYSTORE_PASS = "discus";
@@ -84,10 +87,12 @@ public class SignatureManager {
 
 
     /**
-     * Web-service implementation using Strings only
-     * (see signDocument below)
+     * (For web-service calls)
+     * Signs the given XML document with this service space's private key.
+     * @returns an array of two Strings, where the first is a status code (0 is OK)
+     * and the second is either the signed XML document or the error message.
      */
-    public String signDocument(String xml)
+    public String[] signDocument(String xml)
         throws SignatureManagerException {
 
         try {
@@ -98,10 +103,10 @@ public class SignatureManager {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             XMLUtils.outputDOM(signedDoc,out);
 
-            return out.toString();
+            return new String[] { String.valueOf(STATUS_OK), out.toString() };
 
         } catch (Exception e) {
-            throw new SignatureManagerException(e);
+            return new String[] { String.valueOf(STATUS_ERROR), e.getMessage() } ;
         }
 
     }
@@ -149,8 +154,11 @@ public class SignatureManager {
     }
 
     /**
-     * For web-service calls... returns an array with the first element being the alias that
-     * matches the signature, and the second element the xml document without the signature
+     * (For web-service calls)
+     * Verifies a signed XML document and returns the document and the id of the signing service space
+     * @returns an array three Strings, where the first is a status code (0 is OK),
+     * the second element is the signing service space id, and the third is is
+     * the given xml document but without the signature, or the error message.
      */
     public String[] verifyDocument(String xml)
         throws SignatureManagerException {
@@ -167,18 +175,18 @@ public class SignatureManager {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             XMLUtils.outputDOM(vr.document,out);
 
-            String[] ret = new String[2];
-            ret[0] = vr.alias;
-            ret[1] = out.toString();
+            return new String[] { String.valueOf(STATUS_OK), vr.alias, out.toString() };
 
-            return ret;
         } catch (Exception e) {
-            throw new SignatureManagerException(e);
+            return new String[] { String.valueOf(STATUS_ERROR), "0", e.getMessage() };
         }
 
 
     }
 
+    /**
+     * Verifies a signed XML document and returns the document and the id of the signing service space
+     */
     public VerificationResponse verifyDocument(Document signedDoc)
             throws SignatureManagerException {
 

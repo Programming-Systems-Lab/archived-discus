@@ -156,9 +156,11 @@ public class ServiceMethodDataTypeDescriptor extends org.exolab.castor.xml.util.
             {
                 try {
                     ServiceMethodDataType target = (ServiceMethodDataType) object;
-                    // ignore null values for non optional primitives
-                    if (value == null) return;
-                    
+                    // if null, use delete method for optional primitives 
+                    if (value == null) {
+                        target.deleteNumInvokations();
+                        return;
+                    }
                     target.setNumInvokations( ((Integer)value).intValue());
                 }
                 catch (Exception ex) {
@@ -171,13 +173,11 @@ public class ServiceMethodDataTypeDescriptor extends org.exolab.castor.xml.util.
         } );
         desc.setHandler(handler);
         desc.setNameSpaceURI("http://localhost/Discus/Schema/Treaty.xsd");
-        desc.setRequired(true);
         desc.setMultivalued(false);
         addFieldDescriptor(desc);
         
         //-- validation code for: _numInvokations
         fieldValidator = new FieldValidator();
-        fieldValidator.setMinOccurs(1);
         { //-- local scope
             IntegerValidator iv = new IntegerValidator();
             fieldValidator.setValidator(iv);
@@ -200,9 +200,11 @@ public class ServiceMethodDataTypeDescriptor extends org.exolab.castor.xml.util.
             {
                 try {
                     ServiceMethodDataType target = (ServiceMethodDataType) object;
-                    // ignore null values for non optional primitives
-                    if (value == null) return;
-                    
+                    // if null, use delete method for optional primitives 
+                    if (value == null) {
+                        target.deleteAuthorized();
+                        return;
+                    }
                     target.setAuthorized( ((Boolean)value).booleanValue());
                 }
                 catch (Exception ex) {
@@ -215,13 +217,50 @@ public class ServiceMethodDataTypeDescriptor extends org.exolab.castor.xml.util.
         } );
         desc.setHandler(handler);
         desc.setNameSpaceURI("http://localhost/Discus/Schema/Treaty.xsd");
-        desc.setRequired(true);
         desc.setMultivalued(false);
         addFieldDescriptor(desc);
         
         //-- validation code for: _authorized
         fieldValidator = new FieldValidator();
-        fieldValidator.setMinOccurs(1);
+        desc.setValidator(fieldValidator);
+        
+        //-- _methodImplementation
+        desc = new XMLFieldDescriptorImpl(java.lang.String.class, "_methodImplementation", "MethodImplementation", NodeType.Element);
+        desc.setImmutable(true);
+        handler = (new XMLFieldHandler() {
+            public Object getValue( Object object ) 
+                throws IllegalStateException
+            {
+                ServiceMethodDataType target = (ServiceMethodDataType) object;
+                return target.getMethodImplementation();
+            }
+            public void setValue( Object object, Object value) 
+                throws IllegalStateException, IllegalArgumentException
+            {
+                try {
+                    ServiceMethodDataType target = (ServiceMethodDataType) object;
+                    target.setMethodImplementation( (java.lang.String) value);
+                }
+                catch (Exception ex) {
+                    throw new IllegalStateException(ex.toString());
+                }
+            }
+            public Object newInstance( Object parent ) {
+                return null;
+            }
+        } );
+        desc.setHandler(handler);
+        desc.setNameSpaceURI("http://localhost/Discus/Schema/Treaty.xsd");
+        desc.setMultivalued(false);
+        addFieldDescriptor(desc);
+        
+        //-- validation code for: _methodImplementation
+        fieldValidator = new FieldValidator();
+        { //-- local scope
+            StringValidator sv = new StringValidator();
+            sv.setWhiteSpace("preserve");
+            fieldValidator.setValidator(sv);
+        }
         desc.setValidator(fieldValidator);
         
     } //-- psl.discus.javasrc.schemas.treaty.ServiceMethodDataTypeDescriptor()

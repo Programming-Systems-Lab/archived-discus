@@ -17,20 +17,20 @@ import java.util.Collection;
 public interface ServiceInvokationPermission {
 
     /**
-     * The service space that this is giving permission to
+     * The service space that this is giving permission to.
      */
     public int getServiceSpaceId();
 
     /**
-     * The service that this is giving permission to access
+     * The service that this is giving permission to access.
      */
     public String getServiceName();
 
     /**
-     * If this method is permitted, returns the MethodPermission
+     * Tries to find a method with the given name and parameter list.
      * Otherwise, returns null
      * @see MethodPermission
      */
-    public MethodPermission getMethod(String methodName);
+    public MethodPermission getMethod(String methodName, String[] params);
 
 }

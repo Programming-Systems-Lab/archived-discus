@@ -22,8 +22,9 @@
 		<xs:sequence>
 			<xs:element name="MethodName" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false" />
 			<xs:element name="Parameter" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
-            <xs:element name="NumInvokations" type="xs:int" minOccurs="1" maxOccurs="1" nillable="false" default="1"/>
-			<xs:element name="Authorized" type="xs:boolean" minOccurs="1" maxOccurs="1" nillable="false" default="false"/>
+            <xs:element name="NumInvokations" type="xs:int" minOccurs="0" maxOccurs="1" nillable="false" default="1"/>
+			<xs:element name="Authorized" type="xs:boolean" minOccurs="0" maxOccurs="1" nillable="false" default="false"/>
+            <xs:element name="MethodImplementation" type="xs:string" minOccurs="0" maxOccurs="1" nillable="false"/>
 		</xs:sequence>
 	</xs:complexType>
 </xs:schema>

@@ -18,6 +18,11 @@ import org.w3c.dom.Document;
  */
 public interface SecurityManager {
 
+    public static final int STATUS_OK = 0;
+    public static final int STATUS_ERROR = -1;
+
+
+
     /*-----------------------------------------------------------------------------------------------*/
     /* Methods to perform security checks */
 
@@ -25,13 +30,15 @@ public interface SecurityManager {
      * When a service space is going to invoke services on another service space, it first
      * creates a treaty for that service space containing a description of the services and
      * methods it wants to access.
+     *
      * This method processes a new treaty and returns a treaty containing a new treatyId
      * and the service,method,args entries that are actually authorized for the requesting
      * Service Space.
      *
-     * @returns an XML Document conforming to the treaty schema
+     * @returns an array of 2 strings, where the first string is the status code (0 is OK)
+     * and the second string is the content (either treaty XML or error message)
      */
-    public String verifyTreaty(String signedTreatyXMLDoc, boolean signed)
+    public String[] verifyTreaty(String signedTreatyXMLDoc, boolean signed)
             throws SecurityManagerException;
 
     /**

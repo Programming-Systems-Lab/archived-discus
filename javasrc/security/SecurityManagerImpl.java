@@ -30,9 +30,6 @@ import psl.discus.javasrc.shared.Util;
 
 public class SecurityManagerImpl implements SecurityManager {
 
-    public static final int STATUS_OK = 0;
-    public static final int STATUS_ERROR = -1;
-
     DataSource ds;
     SignatureManager signatureManager;
     TreatyDAO treatyDAO;
@@ -59,7 +56,12 @@ public class SecurityManagerImpl implements SecurityManager {
 
     }
 
-    public String verifyTreaty(String treatyXML, boolean isSigned)
+    /**
+     * Verifies the given treaty.
+     * @return an array of 2 strings, where the first string is the status code (0 is OK)
+     * and the second string is the content (either treaty XML or error message)
+     */
+    public String[] verifyTreaty(String treatyXML, boolean isSigned)
             throws SecurityManagerException {
 
         try {
@@ -100,18 +102,17 @@ public class SecurityManagerImpl implements SecurityManager {
 
                 for (Enumeration methods = serviceInfo.enumerateServiceMethod(); methods.hasMoreElements();) {
                     ServiceMethod method = (ServiceMethod) methods.nextElement();
-                    MethodPermission mp = permission.getMethod(method.getMethodName());
+                    MethodPermission mp = permission.getMethod(method.getMethodName(), method.getParameter());
                     if (mp == null) {
                         // method was not found in the permissions, set authorized to false
                         method.setAuthorized(false);
-                    } else if (!mp.getParams().containsAll(Arrays.asList(method.getParameter()))) {
-                        // permission did not contain all the params that are requested in the method
-                        method.setAuthorized(false);
                     } else {
+                        // method with this parameters was found. set authorized to true, and fill in
+                        // the real methodImplementation
                         method.setAuthorized(true);
+                        method.setMethodImplementation(mp.getMethodImplementation());
+                        method.setNumInvokations(method.getNumInvokations());
                     }
-
-                    method.setNumInvokations(method.getNumInvokations());
                 }
             }
 
@@ -124,40 +125,10 @@ public class SecurityManagerImpl implements SecurityManager {
             treaty.marshal(writer);
             writer.close();
 
-            /*SecurityManagerResponse response = new SecurityManagerResponse();
-            response.setStatus(STATUS_OK);
-            response.setContent(writer.toString());
-
-            writer = new StringWriter();
-            response.marshal(writer);
-            writer.close();
-
-            return writer.toString();
-            */
-            // CHANGED: the SecurityManagerResponse doesn't seem to have a way to include CDATA text... so
-            // I'm doing it manually for now (yuck)
-            StringBuffer buf = new StringBuffer();
-            buf.append("<" + "SecurityManagerResponse" + ">" + "\n")
-                .append("<" + "status" + ">" + String.valueOf(STATUS_OK) + "</" + "status" + ">" + "\n")
-                .append("<" + "content" + ">" + "<![CDATA["  + writer.toString() + "]]>" + "</" + "content" + ">" + "\n")
-                .append("</" + "SecurityManagerResponse" + ">" + "\n");
-
-            return buf.toString();
+            return new String[] { String.valueOf(STATUS_OK), writer.toString() };
 
         } catch (Exception e) {
-            SecurityManagerResponse response = new SecurityManagerResponse();
-            response.setStatus(STATUS_ERROR);
-            response.setMessage(e.toString());
-
-            StringWriter writer = new StringWriter();
-            try {
-                response.marshal(writer);
-                writer.close();
-            } catch (Exception e2) {
-                throw new SecurityManagerException(e2);
-            }
-
-            return writer.toString();
+            return new String[] { String.valueOf(STATUS_ERROR), e.toString() };
         }
 
     }
@@ -202,7 +173,7 @@ public class SecurityManagerImpl implements SecurityManager {
         }
 
         SecurityManagerImpl manager = new SecurityManagerImpl(new FakeDataSource(),new SignatureManager());
-        String result = manager.verifyTreaty(buf.toString(),true);
+        String[] result = manager.verifyTreaty(buf.toString(),true);
 
         Util.debug(result);
 

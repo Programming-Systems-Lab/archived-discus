@@ -11,6 +11,9 @@ import psl.discus.javasrc.shared.FakeDataSource;
 import psl.discus.javasrc.shared.Util;
 
 import java.rmi.RemoteException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  * @author Matias Pelenur
@@ -46,20 +49,28 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
     }
 
     /**
-     * For testing, assumes treatyXMl is NOT signed
+     * For testing, assumes treatyXML is NOT signed
      */
-    public String verifyTreaty(String treatyXML)
+    public String[] verifyTreaty(String treatyXML)
         throws RemoteException {
+
+        // HACK: there seems to be a bug in the JWSDP that converts newlines to spaces in XML tags...
+        // convert back to newlines!
+        treatyXML = Util.replaceString(treatyXML,"> <", ">\n<");
 
         return verifyTreaty(treatyXML, false);
 
     }
 
-    public String verifyTreaty(String treatyXML, boolean signed)
+    public String[] verifyTreaty(String treatyXML, boolean signed)
         throws RemoteException {
 
         if (treatyXML == null)
             throw new RemoteException("treatyXML parameter is null");
+
+        // HACK: there seems to be a bug in the JWSDP that converts newlines to spaces in XML tags...
+        // convert back to newlines!
+        treatyXML = Util.replaceString(treatyXML,"> <", ">\n<");
 
         try {
             return securityManager.verifyTreaty(treatyXML,signed);
@@ -68,11 +79,15 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
         }
     }
 
-    public String signDocument(String xml)
+    public String[] signDocument(String xml)
             throws RemoteException {
 
         if (xml == null)
            throw new RemoteException("xml parameter is null");
+
+        // HACK: there seems to be a bug in the JWSDP that converts newlines to spaces in XML tags...
+        // convert back to newlines!
+        xml = Util.replaceString(xml,"> <", ">\n<");
 
         try {
             return signatureManager.signDocument(xml);
@@ -87,6 +102,10 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
 
         if (signedXML == null)
            throw new RemoteException("xml parameter is null");
+
+        // HACK: there seems to be a bug in the JWSDP that converts newlines to spaces in XML tags...
+        // convert back to newlines!
+        signedXML = Util.replaceString(signedXML,"> <", ">\n<");
 
         try {
             return signatureManager.verifyDocument(signedXML);

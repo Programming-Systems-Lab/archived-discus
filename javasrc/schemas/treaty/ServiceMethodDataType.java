@@ -50,6 +50,8 @@ public abstract class ServiceMethodDataType implements java.io.Serializable {
     **/
     private boolean _has_authorized;
 
+    private java.lang.String _methodImplementation;
+
 
       //----------------/
      //- Constructors -/
@@ -95,6 +97,20 @@ public abstract class ServiceMethodDataType implements java.io.Serializable {
 
     /**
     **/
+    public void deleteAuthorized()
+    {
+        this._has_authorized= false;
+    } //-- void deleteAuthorized() 
+
+    /**
+    **/
+    public void deleteNumInvokations()
+    {
+        this._has_numInvokations= false;
+    } //-- void deleteNumInvokations() 
+
+    /**
+    **/
     public java.util.Enumeration enumerateParameter()
     {
         return new org.exolab.castor.util.IteratorEnumeration(_parameterList.iterator());
@@ -106,6 +122,13 @@ public abstract class ServiceMethodDataType implements java.io.Serializable {
     {
         return this._authorized;
     } //-- boolean getAuthorized() 
+
+    /**
+    **/
+    public java.lang.String getMethodImplementation()
+    {
+        return this._methodImplementation;
+    } //-- java.lang.String getMethodImplementation() 
 
     /**
     **/
@@ -215,6 +238,15 @@ public abstract class ServiceMethodDataType implements java.io.Serializable {
         this._authorized = authorized;
         this._has_authorized = true;
     } //-- void setAuthorized(boolean) 
+
+    /**
+     * 
+     * @param methodImplementation
+    **/
+    public void setMethodImplementation(java.lang.String methodImplementation)
+    {
+        this._methodImplementation = methodImplementation;
+    } //-- void setMethodImplementation(java.lang.String) 
 
     /**
      * 

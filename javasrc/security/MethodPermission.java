@@ -17,4 +17,9 @@ public interface MethodPermission {
 
     public int getNumberInvokations();
 
+    /**
+     * The real method name for this method call, given back in the treaty
+     */
+    public String getMethodImplementation();
+
 }

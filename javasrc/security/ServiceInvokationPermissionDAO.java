@@ -24,7 +24,7 @@ public class ServiceInvokationPermissionDAO {
 
 
     public void addPermission(int clientServiceSpaceId, String serviceName,
-                              String methodName, String paramString, int numInvokations)
+                              String methodName, String paramString, int numInvokations, String methodImplementation)
             throws DAOException {
 
         Connection con = null;
@@ -32,14 +32,15 @@ public class ServiceInvokationPermissionDAO {
 
         try {
             con = ds.getConnection();
-            String sql = "INSERT INTO ServiceInvokationPermission(clientServiceSpaceId,serviceName,methodName,params, numInvokations) " +
-                         "VALUES(?,?,?,?,?)";
+            String sql = "INSERT INTO ServiceInvokationPermission(clientServiceSpaceId,serviceName,methodName," +
+                         "params, numInvokations,methodImplementation) VALUES(?,?,?,?,?)";
             stmt = con.prepareStatement(sql);
             stmt.setInt(1, clientServiceSpaceId);
             stmt.setString(2, serviceName);
             stmt.setString(3, methodName);
             stmt.setString(4, paramString);
             stmt.setInt(5,numInvokations);
+            stmt.setString(6,methodImplementation);
 
             int result = stmt.executeUpdate();
 
@@ -95,7 +96,7 @@ public class ServiceInvokationPermissionDAO {
 
         try {
             con = ds.getConnection();
-            String sql = "SELECT methodName, params, numinvokations FROM ServiceInvokationPermission " +
+            String sql = "SELECT methodName, params, numinvokations, methodImplementation FROM ServiceInvokationPermission " +
                          "WHERE clientServiceSpaceId=? AND serviceName=?";
             stmt = con.prepareStatement(sql);
             stmt.setInt(1, clientServiceSpaceId);
@@ -106,7 +107,8 @@ public class ServiceInvokationPermissionDAO {
                 String methodName = rs.getString("methodName");
                 String params = rs.getString("params");
                 int numInvokations = rs.getInt("numinvokations");
-                MethodPermission mp = new MethodPermissionImpl(methodName, params, numInvokations);
+                String methodImplementation = rs.getString("methodImplementation");
+                MethodPermission mp = new MethodPermissionImpl(methodName, params, numInvokations, methodImplementation);
                 permission.addMethodPermission(mp);
             }
         } catch (SQLException e) {
@@ -125,21 +127,25 @@ public class ServiceInvokationPermissionDAO {
 
     }
 
-
+    /**
+     * An implementation of ServiceInvokationPermission. Note that this class is private, because
+     * only the ServiceInvokationPermissionDAO class is allowed to create instances of it.
+     * It holds the serviceName and a Vector of MethodPermission objects.
+     */
     private class ServiceInvokationPermissionImpl implements ServiceInvokationPermission {
 
         private int serviceSpaceId;
         private String serviceName;
-        private Hashtable allowedMethods;
+        private Vector allowedMethods;
 
         private ServiceInvokationPermissionImpl(int serviceSpaceId, String serviceName) {
             this.serviceSpaceId = serviceSpaceId;
             this.serviceName = serviceName;
-            allowedMethods = new Hashtable();
+            allowedMethods = new Vector();
         }
 
         private void addMethodPermission(MethodPermission mp) {
-            allowedMethods.put(mp.getMethodName(), mp);
+            allowedMethods.add(mp);
         }
 
         public int getServiceSpaceId() {
@@ -150,8 +156,24 @@ public class ServiceInvokationPermissionDAO {
             return serviceName;
         }
 
-        public MethodPermission getMethod(String methodName) {
-            return (MethodPermission) allowedMethods.get(methodName);
+        /**
+         * MethodsPermissions are uniquely identified by a method name and the parameter list.
+         * However, because we don't know if the parameter list we get is going to be exactly
+         * in the order as is stored in the database, we can't really use a hashtable to store
+         * the method permissions. Instead, we use a Vector, and use a special MethodPermissionFinder
+         * class to find a method permission (see below), which checks that the method name
+         * is the same and that the parameter list is the same (even if it is in a different order).
+         *
+         * @returns the MethodPermission, or null if there is no such method permission.
+         */
+        public MethodPermission getMethod(String methodName, String[] params) {
+
+            MethodPermissionFinder finder = new MethodPermissionFinder(methodName, params);
+            int index = allowedMethods.indexOf(finder);
+            if (index == -1)
+                return null;
+            else
+                return (MethodPermission) allowedMethods.elementAt(index);
         }
     }
 
@@ -160,8 +182,9 @@ public class ServiceInvokationPermissionDAO {
         private String methodName;
         private Vector params;
         private int numInvokations;
+        private String methodImplementation;
 
-        public MethodPermissionImpl(String methodName, String paramString, int numInvokations) {
+        public MethodPermissionImpl(String methodName, String paramString, int numInvokations, String methodImplementation) {
             this.methodName = methodName;
             this.numInvokations = numInvokations;
             params = new Vector();
@@ -169,6 +192,7 @@ public class ServiceInvokationPermissionDAO {
             while (st.hasMoreTokens()) {
                 params.add(st.nextToken());
             }
+            this.methodImplementation = methodImplementation;
 
         }
 
@@ -183,10 +207,41 @@ public class ServiceInvokationPermissionDAO {
         public int getNumberInvokations() {
             return numInvokations;
         }
+
+        public String getMethodImplementation() {
+            return methodImplementation;
+        }
     }
 
+    /**
+     * This class is uses exclusively to find MethodPermissions in the methods Vector of the
+     * ServiceInvokationPermissionImpl.
+     */
+    private class MethodPermissionFinder {
+        String methodName;
+        String[] params;
 
-    // for testing
+        public MethodPermissionFinder(String methodName, String[] params) {
+            this.methodName = methodName;
+            this.params = params;
+        }
+
+        public boolean equals(Object o) {
+            if (!(o instanceof MethodPermission))
+                return false;
+
+            MethodPermission mp = (MethodPermission) o;
+            // first we check that the name matches, and then the params
+            if (!mp.getMethodName().equals(methodName))
+                return false;
+            else if (!mp.getParams().containsAll(Arrays.asList(params)))
+                return false;
+            else
+                return true;
+        }
+    }
+
+    // for testing only
     public static void main (String[] args)
         throws Exception {
 
