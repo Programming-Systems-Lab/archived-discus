@@ -111,7 +111,7 @@ public class ServiceSpaceDAO {
         try {
             con = ds.getConnection();
             String sql = "SELECT ssg.serviceSpaceId, ss.serviceSpaceName, ss.trustLevel " +
-                    "FROM ServiceSpaceGroups ssg, ServiceSpaces ss WHERE groupid=?";
+                    "FROM ServiceSpaceGroups ssg, ServiceSpaces ss WHERE groupid=? AND ssg.serviceSpaceId=ss.serviceSpaceId";
             stmt = con.prepareStatement(sql);
             stmt.setInt(1,groupId);
 
