@@ -18,9 +18,9 @@ import org.apache.xml.serialize.OutputFormat;
 import org.w3c.dom.Element;
 import org.w3c.dom.*;
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import psl.discus.javasrc.security.*;
-import psl.discus.javasrc.shared.FakeDataSource;
-import psl.discus.javasrc.shared.DAOException;
+import psl.discus.javasrc.shared.*;
 
 import javax.sql.DataSource;
 import javax.xml.parsers.*;
@@ -28,9 +28,9 @@ import java.io.*;
 import java.util.*;
 
 /**
- * Initial implementation of the JXTA client for finding p2p UDDI services
- * and sendingto them UDDI requests
- * A lot of this code was borrowed directly from the JXTA Programmer's Guide,
+ * Implementation of the JXTA client for finding p2p UDDI services
+ * and sending to them UDDI requests
+ * Some of the code here was borrowed from the JXTA Programmer's Guide,
  * http://www.jxta.org/jxtaprogguide_final.pdf
  *
  * @author matias
@@ -43,7 +43,7 @@ import java.util.*;
  *  service and send a message to the service.
  *
  */
-public class Client implements PipeMsgListener {
+public class Client implements PipeMsgListener, Tags {
 
     private static final Logger logger = Logger.getLogger(Client.class);
 
@@ -52,6 +52,11 @@ public class Client implements PipeMsgListener {
     private DiscoveryService discoveryService;
     private PipeService pipeService;
     private PipeAdvertisement inputPipeAdv;
+
+    private static Random random = new Random();
+        // used to uniquely number each msg sent so we can identify it when the response come
+
+    private Hashtable queries;  // holds a reference to each query sent, so as to properly dispatch the response
 
     private MimeMediaType xmlMimeMediaType = new MimeMediaType("text/xml");
 
@@ -69,6 +74,7 @@ public class Client implements PipeMsgListener {
     /**
      * Driver method for testing
      */
+    /*
     public static void main(String args[]) {
 
         logger.debug("Starting Client peer ....");
@@ -86,7 +92,7 @@ public class Client implements PipeMsgListener {
             while ((line = reader.readLine()) != null) {
 
                 if (line.equals(CMD_MESSAGE)) {
-                    client.sendQuery(Server.ENVELOPE_TAG, query);
+                    client.sendQuery(query);
                 } else if (line.equals(CMD_QUIT)) {
                     System.exit(0);
                 }
@@ -97,6 +103,7 @@ public class Client implements PipeMsgListener {
         }
 
     }
+    */
 
     public Client(DataSource ds) {
 
@@ -137,6 +144,8 @@ public class Client implements PipeMsgListener {
         catch (DAOException e) {
             throw new RuntimeException("Could not initialize Client: " + e);
         }
+
+        queries = new Hashtable();
     }
 
     private void startJxta() {
@@ -230,7 +239,7 @@ public class Client implements PipeMsgListener {
 
         // create XML representation for sending
         org.w3c.dom.Document doc = db.newDocument();
-        inputPipeXMLAd = doc.createElement(Server.PIPE_TAG);
+        inputPipeXMLAd = doc.createElement(PIPE_TAG);
         inputPipeXMLAd.setAttribute("xmlns:jxta", "http://jxta.org");
         Element id = doc.createElement("Id");
         id.appendChild(doc.createTextNode(inputPipeAdv.getID().toString()));
@@ -246,9 +255,10 @@ public class Client implements PipeMsgListener {
 
     }
 
-    public void sendQuery(String tag, Element contents) {
+    public void sendQuery(ClientQuery query) {
 
-        final int BIND_TIMEOUT = 15000;
+        final int BIND_TIMEOUT = 15000;     // how long we try to connect to the endpoint for before timing out
+        logger.info("sending query...");
 
         for (Enumeration endpoints = knownPipeAds.elements(); endpoints.hasMoreElements();) {
             try {
@@ -258,21 +268,20 @@ public class Client implements PipeMsgListener {
                 // create the output pipe endpoint to connect
                 // to the server, try 3 times to bind the pipe endpoint to
                 // the listening endpoint pipe of the service
-                OutputPipe myPipe = null;
+                OutputPipe endpointPipe = null;
                 for (int i = 0; i < 3; i++) {
                     logger.debug("Trying to bind to pipe for service space id " + endpoint.getServiceSpaceId() + "...");
                     try {
-                        myPipe = pipeService.createOutputPipe(pipeAd, BIND_TIMEOUT);
-                        logger.debug("bound to pipe");
+                        endpointPipe = pipeService.createOutputPipe(pipeAd, BIND_TIMEOUT);
                         break;
                     } catch (java.io.IOException e) {
                         // will try again;
                     }
                 }
-                if (myPipe == null) {
-                    logger.debug("Could not resolve pipe endpoint - removing");
+                if (endpointPipe == null) {
+                    logger.warn("Could not resolve pipe endpoint - removing");
 
-                    // this pipe seems outdated - remove it from the "known pipes" and the datab
+                    // this pipe advertisement seems outdated - remove it from the "known pipes" and the database
                     knownPipeAds.remove(pipeAd.getID());
                     clientDAO.removePipeAdvertisement(pipeAd);
 
@@ -283,28 +292,47 @@ public class Client implements PipeMsgListener {
                 Message msg = pipeService.createMessage();
 
                 org.w3c.dom.Document doc = db.newDocument();
-                Element main = doc.createElement(Server.DATA_TAG);
 
-                Node query = doc.importNode(contents,true);
+                Element dataElement = doc.createElement(DATA_TAG);
 
-                main.appendChild(query);
+                // first we uniquely identify this message, and store it in the queries hashtable
+                // with a reference to its ClientQuery
+                Long messageNumber = new Long(random.nextLong());
+                QueryMessage queryMessage = new QueryMessage(query,endpoint.getServiceSpaceId());
+                queries.put(messageNumber, queryMessage);
+
+                Element msgNumElement = doc.createElement(MSGNUM_TAG);
+                Text msgNumText = doc.createTextNode(String.valueOf(messageNumber));
+                msgNumElement.appendChild(msgNumText);
+                dataElement.appendChild(msgNumElement);
+
+                // then we add the given query to our query element
+                Element queryElement = doc.createElement(QUERY_TAG);
+
+                // we need to import the queryelement because we are putting it into a different DOM document
+                Node queryNode = doc.importNode(query.getQueryElement(),true);
+                queryElement.appendChild(queryNode);
+
+                dataElement.appendChild(queryElement);
 
                 Node ad = doc.importNode(inputPipeXMLAd, true);
-                main.appendChild(ad);
+                dataElement.appendChild(ad);
 
-                doc.appendChild(main);
+                doc.appendChild(dataElement);
 
                 doc = signatureManager.signDocument(doc);
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 XMLUtils.outputDOM(doc, out);
-                //MessageElement element = msg.newMessageElement(Server.INPUT_PIPE_TAG,xmlMimeMediaType,pipeDoc.getStream());
-                MessageElement element = msg.newMessageElement(Server.DATA_TAG, xmlMimeMediaType, out.toByteArray());
+
+                logger.debug("sending msg: \n" + out.toString());
+
+                MessageElement element = msg.newMessageElement(DATA_TAG, xmlMimeMediaType, out.toByteArray());
                 msg.addElement(element);
 
-                // send the message to the service pipe
-                myPipe.send(msg);
-                logger.debug("message sent to the Server");
+                // send the message
+                endpointPipe.send(msg);
+                logger.info("message sent to service space");
 
             } catch (Exception e) {
                 logger.error("Problem sending message: " + e);
@@ -317,6 +345,7 @@ public class Client implements PipeMsgListener {
         Message msg;
         try {
             msg = event.getMessage();
+
             if (msg == null)
                 return;
         } catch (Exception e) {
@@ -324,12 +353,86 @@ public class Client implements PipeMsgListener {
             return;
         }
 
-        // Get message
-        String newMessage = msg.getString(Server.DATA_TAG);
-        if (newMessage == null)
-            logger.debug("null msg received");
-        else
-            logger.info("Received message: " + newMessage);
+       // Get message
+        String newMessage = msg.getString(DATA_TAG);
+
+        if (newMessage == null) {
+            logger.debug("data tag in message was empty or missing");
+            return;
+        }
+
+        logger.debug("received message: " + newMessage);
+
+        // verify message, then extract message number (for dispatching) and results (SOAP envelope)
+        org.w3c.dom.Document msgDoc = null;
+        try {
+            msgDoc = db.parse(new InputSource(new StringReader(newMessage)));
+        }
+        catch (Exception e) {
+            logger.warn("Could not parse message: " + e);
+            return;
+        }
+
+        SignatureManagerResponse verificationResult = null;
+        try {
+            verificationResult = signatureManager.verifyDocument(msgDoc);
+            logger.info("verified message, from service space " + verificationResult.getSigner().getName());
+        }
+        catch (SignatureManagerException e) {
+            logger.warn("could not verify signature: " + e);
+
+            // for now we continue anyway
+            logger.warn("continuing anyway!");
+        }
+
+        if (verificationResult != null) {
+            msgDoc = verificationResult.getDocument();
+        }
+
+        // extract message number - we need this to dispatch the message properly
+        Long messageNumber = null;
+        {
+            NodeList list = msgDoc.getElementsByTagName(MSGNUM_TAG);
+            if (list == null || list.getLength() == 0) {
+                logger.error("did not find message number in document");
+                return;
+            }
+
+            Node envelopeNode = list.item(0);
+            Text msgNumText = (Text) envelopeNode.getFirstChild();
+            messageNumber = new Long(Util.parseLong(msgNumText.getNodeValue()));
+
+        }
+
+        // extract response
+        Element responseElement = null;
+        {
+            NodeList list = msgDoc.getElementsByTagName(RESPONSE_TAG);
+            if (list == null || list.getLength() == 0) {
+                logger.error("did not find response element in document");
+                return;
+            }
+
+            responseElement = (Element) list.item(0);
+        }
+
+        // lookup QueryMessage object for this message number
+        QueryMessage queryMessage = (QueryMessage) queries.get(messageNumber);
+        if (queryMessage == null) {
+            logger.warn("query not found for message number " + messageNumber);
+            return;
+        }
+
+        // verify that the signer and the id on the query message match
+        if (queryMessage.getServiceSpaceId() != verificationResult.getSigner().getServiceSpaceId()) {
+            logger.warn("service space ids do not match!");
+            return;
+        }
+
+        // now pass on the response to the object that sent the query
+        ClientQuery query = queryMessage.getQuery();
+        ClientResponseEvent evt = new ClientResponseEvent(this,query,responseElement);
+        query.getResponseListener().clientResponseEvent(evt);
     }
 
     /**
@@ -346,7 +449,7 @@ public class Client implements PipeMsgListener {
                 logger.debug("sending discovery request");
 
                 discoveryService.getRemoteAdvertisements(null, DiscoveryService.ADV,
-                        "Name", "JXTASPEC:" + Server.SERVICE_NAME, 1, this);
+                        "Name", "JXTASPEC:" + SERVICE_NAME, 1, this);
                 try {
                     sleep(SLEEP_TIME);
                 } catch (InterruptedException e) {
@@ -392,18 +495,7 @@ public class Client implements PipeMsgListener {
                     ModuleSpecAdvertisement moduleSpecAd = (ModuleSpecAdvertisement)
                             AdvertisementFactory.newAdvertisement
                             (xmlMimeMediaType, new ByteArrayInputStream(str.getBytes()));
-                    logger.debug("got module spec id = " + moduleSpecAd.getID());
-
-                    // for debugging: print the advertisement as a plain text document
-                    /*{
-                        StructuredTextDocument doc = (StructuredTextDocument)
-                                moduleSpecAd.getDocument(xmlMimeMediaType);
-
-                        StringWriter out = new StringWriter();
-                        doc.sendToWriter(out);
-                        logger.debug(out.toString());
-                        out.close();
-                    }*/
+                    //logger.debug("got module spec id = " + moduleSpecAd.getID());
 
                     // Get the pipe advertisement -- what we use to talk to the service
                     PipeAdvertisement pipeAd = moduleSpecAd.getPipeAdvertisement();
@@ -445,7 +537,7 @@ public class Client implements PipeMsgListener {
                             byte[] decoded = Base64.decodeBase64(paramValue);
 
                             org.w3c.dom.Document doc = db.parse(new ByteArrayInputStream(decoded));
-                            //NodeList l = doc.getElementsByTagName(Server.DATA_TAG);
+                            //NodeList l = doc.getElementsByTagName(DATA_TAG);
 
                             //Node data = l.item(0);
                             /*
@@ -473,7 +565,7 @@ public class Client implements PipeMsgListener {
                             logger.warn("not verifying the module advertisement");
 
                             {
-                                NodeList list = doc.getElementsByTagName(Server.MODULE_SPEC_ID_TAG);
+                                NodeList list = doc.getElementsByTagName(MODULE_SPEC_ID_TAG);
                                 if (list == null || list.getLength() == 0) {
                                     logger.debug("msId not found in signed data");
                                     continue;
@@ -488,7 +580,7 @@ public class Client implements PipeMsgListener {
                             }
 
                             {
-                                NodeList list = doc.getElementsByTagName(Server.PIPE_ID_TAG);
+                                NodeList list = doc.getElementsByTagName(PIPE_ID_TAG);
                                 if (list == null || list.getLength() == 0) {
                                     logger.debug("pipeId not found in signed data");
                                     continue;
@@ -502,12 +594,13 @@ public class Client implements PipeMsgListener {
                                 }
                             }
 
-                            // TODO: we might want to check if we actually trust this peer enough
+                            // TODO: we should check if we actually trust this peer enough
 
                             // ok, if we got here we're all OK
                             logger.info("Adding pipe for service from peer " + peerAdv.getName());
-                            // TODO: use actual service space id
-                            ServiceSpaceEndpoint endpoint = clientDAO.addPipeAdvertisement(-1,pipeAd);
+
+                            // TODO: use actual service space id (need signature verification)
+                            ServiceSpaceEndpoint endpoint = clientDAO.addPipeAdvertisement(1,pipeAd);
                             knownPipeAds.put(pipeAd.getID(), endpoint);
 
                         } catch (Exception e) {
@@ -522,6 +615,32 @@ public class Client implements PipeMsgListener {
                 }
             }
         }
+    }
+
+    /**
+     * This class encapsulates a query and the service space it is being sent to.
+     * It's stored in a hashtable when a query message gets sent, and then is used to
+     * check that the response for that message was signed by the same service space that
+     * it was sent to.
+     */
+    class QueryMessage {
+
+        private ClientQuery query;
+        private int serviceSpaceId;
+
+        public QueryMessage(ClientQuery query, int serviceSpaceId) {
+            this.query = query;
+            this.serviceSpaceId = serviceSpaceId;
+        }
+
+        public ClientQuery getQuery() {
+            return query;
+        }
+
+        public int getServiceSpaceId() {
+            return serviceSpaceId;
+        }
+
     }
 }
 
