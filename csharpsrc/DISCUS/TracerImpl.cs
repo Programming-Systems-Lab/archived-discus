@@ -1,7 +1,7 @@
 using System;
 using PSL.DISCUS.Interfaces;
 
-namespace PSL.DISCUS.Impl.Logging
+namespace PSL.DISCUS.Logging
 {
 	/// <summary>
 	/// Summary description for TracerImpl.

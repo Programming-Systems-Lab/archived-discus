@@ -7,6 +7,8 @@ namespace PSL.DISCUS.Interfaces
 	/// </summary>
 	public interface IExecuteService
 	{
-		string ExecuteServiceMethod( string strXMLExecRequest );
+		string[] ExecuteServiceMethod( string strXMLExecRequest );
+		// To support bulk (async) processing in gatekeeper
+		string[] ExecuteMultipleServiceMethods( string[] arrXmlExecRequest );
 	}
 }

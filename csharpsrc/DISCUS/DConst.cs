@@ -1,7 +1,7 @@
 
 using System;
 // DISCUS system constants
-namespace PSL.DISCUS.Impl
+namespace PSL.DISCUS
 {
 	/// <summary>
 	/// DISCUS Constants (system wide constants)

@@ -4,7 +4,7 @@ using System.Xml;
 using System.Collections;
 using System.Xml.Serialization;
 
-namespace PSL.DISCUS.Impl.GateKeeper
+namespace PSL.DISCUS
 {
 	/// <summary>
 	/// Summary description for TreatyType.

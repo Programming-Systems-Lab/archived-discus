@@ -1,6 +1,6 @@
 using System;
 
-namespace PSL.DISCUS.Impl.DataAccess
+namespace PSL.DISCUS.DataAccess
 {
 	/// <summary>
 	/// Abstract class defines database constants,

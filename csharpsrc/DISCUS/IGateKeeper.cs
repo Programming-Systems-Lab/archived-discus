@@ -5,7 +5,7 @@ namespace PSL.DISCUS.Interfaces
 	/// <summary>
 	/// GateKeeper interface
 	/// </summary>
-	public interface IGateKeeper:IResourceAcquire,IExecuteService,IExecuteWorkflow,ILogger,ITracer
+	public interface IGatekeeper:IResourceAcquire,IExecuteService,IExecuteWorkflow,ILogger,ITracer
 	{
 	}
 }

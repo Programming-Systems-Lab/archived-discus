@@ -6,10 +6,10 @@ using System.Xml.XPath;
 using System.Diagnostics;
 using Microsoft.Data.Odbc;
 using PSL.DISCUS.Interfaces.DataAccess;
-using PSL.DISCUS.Impl.DynamicProxy;
+using PSL.DISCUS.DynamicProxy;
 
 
-namespace PSL.DISCUS.Impl.DataAccess
+namespace PSL.DISCUS.DataAccess
 {
 	/// <summary>
 	/// Service Space Data Access Object

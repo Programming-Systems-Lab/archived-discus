@@ -1,7 +1,7 @@
 using System;
 
 // DISCUS DataAccess package
-namespace PSL.DISCUS.Impl.DataAccess
+namespace PSL.DISCUS.DataAccess
 {
 	/// <summary>
 	/// Abstract Utility class used for database access

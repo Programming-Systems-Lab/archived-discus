@@ -11,10 +11,10 @@ using System.Web.Services.Description;
 using System.Reflection;
 using Microsoft.CSharp;
 using System.Collections.Specialized;
-using PSL.DISCUS.Impl.DynamicProxy.Util;
+using PSL.DISCUS.DynamicProxy.Util;
 
 // DISCUS DynamicProxy package
-namespace PSL.DISCUS.Impl.DynamicProxy
+namespace PSL.DISCUS.DynamicProxy
 {
 	/// <summary>
 	/// Generates web service proxies given a WSDL URL reference
@@ -24,6 +24,25 @@ namespace PSL.DISCUS.Impl.DynamicProxy
 		// Source name used for event logging
 		private const string SOURCENAME = "DynamicProxy.ProxyGen";
 		private EventLog m_EvtLog;
+		private ProxyMutator m_mutator = null;
+
+		// Set mutator
+		public ProxyMutator Mutator
+		{
+			set
+			{ m_mutator = value; }
+		}
+
+		public void ResetMutator()
+		{
+			m_mutator = null;
+		}
+
+		public bool HasMutator
+		{
+			get
+			{ return m_mutator != null; }
+		}
 
 		public ProxyGen()
 		{
@@ -64,17 +83,26 @@ namespace PSL.DISCUS.Impl.DynamicProxy
 				ICodeGenerator cg = cdp.CreateGenerator();
 				ICodeCompiler cc = cdp.CreateCompiler();
 				
+				// Modify proxy as appropriate
+				if( m_mutator != null )
+					m_mutator.Mutate( ref cnSpace );
+
 				// Construct paths to source code and assembly
 				string strFilenameSource = req.proxyPath + "\\" + req.filenameSource + ".cs";
 				string strAssemblyFilename = req.proxyPath + "\\" + req.filenameSource + ".dll";
 				// Create an output stream associated with assembly
 				StreamWriter sw = new StreamWriter( strFilenameSource );
+								
 				// Generate the code
 				cg.GenerateCodeFromNamespace( cnSpace, sw, null );
 				sw.Flush();
 				sw.Close();
 				
 				CompilerParameters cparams = new CompilerParameters( new String[] { "System.dll", "System.Xml.dll", "System.Web.Services.dll" } );
+				// Add compiler params from ProxyMytator
+				if( m_mutator != null )
+					cparams.ReferencedAssemblies.AddRange( m_mutator.CompilerParameters );				
+				
 				cparams.GenerateExecutable = false;
 				cparams.GenerateInMemory = false;
 				cparams.MainClass = req.serviceName;
@@ -82,6 +110,9 @@ namespace PSL.DISCUS.Impl.DynamicProxy
 				cparams.IncludeDebugInformation = true;
 			
 				CompilerResults cr = cc.CompileAssemblyFromFile( cparams, strFilenameSource );
+				
+				if( cr.Errors.HasErrors )
+					throw new Exception( "Compilation failed with errors - see source file: " + strFilenameSource );
 				
 				// Set location of proxy assembly
 				strAssemblyLoc = strAssemblyFilename;

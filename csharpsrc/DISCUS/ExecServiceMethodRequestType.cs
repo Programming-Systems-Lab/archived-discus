@@ -4,7 +4,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using System.Collections;
 
-namespace PSL.DISCUS.Impl.GateKeeper
+namespace PSL.DISCUS
 {
 	/// <summary>
 	/// ExecServiceMethodRequestType encapsulates a request for

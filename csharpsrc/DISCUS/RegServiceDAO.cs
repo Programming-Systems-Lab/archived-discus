@@ -9,7 +9,7 @@ using PSL.DISCUS.Interfaces.DataAccess;
 
 
 // DISCUS DataAccess package
-namespace PSL.DISCUS.Impl.DataAccess
+namespace PSL.DISCUS.DataAccess
 {
 	/// <summary>
 	/// Registered Service Data Access Object

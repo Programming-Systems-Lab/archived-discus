@@ -3,7 +3,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Diagnostics;
 
-namespace PSL.DISCUS.Impl.Logging
+namespace PSL.DISCUS.Logging
 {
 	/// <summary>
 	/// Summary description for UrlTracerImpl.

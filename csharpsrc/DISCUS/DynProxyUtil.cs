@@ -3,7 +3,7 @@ using System.IO;
 using System.Net;
 
 // DISCUS Dynamic Proxy Util Package
-namespace PSL.DISCUS.Impl.DynamicProxy.Util
+namespace PSL.DISCUS.DynamicProxy.Util
 {
 	/// <summary>
 	/// Utility class used in Dynamic Proxy Generation

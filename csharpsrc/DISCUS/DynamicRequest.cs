@@ -1,7 +1,7 @@
 using System;
 
 // DISCUS Dynamic Proxy Package
-namespace PSL.DISCUS.Impl.DynamicProxy
+namespace PSL.DISCUS.DynamicProxy
 {
 	/// <summary>
 	/// Encapsulates a Dynamic Request to a Web Service

@@ -87,6 +87,11 @@
                     AssemblyName = "System.Web.Services"
                     HintPath = "..\..\..\..\WINNT\Microsoft.NET\Framework\v1.0.3705\System.Web.Services.dll"
                 />
+                <Reference
+                    Name = "AsyncCore"
+                    AssemblyName = "AsyncCore"
+                    HintPath = "..\..\bin\AsyncCore.dll"
+                />
             </References>
         </Build>
         <Files>
@@ -147,6 +152,11 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "ExecServiceContext.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "ExecServiceMethodRequestType.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -187,6 +197,11 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "IProxyMutate.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "IResourceAcquire.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -207,7 +222,32 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "ProxyBaseClassMutator.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "ProxyGen.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ProxyMethodMutator.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ProxyMutator.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ProxyNameMutator.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "ProxyPolicyMutator.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -222,6 +262,11 @@
                 />
                 <File
                     RelPath = "ServiceSpaceDAO.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "TaskContext.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
@@ -242,6 +287,16 @@
                 />
                 <File
                     RelPath = "UrlTracerImpl.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "WSDetails.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "WSProxyGenContext.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
