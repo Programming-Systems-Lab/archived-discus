@@ -12,6 +12,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.sql.DataSource;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
 import org.apache.xml.security.Init;
 import org.apache.xml.security.exceptions.XMLSecurityException;
@@ -28,8 +31,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.DOMException;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import psl.discus.javasrc.shared.Util;
-import psl.discus.javasrc.shared.FakeDataSource;
 
 
 /**
@@ -39,44 +40,69 @@ import psl.discus.javasrc.shared.FakeDataSource;
  */
 public class SignatureManagerImpl implements SignatureManager {
 
-    // TODO: these settings should be gotten from somewhere else
     private static final String KEYSTORE_TYPE = "JKS";
+
+    /* The following are retrieved from the web.xml file
     private static final String KEYSTORE_PASS = "discus";
     private static final String PRIVATEKEY_ALIAS = "100";
     private static final String PRIVATEKEY_PASS = "foobar";
     private static final String CERT_ALIAS = "100";
+    */
 
-    // TODO: get keystore from database!
-    //private static final String keystoreFileName = "keystore.jks";
-
-    private static KeyStore keyStore;
+    private static KeyStore keyStore;       // the keystore is retrieved from the database
     private static PrivateKey privateKey;
 
     private DocumentBuilder db;
+    private String certAlias;
 
     public SignatureManagerImpl(DataSource ds)
             throws SignatureManagerException {
 
+        Util.debug("Initializing SignatureManagerImpl");
+
+        // lookup values using JNDI
+        String keyStorePass=null, privateKeyAlias=null, privateKeyPass=null;
+
+        try {
+            Context initCtx = new InitialContext();
+            Context envCtx = (Context) initCtx.lookup("java:comp/env");
+
+            keyStorePass = (String) envCtx.lookup("KeyStorePass");
+            privateKeyAlias = (String) envCtx.lookup("PrivateKeyAlias");
+            privateKeyPass = (String) envCtx.lookup("PrivateKeyPass");
+            certAlias = (String) envCtx.lookup("CertAlias");
+
+        } catch (NamingException e) {
+            throw new SignatureManagerException("Could not find datasource: " + e);
+        }
+
+        Util.print("Loading keystore from database...");
         if (keyStore == null) {
+            // get keystore from the database
             try {
                 KeyStoreDAO dao = new KeyStoreDAO(ds);
                 keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
-                dao.loadKeyStore(0,keyStore,KEYSTORE_PASS.toCharArray());
+                dao.loadKeyStore(0,keyStore,keyStorePass.toCharArray());
             } catch (Exception e) {
                 throw new SignatureManagerException(e);
             }
         }
+        Util.println("done.");
 
+        Util.print("Getting private key...");
         if (privateKey == null) {
+            // get privatekey from the keystore
             try {
-                privateKey = (PrivateKey) keyStore.getKey(PRIVATEKEY_ALIAS,PRIVATEKEY_PASS.toCharArray());
+                privateKey = (PrivateKey) keyStore.getKey(privateKeyAlias,privateKeyPass.toCharArray());
                 if (privateKey == null)
                     throw new SignatureManagerException("Could not get PrivateKey");
             } catch (Exception e) {
                 throw new SignatureManagerException(e);
             }
         }
+        Util.println("done.");
 
+        // we will need a documentbuilder to create XML documents -- instantiate one here
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         try {
@@ -118,6 +144,7 @@ public class SignatureManagerImpl implements SignatureManager {
     public Document signDocument(Document givenDoc)
             throws SignatureManagerException {
 
+        Util.print("Signing document...");
         try {
             // make a copy of the document, so we don't modify the one that was passed
             Document doc = (Document) givenDoc.cloneNode(true);
@@ -139,17 +166,18 @@ public class SignatureManagerImpl implements SignatureManager {
 
             {
                 X509Certificate cert =
-                        (X509Certificate) keyStore.getCertificate(CERT_ALIAS);
+                        (X509Certificate) keyStore.getCertificate(certAlias);
 
                 if (cert == null)
                     throw new SignatureManagerException("Could not get signing certificate!");
 
                 sig.addKeyInfo(cert);
-                Util.debug("Start signing");
+
                 sig.sign(privateKey);
-                Util.debug("Finished signing");
+
             }
 
+            Util.debug("done");
             return doc;
         } catch (Exception e) {
             throw new SignatureManagerException(e);
@@ -192,6 +220,8 @@ public class SignatureManagerImpl implements SignatureManager {
      */
     public SignatureManagerResponse verifyDocument(Document signedDoc)
             throws SignatureManagerException {
+
+        Util.print("Verifying document...");
 
         SignatureManagerResponse vr = new SignatureManagerResponse();
         try {
@@ -236,6 +266,7 @@ public class SignatureManagerImpl implements SignatureManager {
             //XMLUtils.outputDOM(doc,new FileOutputStream("out.xml"));
 
             vr.document = doc;
+            Util.debug("done");
 
         } catch (Exception e) {
             throw new SignatureManagerException(e);

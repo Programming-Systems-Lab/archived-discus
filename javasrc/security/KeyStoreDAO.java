@@ -7,10 +7,6 @@ import java.security.PrivateKey;
 
 import javax.sql.DataSource;
 
-import psl.discus.javasrc.shared.DAOException;
-import psl.discus.javasrc.shared.Util;
-import psl.discus.javasrc.shared.FakeDataSource;
-
 /**
  * Handles loading and saving the KeyStore to the database
  * @author Matias Pelenur

@@ -21,7 +21,6 @@ import psl.discus.javasrc.schemas.execServiceMethodRequest.ExecServiceMethodRequ
 import psl.discus.javasrc.schemas.treaty.ServiceInfo;
 import psl.discus.javasrc.schemas.treaty.ServiceMethod;
 import psl.discus.javasrc.schemas.treaty.Treaty;
-import psl.discus.javasrc.shared.*;
 
 public class SecurityManagerImpl implements SecurityManager {
 
@@ -34,6 +33,8 @@ public class SecurityManagerImpl implements SecurityManager {
 
     public SecurityManagerImpl(DataSource ds, SignatureManager signatureManager)
             throws SecurityManagerException {
+
+        Util.debug("Initializing SecurityManagerImpl");
 
         this.ds = ds;
         this.signatureManager = signatureManager;
@@ -58,6 +59,8 @@ public class SecurityManagerImpl implements SecurityManager {
      */
     public String[] verifyTreaty(String treatyXML, boolean signed) {
 
+        Util.debug("Verifying treaty...");
+
         try {
 
             if (treatyXML == null)
@@ -76,12 +79,16 @@ public class SecurityManagerImpl implements SecurityManager {
                 SignatureManagerResponse vr = signatureManager.verifyDocument(treatyDoc);
                 treatyDoc = vr.document;
                 requesterId = Util.parseInt(vr.alias);
-                treaty.setClientServiceSpace(vr.alias);
+
             }
 
             treaty = Treaty.unmarshal(treatyDoc);
-            if (requesterId == 0) requesterId = Util.parseInt(treaty.getClientServiceSpace());
 
+            // if treaty is unsigned, (requestid==0), just use the service space id they gave us
+            if (requesterId == 0)
+                requesterId = Util.parseInt(treaty.getClientServiceSpace());
+            else    // otherwise, use the one from the signature
+                treaty.setClientServiceSpace(String.valueOf(requesterId));
 
             // now, for each service in the treaty, we get the authorized methods, and set
             // the authorized flag for each method accordingly
@@ -116,6 +123,8 @@ public class SecurityManagerImpl implements SecurityManager {
             treaty.marshal(writer);
             writer.close();
 
+            Util.debug("Done verifying treaty.");
+
             return new String[]{STATUS_OK, writer.toString(), String.valueOf(requesterId)};
 
         } catch (Exception e) {
@@ -129,6 +138,8 @@ public class SecurityManagerImpl implements SecurityManager {
     }
 
     public String[] doRequestCheck(String requestXML, boolean signed) {
+
+        Util.debug("Doing request check...");
 
         try {
             ExecServiceMethodRequest request = null;
@@ -205,6 +216,8 @@ public class SecurityManagerImpl implements SecurityManager {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             XMLUtils.outputDOM(requestDoc,out);
             String returnXML = out.toString();
+
+            Util.debug("Done with request check.");
 
             if (error == null)
                 return new String[] {STATUS_OK, returnXML};

@@ -37,6 +37,13 @@ public interface SecurityManagerService extends Remote  {
         throws RemoteException;
 
     /**
+     * Revokes a treaty. Returns STATUS_OK if revoked OK, or STATUS_ERROR and an error message
+     * if the operation failed.
+     */
+    public String[] revokeTreaty(int treatyid)
+        throws RemoteException;
+
+    /**
      * Signs the given XML document with this service space's private key.
      * @returns an array of two Strings, where the first is a status code (0 is OK)
      * and the second is either the signed XML document or the error message.

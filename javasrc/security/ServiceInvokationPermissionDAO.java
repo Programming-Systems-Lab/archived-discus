@@ -5,10 +5,6 @@ import java.util.*;
 
 import javax.sql.DataSource;
 
-import psl.discus.javasrc.shared.DAOException;
-import psl.discus.javasrc.shared.FakeDataSource;
-import psl.discus.javasrc.shared.Util;
-
 /**
  * Author: Matias
  * Date: Mar 19, 2002
@@ -32,7 +28,7 @@ public class ServiceInvokationPermissionDAO {
 
         try {
             con = ds.getConnection();
-            String sql = "INSERT INTO ServiceInvokationPermission(clientServiceSpaceId,serviceName,methodName," +
+            String sql = "INSERT INTO ServicePermissions(clientServiceSpaceId,serviceName,methodName," +
                          "params, numInvokations,methodImplementation) VALUES(?,?,?,?,?)";
             stmt = con.prepareStatement(sql);
             stmt.setInt(1, clientServiceSpaceId);
@@ -63,7 +59,7 @@ public class ServiceInvokationPermissionDAO {
 
         try {
             con = ds.getConnection();
-            String sql = "DELETE FROM ServiceInvokationPermission " +
+            String sql = "DELETE FROM ServicePermission " +
                          "WHERE clientServiceSpaceId=? AND serviceName=? AND methodName=?";
             stmt = con.prepareStatement(sql);
             stmt.setInt(1,clientServiceSpaceId);
@@ -96,11 +92,12 @@ public class ServiceInvokationPermissionDAO {
 
         try {
             con = ds.getConnection();
-            String sql = "SELECT methodName, params, numinvokations, methodImplementation FROM ServiceInvokationPermission " +
-                         "WHERE clientServiceSpaceId=? AND serviceName=?";
+            String sql = "SELECT methodName, params, numinvokations, methodImplementation FROM " +
+                         "ServicePermissions sp, ServiceSpaceGroups sg " +
+                         "WHERE serviceName=? AND sp.groupid=sg.groupid AND sg.servicespaceid=? ";
             stmt = con.prepareStatement(sql);
-            stmt.setInt(1, clientServiceSpaceId);
-            stmt.setString(2, serviceName);
+            stmt.setString(1, serviceName);
+            stmt.setInt(2, clientServiceSpaceId);
 
             rs = stmt.executeQuery();
             while (rs.next()) {

@@ -3,12 +3,15 @@ package psl.discus.javasrc.services;
 import java.rmi.RemoteException;
 
 import javax.sql.DataSource;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.naming.Context;
 
 import psl.discus.javasrc.security.*;
 import psl.discus.javasrc.security.SecurityManager;
 
-import psl.discus.javasrc.shared.FakeDataSource;
-import psl.discus.javasrc.shared.Util;
+import psl.discus.javasrc.security.FakeDataSource;
+import psl.discus.javasrc.security.Util;
 
 import java.rmi.RemoteException;
 import java.io.FileOutputStream;
@@ -20,20 +23,33 @@ import java.io.IOException;
  */
 public class SecurityManagerServiceImpl implements SecurityManagerService {
 
-    SecurityManager securityManager;
-    SignatureManager signatureManager;
+    public static final String DISCUS_DB_JNDI_NAME = "jdbc/SecurityManagerDB";
+
+    private SecurityManager securityManager;
+    private SignatureManager signatureManager;
 
     public SecurityManagerServiceImpl()
         throws RemoteException {
 
         Util.debug("Initializing SecurityManagerService...");
 
-        // TODO: get *real* DataSource
-        DataSource ds = new FakeDataSource();
+        // For testing: [removed]
+        // DataSource ds = new FakeDataSource();
+
+        // get datasource -- it should be defined in the server and web.xml configuration
+        DataSource ds  = null;
+
+        try {
+            Context initCtx = new InitialContext();
+            Context envCtx = (Context) initCtx.lookup("java:comp/env");
+            ds = (DataSource) envCtx.lookup (DISCUS_DB_JNDI_NAME);
+        } catch (NamingException e) {
+            throw new RemoteException("Could not find datasource: " + e);
+        }
 
         // create SignatureManager
         try {
-            signatureManager = new SignatureManager(ds);
+            signatureManager = new SignatureManagerImpl(ds);
         }
         catch (Exception e) {
             throw new RemoteException("Could not initialize SignatureManager: " + e);
@@ -58,11 +74,8 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
         // convert back to newlines!
         treatyXML = Util.replaceString(treatyXML,"> <", ">\n<");
 
-        try {
-            return securityManager.verifyTreaty(treatyXML,signed);
-        } catch (SecurityManagerException e) {
-            throw new RemoteException("Error", e);
-        }
+        return securityManager.verifyTreaty(treatyXML,signed);
+
     }
 
     public String[] doRequestCheck(String requestXML, boolean signed)
@@ -75,11 +88,19 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
         // convert back to newlines!
         requestXML = Util.replaceString(requestXML,"> <", ">\n<");
 
-        try {
-            return securityManager.doRequestCheck(requestXML, signed);
-        } catch (SecurityManagerException e) {
-            throw new RemoteException("Error", e);
-        }
+        return securityManager.doRequestCheck(requestXML, signed);
+
+    }
+
+    /**
+     * Revokes a treaty. Returns STATUS_OK if revoked OK, or STATUS_ERROR and an error message
+     * if the operation failed.
+     */
+    public String[] revokeTreaty(int treatyid)
+        throws RemoteException {
+
+        return securityManager.revokeTreaty(treatyid);
+
     }
 
     public String[] signDocument(String xml)
@@ -117,31 +138,4 @@ public class SecurityManagerServiceImpl implements SecurityManagerService {
         }
     }
 
-
-
-    /*
-    public String addServiceSpace(String serviceSpaceXMLDoc)
-        throws RemoteException {
-
-        return securityManager.addServiceSpace(serviceSpaceXMLDoc);
-    }
-
-    public String removeServiceSpace(int serviceSpaceId)
-        throws RemoteException {
-
-        return securityManager.removeServiceSpace(serviceSpaceId);
-    }
-
-    public String addPermission(String servicePermissionXMLDoc)
-        throws RemoteException {
-
-        return securityManager.addPermission(servicePermissionXMLDoc);
-    }
-
-    public String removePermission(String servicePermissionXMLDoc)
-        throws RemoteException {
-
-        return securityManager.removePermission(servicePermissionXMLDoc);
-    }
-    */
 }

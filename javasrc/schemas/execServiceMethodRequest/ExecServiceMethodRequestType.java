@@ -134,7 +134,23 @@ public abstract class ExecServiceMethodRequestType implements java.io.Serializab
     public int getParameterCount()
     {
         return _parameterList.size();
-    } //-- int getParameterCount() 
+    } //-- int getParameterCount()
+
+    /**
+     * added by matias: counts only parameters that are filled in
+     */
+    public int getFilledParameterCount()
+    {
+        int count = 0;
+        for (Enumeration e = enumerateParameter(); e.hasMoreElements();) {
+            String param = (String) e.nextElement();
+            if (param != null && param.length() > 0)
+                count++;
+        }
+
+        return count;
+
+    }
 
     /**
     **/
