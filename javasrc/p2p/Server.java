@@ -46,10 +46,18 @@ import psl.discus.javasrc.uddi.*;
  * discover the module advertisements and create output pipes to
  * connect to the service. The server application creates an input
  * pipe and waits to receive messages.
+ *
+ * This class instantiates a JXTA peer, and no more than one instance should
+ * be created (since they will use the same jxta settings and not work properly)
+ * Because of this the class is a singleton, meaning that it supports only one actual
+ * instance. Calling the getInstance() method will either create a new instance, or
+ * return the existing one.
  */
 public class Server implements PipeMsgListener, Tags {
 
-    static PeerGroup group = null;
+    private static Server server;  // the singleton instance
+    private static PeerGroup group = null;
+
     private DiscoveryService discoveryService;
     private PipeService pipeService;
 
@@ -65,24 +73,56 @@ public class Server implements PipeMsgListener, Tags {
     private SignatureManager signatureManager;
     private MessageDispatcher messageDispatcher;
     private XMLSerializer xmlSerializer;
+    private DataSource ds;
 
 
-    public static void main(String args[]) {
-        Server server = new Server(new FakeDataSource());
+    public static void main(String args[])
+        throws ServerException {
+
+        Server server = getInstance(new FakeDataSource());
         logger.debug("Starting Server....");
         server.startJxta();
 
     }
 
 
+    /**
+     * Gets an instance of the server class. If necessary, a new Server object will be
+     * instantiated, with the given DataSource. Otherwise, the existing Server will be returned
+     * @param ds the DataSource with which to instantiate the new client
+     * @return an instance of a Server
+     * @throws ServerException if an error occurs, or if the datasource given is not the same as
+     * the one used by the existing server
+     */
+    public static Server getInstance(DataSource ds)
+        throws ServerException {
 
-    public Server(DataSource ds) {
+        if (server == null) {
+            server = new Server(ds);
+        }
+        else if (server.ds != ds) {
+            throw new ServerException("DataSource given doesn't match datasource of existing instance");
+        }
+
+        return server;
+
+    }
+
+    /**
+     * The constructor is made private because an instance of this class can only be obtained
+     * by calling the getInstance() method
+     */
+    private Server(DataSource ds)
+        throws ServerException {
+
+        this.ds = ds;
+
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         try {
             db = dbf.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
-            throw new RuntimeException("Could not get DocumentBuilder: " + e);
+            throw new ServerException("Could not get DocumentBuilder: " + e);
         }
 
         try {
@@ -90,14 +130,14 @@ public class Server implements PipeMsgListener, Tags {
             signatureManager = new SignatureManagerImpl(ds);
         }
         catch (SignatureManagerException e) {
-            throw new RuntimeException("Could not initialize SignatureManager: " + e);
+            throw new ServerException("Could not initialize SignatureManager: " + e);
         }
 
         try {
             logger.debug("Instantiating MessageDispatcher...");
             messageDispatcher = new MessageDispatcher(ds, signatureManager);
         } catch (MessageDispatcherException e) {
-            throw new RuntimeException("Could not initialize MessageDispatcher: " + e);
+            throw new ServerException("Could not initialize MessageDispatcher: " + e);
         }
 
         xmlSerializer = new XMLSerializer();
@@ -106,7 +146,8 @@ public class Server implements PipeMsgListener, Tags {
         xmlSerializer.setOutputFormat(format);
     }
 
-    public void startJxta() {
+    public void startJxta()
+        throws ServerException {
 
         logger.debug("Starting jxta...");
         try {
@@ -114,9 +155,8 @@ public class Server implements PipeMsgListener, Tags {
             group = PeerGroupFactory.newNetPeerGroup();
 
         } catch (PeerGroupException e) {
-            // could not instanciate the group, print the stack and exit
             logger.fatal("error: could not instantiate netPeerGroup");
-            return;
+            throw new ServerException(e);
         }
 
         // get the discovery, and pipe service

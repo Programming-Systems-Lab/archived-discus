@@ -42,10 +42,17 @@ import java.util.*;
  *  It can then create a new output pipe to connect to the
  *  service and send a message to the service.
  *
+ *  This class instantiates a JXTA peer, and no more than one instance should
+ *  be created (since they will use the same jxta settings and not work properly)
+ *  Because of this the class is a singleton, meaning that it supports only one actual
+ *  instance. Calling the getInstance() method will either create a new instance, or
+ * return the existing one.
+ *
  */
 public class Client implements PipeMsgListener, Tags {
 
     private static final Logger logger = Logger.getLogger(Client.class);
+    private static Client client;   // the singleton instance
 
     private PeerGroup netPeerGroup = null;
 
@@ -67,6 +74,7 @@ public class Client implements PipeMsgListener, Tags {
     private static final String CMD_QUIT = "quit";
     private static final String PIPE_ADV_FILE = "pipe.adv";
 
+    private DataSource ds;
     private DocumentBuilder db;
     private SignatureManager signatureManager;
     private ClientDAO clientDAO;
@@ -74,23 +82,50 @@ public class Client implements PipeMsgListener, Tags {
     private XMLSerializer xmlSerializer;
 
 
+    /**
+     * Gets an instance of the client class. If necessary, a new Client object will be
+     * instantiated, with the given DataSource. Otherwise, the existing Client will be returned
+     * @param ds the DataSource with which to instantiate the new client
+     * @return an instance of a Client
+     * @throws ClientException if an error occurs, or if the datasource given is not the same as
+     * the one used by the existing client
+     */
+    public static Client getInstance(DataSource ds)
+        throws ClientException {
 
-    public Client(DataSource ds) {
+        if (client == null) {
+            // instantiate a new client
+            client = new Client(ds);
+        }
+        else if (client.ds != ds) {
+            throw new ClientException("DataSource given doesn't match datasource of existing instance");
+        }
 
-        knownPipeAds = new Hashtable();
+        return client;
+
+    }
+
+    /**
+     * The constructor is made private because an instance of this class can only be obtained
+     * by calling the getInstance() method
+     */
+    private Client(DataSource ds)
+        throws ClientException {
+
+        this.ds = ds;
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         try {
             db = dbf.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
-            throw new RuntimeException("Could not get DocumentBuilder: " + e);
+            throw new ClientException("Could not get DocumentBuilder: " + e);
         }
 
         try {
             signatureManager = new SignatureManagerImpl(ds);
         } catch (SignatureManagerException e) {
-            throw new RuntimeException("Could not initialize SignatureManager: " + e);
+            throw new ClientException("Could not initialize SignatureManager: " + e);
         }
 
         clientDAO = new ClientDAO(ds);
@@ -104,6 +139,7 @@ public class Client implements PipeMsgListener, Tags {
         createInputPipe();
 
         // load known pipes
+        knownPipeAds = new Hashtable();
         try {
             Vector endpoints = clientDAO.getServiceSpaceEndpoints();
             for (Enumeration e = endpoints.elements(); e.hasMoreElements();) {
@@ -112,7 +148,7 @@ public class Client implements PipeMsgListener, Tags {
             }
         }
         catch (DAOException e) {
-            throw new RuntimeException("Could not initialize Client: " + e);
+            throw new ClientException("Could not initialize Client: " + e);
         }
 
         queries = new Hashtable();
@@ -142,7 +178,6 @@ public class Client implements PipeMsgListener, Tags {
             // create, and Start the default jxta NetPeerGroup
             netPeerGroup = PeerGroupFactory.newNetPeerGroup();
         } catch (PeerGroupException e) {
-            e.printStackTrace();
             throw new RuntimeException("fatal error : group creation failure");
         }
 
