@@ -4,9 +4,7 @@ using System.Xml;
 using System.Xml.Schema;
 using System.Xml.XPath;
 using System.Xml.Serialization;
-using System.Runtime.Serialization.Formatters.Soap;
 using Microsoft.Data.Odbc;
-using PSL.DISCUS.Impl.Treaty;
 using PSL.DISCUS.Impl.DataAccess;
 using PSL.DISCUS.Impl.GateKeeper;
 using PSL.DISCUS.Impl.DynamicProxy;
@@ -23,6 +21,110 @@ namespace DISCUSUnittest
 	/// </summary>
 	class Tester
 	{
+		/* Register services an known gatekeepers */
+		public static void SetupServiceSpace()
+		{
+			InternalRegistry ireg = new InternalRegistry();
+			// BN QuoteBinding Service
+			int nServiceID = ireg.RegisterService( "BNQuoteService", "","http://www.xmethods.net/sd/2001/BNQuoteService.wsdl", "http://services.xmethods.net:80/soap/servlet/rpcrouter" );
+			if( nServiceID != -1 )
+				ireg.RegisterServiceMethod( "BNQuoteService", "getPrice" );
+			// XMethodsQuery
+			nServiceID = ireg.RegisterService( "XMethodsQuery", "", "http://www.xmethods.net/wsdl/query.wsdl", "http://www.xmethods.net/interfaces/query" );
+			if( nServiceID != -1 )
+			{
+				ireg.RegisterServiceMethod( "XMethodsQuery", "getAllServiceSummaries" );
+				ireg.RegisterServiceMethod( "XMethodsQuery", "getServiceNamesByPublisher" );
+			}
+
+			// GeoCash
+			nServiceID = ireg.RegisterService( "GeoCash", "", "http://64.78.60.122/GeoCash.asmx?WSDL", "http://64.78.60.122/GeoCash.asmx" );
+			if( nServiceID != -1 )
+				ireg.RegisterServiceMethod( "GeoCash", "GetATMLocations" );
+
+			// Google
+			nServiceID = ireg.RegisterService( "GoogleSearchService", "", "http://api.google.com/GoogleSearch.wsdl", "http://api.google.com/search/beta2" );
+			if( nServiceID != -1 )
+				ireg.RegisterServiceMethod( "GoogleSearchService", "doGoogleSearch" );
+			// SecurityManager
+			nServiceID = ireg.RegisterService( "SecurityManagerService", "", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl", "http://church.psl.cs.columbia.edu:8080/security/jaxrpc/SecurityManagerService" );
+			if( nServiceID != -1 )
+			{
+				ireg.RegisterServiceMethod( "SecurityManagerService", "doRequestCheck" );
+				ireg.RegisterServiceMethod( "SecurityManagerService", "signDocument" );
+				ireg.RegisterServiceMethod( "SecurityManagerService", "verifyDocument" );
+				ireg.RegisterServiceMethod( "SecurityManagerService", "verifyTreaty" );
+				ireg.RegisterServiceMethod( "SecurityManagerService", "verifyTreaty2" );
+			}
+		}
+		
+		public static void ResetServiceLocations()
+		{
+			InternalRegistry ireg = new InternalRegistry();
+			// BN Quote Binding
+			ireg.UpdateServiceLocation( "BNQuoteService", "http://www.xmethods.net/sd/2001/BNQuoteService.wsdl" );
+			// XMethodsQuery
+			ireg.UpdateServiceLocation( "XMethodsQuery", "http://www.xmethods.net/wsdl/query.wsdl" );
+			// GeoCash
+			ireg.UpdateServiceLocation( "GeoCash", "http://64.78.60.122/GeoCash.asmx?WSDL" );
+			// Google
+			ireg.UpdateServiceLocation( "GoogleSearchService", "http://api.google.com/GoogleSearch.wsdl" );
+			// SecurityManager
+			ireg.UpdateServiceLocation( "SecurityManagerService", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl" );
+		}
+
+		public static void TestServiceMethods()
+		{
+			// GateKeeper instance
+			GateKeeper g = new GateKeeper();
+			object objRes = null;
+			//InternalRegistry ireg = new InternalRegistry();
+			//ireg.UpdateServiceLocation( "SecurityManagerService", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl" );
+
+
+			ExecServiceMethodRequestType e = new ExecServiceMethodRequestType();
+			// BNQuoteBinding
+			//e.TreatyID = 4;
+			//e.ServiceName = "BNQuoteService";
+			//e.MethodName = "getPrice";
+			//e.m_Parameter.Clear();
+			//e.m_Parameter.Add( "<?xml version=\"1.0\"?><string>1861005458</string>" );
+
+			//objRes = g.ExecuteServiceMethod( e.ToXml() );			
+
+			objRes = g.EnlistServicesByName( "<?xml version=\"1.0\"?><Treaty xmlns=\"http://localhost/Discus/Schema/Treaty.xsd\"><TreatyID>1000</TreatyID><ClientServiceSpace>myservicespace</ClientServiceSpace><ProviderServiceSpace>providerss</ProviderServiceSpace><ServiceInfo><ServiceName>service</ServiceName><ServiceMethod><MethodName>method</MethodName><Parameter>foo</Parameter><Parameter>bar</Parameter><NumInvokations>1</NumInvokations><Authorized>true</Authorized></ServiceMethod></ServiceInfo></Treaty>" );
+			
+			// XMethodsQuery
+			/*e.ServiceName = "XMethodsQuery";
+			e.MethodName = "getAllServiceSummaries";
+			e.m_Parameter.Clear();
+			objRes = g.ExecuteServiceMethod( e.ToXml() );
+			
+			e.MethodName = "getServiceNamesByPublisher";
+			e.m_Parameter.Clear();
+			e.m_Parameter.Add( "<?xml version=\"1.0\"?><string>Interdata</string>" );
+			objRes = g.ExecuteServiceMethod( e.ToXml() );
+
+			// GeoCash
+			e.ServiceName = "GeoCash";
+			e.MethodName = "GetATMLocations";
+			e.m_Parameter.Clear();
+			e.m_Parameter.Add( "<?xml version=\"1.0\"?><string>10025</string>" );
+			objRes = g.ExecuteServiceMethod( e.ToXml() );
+
+			// Google
+			
+			// SecurityManagerService
+			/*e.ServiceName = "SecurityManagerService";
+			e.MethodName = "signDocument";
+			e.m_Parameter.Clear();
+			e.m_Parameter.Add( "<?xml version=\"1.0\" encoding=\"utf-8\"?><ExecServiceMethodRequest><TreatyID>4</TreatyID><ServiceName>GeoCash</ServiceName><MethodName>GetATMLocations</MethodName><Parameter>Simple Document</Parameter></ExecServiceMethodRequest>" );
+			objRes = g.ExecuteServiceMethod( e.ToXml() );*/
+
+
+		}
+
+		
 		/// <summary>
 		/// The main entry point for the application.
 		/// </summary>
@@ -31,6 +133,13 @@ namespace DISCUSUnittest
 		{
 			try
 			{
+				 //SetupServiceSpace();
+				//TestServiceMethods();
+
+				PSL.DISCUS.Impl.GateKeeper.TreatyType t = new TreatyType();
+				
+				
+				
 				//InternalRegistry ireg = new InternalRegistry();
 				//ireg.RegisterServiceMethod( "XMethodsQuery", "getServiceNamesByPublisher" );
 				//ireg.UpdateGateKeeperLocation( "PSLGatekeeper1", "http://localhost/PSLGatekeeper1/PSLGatekeeper1.asmx?WSDL" );
@@ -85,17 +194,34 @@ namespace DISCUSUnittest
 				
 				string strAssembly = pGen.GenerateAssembly( req );*/
 
-				/*InternalRegistry ireg = new InternalRegistry();
-				int nServiceID = ireg.RegisterService( "SecurityManagerService", "", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl", "http://church.psl.cs.columbia.edu:8080/security/jaxrpc/SecurityManagerService" ); 
-				if( nServiceID != -1 )
-					ireg.RegisterServiceMethod( "SecurityManagerService", "verifyTreaty" );
-				*/
+				//InternalRegistry ireg = new InternalRegistry();
+				//int nServiceID = ireg.RegisterService( "SecurityManagerService", "", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl", "http://church.psl.cs.columbia.edu:8080/security/jaxrpc/SecurityManagerService" ); 
+				//if( nServiceID != -1 )
+				//	ireg.RegisterServiceMethod( "SecurityManagerService", "verifyTreaty" );
+				//*/
+				//ireg.UpdateServiceLocation( "SecurityManagerService", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl" );
 				
 				//string strTreaty = "<?xml version=\"1.0\" ?><Treaty xmlns=\"http://localhost/Discus/Schema/Treaty.xsd\"><TreatyID>1000</TreatyID><ClientServiceSpace>myservicespace</ClientServiceSpace><ProviderServiceSpace>providerss</ProviderServiceSpace><ServiceInfo><ServiceName>service</ServiceName><ServiceMethod><MethodName>method</MethodName><Parameter>foo</Parameter><Parameter>bar</Parameter><NumInvokations>1</NumInvokations><Authorized>true</Authorized></ServiceMethod></ServiceInfo></Treaty>";
-				string strInput = "<?xml version=\"1.0\" encoding=\"utf-8\"?><ExecServiceMethodRequest><TreatyID>1000</TreatyID><ServiceName>SecurityManagerService</ServiceName><MethodName>verifyTreaty</MethodName><Parameter><![CDATA[<?xml version=\"1.0\"?><string><?xml version=\"1.0\"?><Treaty xmlns=\"http://localhost/Discus/Schema/Treaty.xsd\"><TreatyID>1000</TreatyID><ClientServiceSpace>myservicespace</ClientServiceSpace><ProviderServiceSpace>providerss</ProviderServiceSpace><ServiceInfo><ServiceName>service</ServiceName><ServiceMethod><MethodName>method</MethodName><Parameter>foo</Parameter><Parameter>bar</Parameter><NumInvokations>1</NumInvokations><Authorized>true</Authorized></ServiceMethod></ServiceInfo></Treaty></string>]]></Parameter></ExecServiceMethodRequest>";
+				/*string strInput = "<?xml version=\"1.0\" encoding=\"utf-8\"?><ExecServiceMethodRequest><TreatyID>1000</TreatyID><ServiceName>SecurityManagerService</ServiceName><MethodName>verifyTreaty</MethodName><Parameter><![CDATA[<?xml version=\"1.0\"?><string><?xml version=\"1.0\"?><Treaty xmlns=\"http://localhost/Discus/Schema/Treaty.xsd\"><TreatyID>1000</TreatyID><ClientServiceSpace>myservicespace</ClientServiceSpace><ProviderServiceSpace>providerss</ProviderServiceSpace><ServiceInfo><ServiceName>service</ServiceName><ServiceMethod><MethodName>method</MethodName><Parameter>foo</Parameter><Parameter>bar</Parameter><NumInvokations>1</NumInvokations><Authorized>true</Authorized></ServiceMethod></ServiceInfo></Treaty></string>]]></Parameter></ExecServiceMethodRequest>";
 				GateKeeper g = new GateKeeper();
 				string strRes = g.ExecuteServiceMethod( strInput );
 
+				XmlDocument doc = new XmlDocument();
+				doc.LoadXml( strRes );
+
+				string strT = doc.InnerText;
+				string strX = doc.InnerXml;
+				
+				//XmlSerializer xser = new XmlSerializer( System.String );
+				//XmlTextReader xt = new XmlTextReader( strRes, XmlNodeType.Document );
+				//string strSMgrResponse = xt.ReadInnerXml();
+				
+				//XmlDocument doc = new XmlDocument();
+				//doc.LoadXml( strRes );*/
+
+				 
+
+				
 				int x = 0;
 				x++;
 			}

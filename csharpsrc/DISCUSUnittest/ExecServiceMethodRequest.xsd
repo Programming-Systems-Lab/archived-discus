@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema id="ExecServiceMethodRequest" targetNamespace="http://www.psl.cs.columbia.edu/Discus/ExecServiceMethodRequest.xsd" elementFormDefault="qualified" xmlns="http://www.psl.cs.columbia.edu/Discus/ExecServiceMethodRequest.xsd" xmlns:mstns="http://www.psl.cs.columbia.edu/Discus/ExecServiceMethodRequest.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="ExecServiceMethodRequest" type="ExecServiceMethodRequestType" />
+	<xs:complexType name="ExecServiceMethodRequestType">
+		<xs:sequence>
+			<xs:element name="TreatyID" type="xs:int" minOccurs="1" maxOccurs="1" default="0" nillable="false" />
+			<xs:element name="ServiceName" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false" />
+			<xs:element name="MethodName" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false" />
+			<xs:element name="Parameter" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

@@ -116,7 +116,21 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "ExecServiceMethodRequest.xsd"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "ExecServiceMethodRequest.xsx"
+                    DependentUpon = "ExecServiceMethodRequest.xsd"
+                    BuildAction = "None"
+                />
+                <File
                     RelPath = "PSLGatekeeper2.cs"
+                    SubType = "code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "SecurityManagerService.cs"
                     SubType = "code"
                     BuildAction = "Compile"
                 />
