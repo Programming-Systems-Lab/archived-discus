@@ -202,6 +202,11 @@
                     BuildAction = "Compile"
                 />
                 <File
+                    RelPath = "LogTraceContext.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
                     RelPath = "ProxyGen.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -210,6 +215,10 @@
                     RelPath = "RegServiceDAO.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "SampleDAMLWF.xml"
+                    BuildAction = "Content"
                 />
                 <File
                     RelPath = "ServiceSpaceDAO.cs"
@@ -223,6 +232,16 @@
                 />
                 <File
                     RelPath = "TreatyType.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "UrlLoggerImpl.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "UrlTracerImpl.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

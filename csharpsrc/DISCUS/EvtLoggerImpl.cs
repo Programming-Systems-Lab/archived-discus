@@ -24,7 +24,7 @@ namespace PSL.DISCUS.Impl.Logging
 			}
 		}
 		
-		public EvtLoggerImpl()
+		public EvtLoggerImpl( LogTraceContext ctx )
 		{
 			// Create new Application Event Log instance
 			m_EvtLogger = new EventLog( "Application" );

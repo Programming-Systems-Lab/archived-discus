@@ -64,9 +64,12 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			{ m_bTraceOn = value; }
 		}
 
+		LogTraceContext m_logCtx = new LogTraceContext();
+		LogTraceContext m_traceCtx = new LogTraceContext();
+
 		// Set up logging and tracing facilities
-		private LoggerImpl m_objLogger = new EvtLoggerImpl();
-		private TracerImpl m_objTracer = new EvtTracerImpl();
+		private LoggerImpl m_objLogger; 
+		private TracerImpl m_objTracer; 
 		
 		// Proxy Generator
 		private ProxyGen m_pxyGen;
@@ -124,9 +127,6 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			{
 				// Create ProxyGenerator instance
 				m_pxyGen = new ProxyGen();
-				// Initialize error logging facility
-				m_objLogger.Source = "Gatekeeper";
-				m_objTracer.Source = "Gatekeeper";
 
 				// Read DISCUS config file
 				FileStream fs = File.Open( CONFIG, FileMode.Open );
@@ -140,19 +140,85 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				// Use XPath to extract what info we need
 				XmlNode root =  doc.DocumentElement;
 				// Get specific GateKeeper name
-				m_strName = root.SelectSingleNode( "GateKeeperName" ).InnerText;
+				XmlNode currentNode = root.SelectSingleNode( "GateKeeperName" );
+				
+				if( currentNode != null )
+					m_strName = currentNode.InnerText;
 
+				// Set logging and tracing contexts
+
+				// Logging context info
+				currentNode = root.SelectSingleNode( "Logging/UrlLogging/Hostname" );
+				if( currentNode != null )
+					m_logCtx.Hostname = currentNode.InnerText;
+
+				currentNode = root.SelectSingleNode( "Logging/UrlLogging/Port" );
+				if( currentNode != null )
+					m_logCtx.Port = Int32.Parse( currentNode.InnerText );
+
+				currentNode = root.SelectSingleNode( "Logging/WebServiceLogging/WSDL" );
+				if( currentNode != null )
+					m_logCtx.WebServiceWSDL = currentNode.InnerText;
+
+				currentNode = root.SelectSingleNode( "Logging/WebServiceLogging/AccessPoint" );
+				if( currentNode != null )
+					m_logCtx.WebServiceAccessPoint = currentNode.InnerText;
+
+				// Tracing context info
+				currentNode = root.SelectSingleNode( "Tracing/UrlTracing/Hostname" );
+				if( currentNode != null )
+					m_traceCtx.Hostname = currentNode.InnerText;
+
+				currentNode = root.SelectSingleNode( "Tracing/UrlTracing/Port" );
+				if( currentNode != null )
+					m_traceCtx.Port = Int32.Parse( currentNode.InnerText );
+
+				currentNode = root.SelectSingleNode( "Tracing/WebServiceTracing/WSDL" );
+				if( currentNode != null )
+					m_traceCtx.WebServiceWSDL = currentNode.InnerText;
+
+				currentNode = root.SelectSingleNode( "Tracing/WebServiceTracing/AccessPoint" );
+				if( currentNode != null )
+					m_traceCtx.WebServiceAccessPoint = currentNode.InnerText;
+
+				
+				// Determine the type of logging anf tracing facilities to use
+                string strLoggingType = "";
+				currentNode = root.SelectSingleNode( "Logging/LoggingType" );
+				if( currentNode == null || currentNode.InnerText.Length == 0 )
+					strLoggingType = DConst.EVENT_LOGGING;
+				else strLoggingType = currentNode.InnerText;
+
+				string strTracingType = "";
+				currentNode = root.SelectSingleNode( "Tracing/TracingType" );
+				if( currentNode == null || currentNode.InnerText.Length == 0 )
+					strTracingType = DConst.EVENT_TRACING;
+				else strTracingType = currentNode.InnerText;
+				
+				// Gaurantees that some logging and tracing facility is available
+				m_objLogger = CreateLoggingInstance( strLoggingType, m_logCtx );
+				m_objTracer = CreateTracingInstance( strTracingType, m_traceCtx );
+				
 				// Specific sourcename
 				if( m_strName.Length > 0 )
 				{
 					m_objLogger.Source = m_strName;
 					m_objTracer.Source = m_strName;
 				}
+				else
+				{
+					m_objLogger.Source = "Gatekeeper";
+					m_objTracer.Source = "Gatekeeper";
+				}
 				
 				// Find out where we store dynamic proxies
 				// if no dir specified create default 
 				// proxy cache directory under the current directory
-				m_strPxyCacheDir = root.SelectSingleNode( "ProxyCache" ).InnerText;
+				currentNode = root.SelectSingleNode( "ProxyCache" );
+				
+				if( currentNode != null )
+					m_strPxyCacheDir = currentNode.InnerText;
+				
 				if( m_strPxyCacheDir.Length == 0 )
 					m_strPxyCacheDir = DConst.DEFAULT_PXY_DIR;
 
@@ -403,6 +469,74 @@ namespace PSL.DISCUS.Impl.GateKeeper
 			return bRetVal;
 		}
 
+		/* Function creates a logging instance. 
+		 * Input: strLoggingType - the type of logging instance to create
+		 *						   EvtLoggerImpl, UrlLoggerImpl or WebServiceLoggerImpl
+		 *						   based on the names: "EventLog", "UrlLog", "WebServiceLog"
+		 * Return values: an instance of the named logging implementation OR
+		 *				  an instance of the default logging implementation, EvtLoggerImpl
+		 */
+		private LoggerImpl CreateLoggingInstance( string strLoggingType, LogTraceContext logCtx )
+		{
+			LoggerImpl objLoggingInst = null;
+			
+			try
+			{
+				if( strLoggingType.ToLower().CompareTo( DConst.URL_LOGGING.ToLower() ) == 0 )
+				{
+					// UrlLoggerImpl
+					objLoggingInst = new UrlLoggerImpl( logCtx );
+				}
+				else if( strLoggingType.ToLower().CompareTo( DConst.WEB_SERVICE_LOGGING.ToLower() ) == 0 )
+				{
+					// WebServiceLoggerImpl
+					objLoggingInst = new EvtLoggerImpl( logCtx );
+				}
+				else objLoggingInst = new EvtLoggerImpl( logCtx );
+			}
+			catch( Exception e )
+			{
+				objLoggingInst = new EvtLoggerImpl( logCtx );
+				objLoggingInst.LogError( e.Message );
+			}
+
+			return objLoggingInst;
+		}
+		
+		/* Function creates a tracing instance. 
+		 * Input: strTracingType - the type of logging instance to create
+		 *						   EvtTracerImpl, UrlTracerImpl or WebServiceTracerImpl
+		 *						   based on the names: "EventTrace", "UrlTrace", "WebServiceTrace"
+		 * Return values: an instance of the named tracing implementation OR
+		 *				  an instance of the default tracing implementation, EvtTracerImpl
+		 */
+		private TracerImpl CreateTracingInstance( string strTracingType, LogTraceContext traceCtx )
+		{
+			TracerImpl objTracingInst = null;
+			
+			try
+			{
+				if( strTracingType.ToLower().CompareTo( DConst.URL_TRACING.ToLower() ) == 0 )
+				{
+					// UrlTracerImpl
+					objTracingInst = new UrlTracerImpl( traceCtx );
+				}
+				else if( strTracingType.ToLower().CompareTo( DConst.WEB_SERVICE_TRACING.ToLower() ) == 0 )
+				{
+					// WebServiceTracerImpl
+					objTracingInst = new EvtTracerImpl( traceCtx );
+				}
+				else objTracingInst = new EvtTracerImpl( traceCtx );
+			}
+			catch( Exception e )
+			{
+				objTracingInst = new EvtTracerImpl( traceCtx );
+				objTracingInst.TraceError( e.Message );
+			}
+
+			return objTracingInst;
+		}
+
 		/* Procedure dissolves a Treaty with a given TreatyID
 		 * Input: nTreatyID - the treaty to be dissolved
 		 */
@@ -566,6 +700,8 @@ namespace PSL.DISCUS.Impl.GateKeeper
 				// if not then we report the failure and exit
 				if( !CanExecuteAllSteps( mapping ) )
 				{
+					if( m_bTraceOn )
+						TraceError( "All Necessary Resources NOT Acquired" );
 					// Write Treaties to event log for analysis later
 					throw new Exception( "Resource Acquire Failed, All Requests NOT Authorized" );
 				}
@@ -627,7 +763,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		 *		  objParams - array of parameters to pass to proxy method
 		 * Return Values: the results of execution against the GK
 		 */
-		public object ExecuteGateKeeper( string strGKName, string strGKMethod, object[] objParams )
+		private object ExecuteGateKeeper( string strGKName, string strGKMethod, object[] objParams )
 		{
 			object objInvokeResult = null;
 			try
@@ -735,7 +871,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		 *		  objParams - array of parameters to pass to proxy method
 		 * Return Values: the results of execution against the web service
 		 */
-		public object ExecuteService( string strServiceName, string strServiceMethod, object[] objParams )
+		private object ExecuteService( string strServiceName, string strServiceMethod, object[] objParams )
 		{
 			object objInvokeResult = null;
 			try
@@ -1099,7 +1235,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		 *				  gatekeeper and the treaty created with
 		 *				  with them.
 		 */
-		Hashtable FormTreaties( AlphaRequest[] arrReqs )
+		private Hashtable FormTreaties( AlphaRequest[] arrReqs )
 		{
 			if( arrReqs.Length == 0 )
 				return null;
@@ -1185,7 +1321,7 @@ namespace PSL.DISCUS.Impl.GateKeeper
 		 *		  strAccessPoint - URL of web service
 		 *  Return value: path to generated Assembly containing proxy
 		 */
-		private string GenerateProxy( string strName, string strLocation, string strAccessPoint )
+		public string GenerateProxy( string strName, string strLocation, string strAccessPoint )
 		{
 			string strRetVal = "";
 				
