@@ -1,7 +1,7 @@
 <VisualStudioProject>
     <CSHARP>
         <Build>
-            <Settings ReferencePath = "C:\Programming Projects\Columbia\bin\;C:\Program Files\Microsoft.NET\Odbc.Net\;C:\rg2023pslroot\psl\discus\bin\;C:\TEMP\PxyCache\" >
+            <Settings ReferencePath = "C:\Programming Projects\Columbia\bin\;C:\Program Files\Microsoft.NET\Odbc.Net\;C:\rg2023pslroot\psl\discus\bin\;C:\TEMP\PxyCache\;C:\pslroot\psl\discus\bin\" >
                 <Config
                     Name = "Debug"
                     EnableASPDebugging = "false"

@@ -124,37 +124,6 @@
                     SubType = "Code"
                     BuildAction = "Compile"
                 />
-                <File
-                    RelPath = "Web References\localhost\PSLGatekeeper2.disco"
-                    BuildAction = "None"
-                />
-                <File
-                    RelPath = "Web References\localhost\PSLGatekeeper2.wsdl"
-                    BuildAction = "None"
-                />
-                <File
-                    RelPath = "Web References\localhost\Reference.map"
-                    BuildAction = "None"
-                    Generator = "MSDiscoCodeGenerator"
-                    LastGenOutput = "Reference.cs"
-                />
-                <File
-                    RelPath = "Web References\localhost\Reference.cs"
-                    DependentUpon = "Reference.map"
-                    SubType = "code"
-                    BuildAction = "Compile"
-                    DesignTime = "True"
-                    AutoGen = "True"
-                />
-                <Folder
-                    RelPath = "Web References\localhost\"
-                    WebReferenceUrl = "http://localhost/PSLGatekeeper2/PSLGatekeeper2.asmx"
-                    UrlBehavior = "Static"
-                />
-                <Folder
-                    RelPath = "Web References\"
-                    WebReferences = "TRUE"
-                />
             </Include>
         </Files>
     </CSHARP>

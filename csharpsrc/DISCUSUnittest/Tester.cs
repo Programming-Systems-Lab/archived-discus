@@ -1,17 +1,19 @@
 using System;
 using System.IO;
-using System.Xml;
-using System.Xml.Schema;
-using System.Xml.XPath;
-using System.Xml.Serialization;
-using Microsoft.Data.Odbc;
+//using System.Xml;
+//using System.Xml.Schema;
+//using System.Xml.XPath;
+//using System.Xml.Serialization;
+//using Microsoft.Data.Odbc;
 using PSL.DISCUS.Impl.DataAccess;
 using PSL.DISCUS.Impl.GateKeeper;
-using PSL.DISCUS.Impl.DynamicProxy;
-using PSL.DISCUS.Impl.DynamicProxy.Util;
-using System.Reflection;
+//using PSL.DISCUS.Impl.DynamicProxy;
+//using PSL.DISCUS.Impl.DynamicProxy.Util;
+//using System.Reflection;
 using System.Collections;
-//using DISCUSUnittest.localhost;
+using PSL.DISCUS.Impl.Logging;
+using System.Net;
+using System.Net.Sockets;
 
 
 namespace DISCUSUnittest
@@ -25,52 +27,113 @@ namespace DISCUSUnittest
 		public static void SetupServiceSpace()
 		{
 			InternalRegistry ireg = new InternalRegistry();
-			// BN QuoteBinding Service
-			int nServiceID = ireg.RegisterService( "BNQuoteService", "","http://www.xmethods.net/sd/2001/BNQuoteService.wsdl", "http://services.xmethods.net:80/soap/servlet/rpcrouter" );
+			int nServiceID = -1;
+			bool bStatus = false;
+			// Google Search
+			nServiceID = ireg.RegisterService( "GoogleSearchService", "", "http://api.google.com/GoogleSearch.wsdl", "http://api.google.com/search/beta2" );
 			if( nServiceID != -1 )
-				ireg.RegisterServiceMethod( "BNQuoteService", "getPrice" );
-			// XMethodsQuery
+			{
+				bStatus = ireg.RegisterServiceMethod( "GoogleSearchService", "doGoogleSearch" );
+			}
+			
+			// GeoCash
+			nServiceID = ireg.RegisterService( "GeoCash", "",  "http://ws.serviceobjects.net/gc/GeoCash.asmx?WSDL", "http://ws.serviceobjects.net/gc/GeoCash.asmx" );
+			if( nServiceID != -1 )
+			{
+				bStatus = ireg.RegisterServiceMethod( "GeoCash", "GetATMLocations" );
+			}
+
+			// BNQuoteService
+			nServiceID = ireg.RegisterService( "BNQuoteService", "", "http://www.xmethods.net/sd/2001/BNQuoteService.wsdl", "http://services.xmethods.net:80/soap/servlet/rpcrouter" );
+			if( nServiceID != -1 )
+			{
+				bStatus = ireg.RegisterServiceMethod( "BNQuoteService", "getPrice" );
+			}
+
+			// WorldCup Scores
+			nServiceID = ireg.RegisterService( "CupScores", "", "http://64.78.60.122/CupScores.asmx?WSDL", "http://64.78.60.122/CupScores.asmx" );
+			if( nServiceID != -1 )
+			{
+				bStatus = ireg.RegisterServiceMethod( "CupScores", "GetScores" ); 			
+			}
+
+			// Randon Neil Finn Lyric Server
+			nServiceID = ireg.RegisterService( "finnwordsService", "", "http://www.nickhodge.com/nhodge/finnwords/finnwords.wsdl", "http://www.nickhodge.com/nhodge/finnwords/finnwordssoapengine.php" );
+			if( nServiceID != -1 )
+			{
+				bStatus = ireg.RegisterServiceMethod( "finnwordsService", "getRandomNeilFinnLyric" );
+			}
+
+			// Spanish Joke Server, input = "ES"
+			nServiceID = ireg.RegisterService( "JokeServer", "", "http://www.xml-webservices.net/services/entretainment/joke_server.asmx?WSDL", "http://www.xml-webservices.net/services/entretainment/joke_server.asmx" );
+			if( nServiceID != -1 )
+			{
+				bStatus = ireg.RegisterServiceMethod( "JokeServer", "JokeToString" );	
+			}
+
+			// XMethods Query
 			nServiceID = ireg.RegisterService( "XMethodsQuery", "", "http://www.xmethods.net/wsdl/query.wsdl", "http://www.xmethods.net/interfaces/query" );
 			if( nServiceID != -1 )
 			{
-				ireg.RegisterServiceMethod( "XMethodsQuery", "getAllServiceSummaries" );
-				ireg.RegisterServiceMethod( "XMethodsQuery", "getServiceNamesByPublisher" );
+				bStatus = ireg.RegisterServiceMethod( "XMethodsQuery", "getAllServiceSummaries" );
+				bStatus = ireg.RegisterServiceMethod( "XMethodsQuery", "getServiceNamesByPublisher" );
 			}
 
-			// GeoCash
-			nServiceID = ireg.RegisterService( "GeoCash", "", "http://64.78.60.122/GeoCash.asmx?WSDL", "http://64.78.60.122/GeoCash.asmx" );
-			if( nServiceID != -1 )
-				ireg.RegisterServiceMethod( "GeoCash", "GetATMLocations" );
-
-			// Google
-			nServiceID = ireg.RegisterService( "GoogleSearchService", "", "http://api.google.com/GoogleSearch.wsdl", "http://api.google.com/search/beta2" );
-			if( nServiceID != -1 )
-				ireg.RegisterServiceMethod( "GoogleSearchService", "doGoogleSearch" );
-			// SecurityManager
+			// SecurityManager Service
 			nServiceID = ireg.RegisterService( "SecurityManagerService", "", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl", "http://church.psl.cs.columbia.edu:8080/security/jaxrpc/SecurityManagerService" );
 			if( nServiceID != -1 )
 			{
-				ireg.RegisterServiceMethod( "SecurityManagerService", "doRequestCheck" );
-				ireg.RegisterServiceMethod( "SecurityManagerService", "signDocument" );
-				ireg.RegisterServiceMethod( "SecurityManagerService", "verifyDocument" );
-				ireg.RegisterServiceMethod( "SecurityManagerService", "verifyTreaty" );
-				ireg.RegisterServiceMethod( "SecurityManagerService", "verifyTreaty2" );
+				bStatus = ireg.RegisterServiceMethod( "SecurityManagerService", "doRequestCheck" );
+				bStatus = ireg.RegisterServiceMethod( "SecurityManagerService", "signDocument" );
+				bStatus = ireg.RegisterServiceMethod( "SecurityManagerService", "verifyDocument" );
+				bStatus = ireg.RegisterServiceMethod( "SecurityManagerService", "verifyTreaty" );
+				bStatus = ireg.RegisterServiceMethod( "SecurityManagerService", "verifyTreaty2" );
 			}
 		}
 		
 		public static void ResetServiceLocations()
 		{
 			InternalRegistry ireg = new InternalRegistry();
-			// BN Quote Binding
-			ireg.UpdateServiceLocation( "BNQuoteService", "http://www.xmethods.net/sd/2001/BNQuoteService.wsdl" );
-			// XMethodsQuery
-			ireg.UpdateServiceLocation( "XMethodsQuery", "http://www.xmethods.net/wsdl/query.wsdl" );
-			// GeoCash
-			ireg.UpdateServiceLocation( "GeoCash", "http://64.78.60.122/GeoCash.asmx?WSDL" );
-			// Google
+			// Google Search
 			ireg.UpdateServiceLocation( "GoogleSearchService", "http://api.google.com/GoogleSearch.wsdl" );
-			// SecurityManager
+			// GeoCash
+			ireg.UpdateServiceLocation( "GeoCash", "http://ws.serviceobjects.net/gc/GeoCash.asmx?WSDL" );
+			// BNQuoteService
+			ireg.UpdateServiceLocation( "BNQuoteService", "http://www.xmethods.net/sd/2001/BNQuoteService.wsdl" );
+			// WorldCup Scores
+			ireg.UpdateServiceLocation( "CupScores", "http://64.78.60.122/CupScores.asmx?WSDL" );
+			// Randon Neil Finn Lyric Server
+			ireg.UpdateServiceLocation( "finnwordsService", "http://www.nickhodge.com/nhodge/finnwords/finnwords.wsdl" );
+			// Joke Server
+			ireg.UpdateServiceLocation( "JokeServer", "http://www.xml-webservices.net/services/entretainment/joke_server.asmx?WSDL" );
+			// XMethods Query
+			ireg.UpdateServiceLocation( "XMethodsQuery", "http://www.xmethods.net/wsdl/query.wsdl" );
+			// SecurityManager Service
 			ireg.UpdateServiceLocation( "SecurityManagerService", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl" );
+		}
+
+		public static void GenerateAllProxies()
+		{
+			
+			GateKeeper g = new GateKeeper();
+			
+			// Generate Proxies for all the web services we want to interact with
+			// Google Search
+			g.GenerateProxy( "GoogleSearchService", "http://api.google.com/GoogleSearch.wsdl", "http://api.google.com/search/beta2" );
+			// GeoCash
+			g.GenerateProxy( "GeoCash", "http://ws.serviceobjects.net/gc/GeoCash.asmx?WSDL", "http://ws.serviceobjects.net/gc/GeoCash.asmx" );
+			// BNQuoteService
+			g.GenerateProxy( "BNQuoteService", "http://www.xmethods.net/sd/2001/BNQuoteService.wsdl", "http://services.xmethods.net:80/soap/servlet/rpcrouter" );
+			// WorldCup Scores
+			g.GenerateProxy( "CupScores", "http://64.78.60.122/CupScores.asmx?WSDL", "http://64.78.60.122/CupScores.asmx" );
+			// Randon Neil Finn Lyric Server
+			g.GenerateProxy( "finnwordsService", "http://www.nickhodge.com/nhodge/finnwords/finnwords.wsdl", "http://www.nickhodge.com/nhodge/finnwords/finnwordssoapengine.php" );
+			// Joke Server
+			g.GenerateProxy( "JokeServer", "http://www.xml-webservices.net/services/entretainment/joke_server.asmx?WSDL", "http://www.xml-webservices.net/services/entretainment/joke_server.asmx" );
+			// XMethods Query
+			g.GenerateProxy( "XMethodsQuery", "http://www.xmethods.net/wsdl/query.wsdl", "http://www.xmethods.net/interfaces/query" );
+			// SecurityManager Service
+			g.GenerateProxy( "SecurityManagerService", "http://church.psl.cs.columbia.edu:8080/security/SecurityServices.wsdl", "http://church.psl.cs.columbia.edu:8080/security/jaxrpc/SecurityManagerService" );
 		}
 
 		public static void TestServiceMethods()
@@ -101,7 +164,7 @@ namespace DISCUSUnittest
 			// insert into serviceinvokationpermission values(100,'XMethodsQuery','getAllServiceSummaries','',100000,'getAllServiceSummaries');
 			// insert into serviceinvokationpermission values(100,'XMethodsQuery','getServiceNamesByPublisher','PubName',100000,'getServiceNamesByPublisher');
 			// insert into serviceinvokationpermission values(100,'GeoCash','GetATMLocations','Zipcode',100000,'GetATMLocations');
-
+			/*
 			// XMethodsQuery
 			e.ServiceName = "XMethodsQuery";
 			e.MethodName = "getAllServiceSummaries";
@@ -112,13 +175,13 @@ namespace DISCUSUnittest
 			e.m_ParamValue.Clear();
 			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>Interdata</string>" );
 			objRes = g.ExecuteServiceMethod( e.ToXml() );
-
+			*/
 			// GeoCash
-			e.ServiceName = "GeoCash";
-			e.MethodName = "GetATMLocations";
-			e.m_ParamValue.Clear();
-			e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>10025</string>" );
-			objRes = g.ExecuteServiceMethod( e.ToXml() );
+			//e.ServiceName = "GeoCash";
+			//e.MethodName = "GetATMLocations";
+			//e.m_ParamValue.Clear();
+			//e.m_ParamValue.Add( "<?xml version=\"1.0\"?><string>10025</string>" );
+			//objRes = g.ExecuteServiceMethod( e.ToXml() );
 
 			// Google
 			
@@ -133,6 +196,25 @@ namespace DISCUSUnittest
 		}
 
 		
+		static void SendHttpPostData( string strData )
+		{
+			HttpWebRequest req = (HttpWebRequest) WebRequest.Create( "http://127.0.0.1:8080" );
+			req.Method = "POST";
+			req.KeepAlive = false;
+			req.AllowWriteStreamBuffering = false;
+			req.ContentLength = strData.Length;	
+			
+			//TcpClient client = new TcpClient( "localhost", 8080 );
+			//StreamWriter output = new StreamWriter( client.GetStream() );
+			
+			StreamWriter output = new StreamWriter( req.GetRequestStream() );
+
+			output.Write( strData );
+
+			output.Flush();
+			output.Close();
+		}
+		
 		/// <summary>
 		/// The main entry point for the application.
 		/// </summary>
@@ -144,6 +226,11 @@ namespace DISCUSUnittest
 				//SetupServiceSpace();
 				//ResetServiceLocations();
 				//TestServiceMethods();
+				//GenerateAllProxies();
+	
+
+				//GateKeeper g = new GateKeeper();
+				// g.TraceOn = true;
 
 				//string strAlpha = "<?xml version=\"1.0\" encoding=\"utf-8\"?><definitions name=\"DemoAlpha\" targetNamespace=\"http://psl.cs.columbia.edu\" xmlns:xlang=\"http://schemas.microsoft.com/bixtalk/xlang\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><!-- Simple demo using simple xlang constructs --><xlang:behavior><xlang:body><xlang:sequence><xlang:action activation=\"true\" gatekeeper=\"PSLGatekeeper1\" servicename=\"BNQuoteService\" operation=\"getPrice\"><parameter name=\"isbn\"><![CDATA[<?xml version=\"1.0\"?><string>1861005458</string>]]></parameter></xlang:action><xlang:action gatekeeper=\"PSLGatekeeper1\" servicename=\"GeoCash\" operation=\"GetATMLocations\"><parameter name=\"Zipcode\"><![CDATA[<?xml version=\"1.0\"?><string>10025</string>]]></parameter></xlang:action></xlang:sequence></xlang:body></xlang:behavior></definitions>";
 				//GateKeeper g = new GateKeeper();
@@ -155,8 +242,9 @@ namespace DISCUSUnittest
 				//PSLGatekeeper2 g = new PSLGatekeeper2();
 				//string[] arrRes = g.ExecuteAlphaProtocol( strAlpha ); 
 
-
-
+				//SendHttpPostData( "testing" );
+				//SendHttpPostData( "testing" );
+				
 				int x = 0;
 				x++;
 			}
