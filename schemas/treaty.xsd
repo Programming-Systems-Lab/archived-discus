@@ -5,8 +5,8 @@
 	<xs:complexType name="TreatyType">
 		<xs:sequence>
 			<xs:element name="TreatyID" type="xs:int" minOccurs="1" maxOccurs="1" default="0" nillable="false" />
-			<xs:element name="ClientServiceSpace" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false"/>
-			<xs:element name="ProviderServiceSpace" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false"/>
+			<xs:element name="ClientServiceSpace" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false" />
+			<xs:element name="ProviderServiceSpace" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false" />
 			<xs:element name="ServiceInfo" type="mstns:ServiceDataType" minOccurs="1" maxOccurs="unbounded" nillable="false" />
 		</xs:sequence>
 	</xs:complexType>
@@ -22,9 +22,9 @@
 		<xs:sequence>
 			<xs:element name="MethodName" type="xs:string" minOccurs="1" maxOccurs="1" nillable="false" />
 			<xs:element name="Parameter" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
-            <xs:element name="NumInvokations" type="xs:int" minOccurs="0" maxOccurs="1" nillable="false" default="1"/>
-			<xs:element name="Authorized" type="xs:boolean" minOccurs="0" maxOccurs="1" nillable="false" default="false"/>
-            <xs:element name="MethodImplementation" type="xs:string" minOccurs="0" maxOccurs="1" nillable="false"/>
+			<xs:element name="NumInvokations" type="xs:int" minOccurs="0" maxOccurs="1" nillable="false" default="1" />
+			<xs:element name="Authorized" type="xs:boolean" minOccurs="0" maxOccurs="1" nillable="false" default="false" />
+			<xs:element name="MethodImplementation" type="xs:string" minOccurs="0" maxOccurs="1" nillable="false" />
 		</xs:sequence>
 	</xs:complexType>
 </xs:schema>
